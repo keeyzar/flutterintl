@@ -1,0 +1,59 @@
+<!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
+<idea-plugin>
+    <!-- Unique identifier of the plugin. It should be FQN. It cannot be changed between the plugin versions. -->
+    <id>de.keeyzar.gpt-helper.gpt-helper</id>
+
+    <!-- Public plugin name should be written in Title Case.
+         Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-name -->
+    <name>GPT Flutter Intl</name>
+
+    <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
+    <vendor email="info@kevin-kekule.de" url="info@kevin-kekule.de">Keeyzar</vendor>
+
+    <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
+         Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
+         Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
+    <description><![CDATA[
+    This plugin adds some flutter functionality to the IDE. E.g. you can extract Text and automatically add it to the localization file.
+    Just press ALT+ENTER on the String and select "Generate Translation"
+  ]]></description>
+
+    <!-- Product and plugin compatibility requirements.
+         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
+    <depends>com.intellij.modules.platform</depends>
+    <depends>Dart</depends>
+    <depends>org.jetbrains.plugins.terminal</depends>
+
+    <!-- Extension points defined by the plugin.
+         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
+    <extensions defaultExtensionNs="com.intellij">
+        <intentionAction>
+            <!-- add "<language>JAVA</language>" when targeting 2022.3 and later only -->
+            <className>de.keeyzar.gpthelper.gpthelper.features.translations.presentation.actions.GenerateArbIntentionAction</className>
+            <category>SDK intentions</category>
+        </intentionAction>
+        <postStartupActivity implementation="de.keeyzar.gpthelper.gpthelper.ApplicationGptHelper"/>
+        <applicationConfigurable
+                groupId="de.keeyzar.gpthelper"
+                displayName="GPTHelper Settings"
+                id="de.keeyzar.gpthelper.settings"
+                parentId="tools"
+                instance="de.keeyzar.gpthelper.gpthelper.features.shared.presentation.GptHelperSettings"
+        />
+    </extensions>
+
+
+    <actions>
+        <action id="de.keeyzar.gpthelper.gpthelper.features.ddd.presentation.actions.CreateDirectoryStructureAction"
+                class="de.keeyzar.gpthelper.gpthelper.features.ddd.presentation.actions.CreateDirectoryStructureAction" text="Generate DDD Directory Tree"
+                description="Generates a directory tree based on a list of directory paths">
+            <add-to-group group-id="NewGroup" anchor="first"/>
+        </action>
+        <action id="de.keeyzar.gpthelper.gpthelper.features.ddd.presentation.actions.MarkDirectoryStructureAction"
+                class="de.keeyzar.gpthelper.gpthelper.features.ddd.presentation.actions.MarkDirectoryStructureAction"
+                text="Mark this as root directory structure for new DDD dir structure"
+                description="all folders are recursively saved, and when you create a new directory structure, than these folders are generated">
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
+        </action>
+    </actions>
+</idea-plugin>
