@@ -1,4 +1,4 @@
-package de.keeyzar.gpthelper.gpthelper.features.translations.presentation.service
+package de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.service
 
 import com.intellij.psi.PsiElement
 

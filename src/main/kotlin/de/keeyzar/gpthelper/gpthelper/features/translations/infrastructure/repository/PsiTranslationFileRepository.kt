@@ -1,5 +1,7 @@
 package de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.repository
 
+import com.intellij.openapi.application.Application
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.application.WriteAction
 import de.keeyzar.gpthelper.gpthelper.features.shared.domain.exception.GPTHelperBaseException
@@ -25,6 +27,18 @@ class PsiTranslationFileRepository(
             val document = languageFileFinder.findLanguageFile(language, project);
             return@compute FileToTranslate(language, document.text)
         }
+    }
+
+    override fun createOrGetTranslationFileByLanguage(language: Language): FileToTranslate {
+        var fileToTranslate: FileToTranslate? = null
+        ApplicationManager.getApplication().invokeAndWait {
+            fileToTranslate = WriteAction.compute<FileToTranslate, GPTHelperBaseException> {
+                val project = currentProjectProvider.project
+                val file = languageFileFinder.createOrGetLanguageFile(language, project);
+                return@compute FileToTranslate(language, file.text)
+            }
+        }
+        return fileToTranslate!!
     }
 
     override fun saveTranslationFile(fileToTranslate: FileToTranslate) {

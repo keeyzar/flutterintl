@@ -11,6 +11,7 @@ import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.parse
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.dto.GPTArbTranslationResponse
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.configuration.OpenAIConfigProvider
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.client.SingleTranslationRequestClient
+import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.Language
 
 
 class GPTARBRequester(
@@ -19,15 +20,18 @@ class GPTARBRequester(
     private val responseParser: GPTARBResponseParser,
 ) : SingleTranslationRequestClient {
     override suspend fun requestTranslation(content: String, targetLanguage: String): GPTArbTranslationResponse {
-        return translateWithGPTTurbo(content, targetLanguage)
+        return longDescriptionTranslation(content, targetLanguage)
+    }
+
+    override suspend fun requestTranslation(content: String, baseLanguage: Language, targetLanguage: Language): GPTArbTranslationResponse {
+        return longDescriptionTranslation(content, targetLanguage.toISOLangString())
     }
 
     override suspend fun requestTranslation(key: String, value: String, description: String, targetLanguage: String): GPTArbTranslationResponse {
-        return translateWithGPTTurbo(templater.fillTemplate(key, value, description), targetLanguage)
+        return longDescriptionTranslation(templater.fillTemplate(key, value, description), targetLanguage)
     }
-    @OptIn(BetaOpenAI::class)
-    suspend fun translateWithGPTTurbo(content: String, targetLanguage: String): GPTArbTranslationResponse {
-        val modelToUse = "gpt-3.5-turbo-0301"
+
+    private suspend fun longDescriptionTranslation(content: String, targetLanguage: String): GPTArbTranslationResponse {
 
         val request = """
             You act as an API Server answering with valid JSON only.
@@ -41,6 +45,17 @@ class GPTARBRequester(
             {"<key1>": "<value1>", ...}}
             
             The content is:
+        """.trimIndent()
+
+        return translateWithGPTTurbo(request, content, targetLanguage)
+    }
+
+    @OptIn(BetaOpenAI::class)
+    suspend fun translateWithGPTTurbo(requestTemplate: String, content: String, targetLanguage: String): GPTArbTranslationResponse {
+        val modelToUse = "gpt-3.5-turbo-0301"
+
+        val request = """
+            $requestTemplate
             $content
         """.trimIndent()
 

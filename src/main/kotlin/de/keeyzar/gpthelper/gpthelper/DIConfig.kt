@@ -7,6 +7,16 @@ import de.keeyzar.gpthelper.gpthelper.features.ddd.infrastructure.mapper.Directo
 import de.keeyzar.gpthelper.gpthelper.features.ddd.infrastructure.repository.PreferencesDDDSettingsRepository
 import de.keeyzar.gpthelper.gpthelper.features.ddd.presentation.service.CreateDirectoryTreeService
 import de.keeyzar.gpthelper.gpthelper.features.ddd.presentation.service.SaveDirectoryTreeService
+import de.keeyzar.gpthelper.gpthelper.features.filetranslation.domain.client.TranslationClient
+import de.keeyzar.gpthelper.gpthelper.features.filetranslation.domain.controller.FileTranslationProcessController
+import de.keeyzar.gpthelper.gpthelper.features.filetranslation.domain.factories.TranslationRequestFactory
+import de.keeyzar.gpthelper.gpthelper.features.filetranslation.domain.service.FinishedFileTranslationHandler
+import de.keeyzar.gpthelper.gpthelper.features.filetranslation.domain.service.GatherFileTranslationContext
+import de.keeyzar.gpthelper.gpthelper.features.filetranslation.domain.service.PartialFileResponseHandler
+import de.keeyzar.gpthelper.gpthelper.features.filetranslation.infrastructure.client.GPTTranslationClient
+import de.keeyzar.gpthelper.gpthelper.features.filetranslation.infrastructure.factories.TranslationRequestFactoryImpl
+import de.keeyzar.gpthelper.gpthelper.features.filetranslation.infrastructure.service.*
+import de.keeyzar.gpthelper.gpthelper.features.filetranslation.presentation.service.IdeaTargetLanguageProvider
 import de.keeyzar.gpthelper.gpthelper.features.flutter_intl.domain.repository.FlutterIntlSettingsRepository
 import de.keeyzar.gpthelper.gpthelper.features.flutter_intl.infrastructure.repository.FlutterFileRepository
 import de.keeyzar.gpthelper.gpthelper.features.flutter_intl.infrastructure.repository.IdeaFlutterIntlSettingsRepository
@@ -49,7 +59,6 @@ class DIConfig {
             single<GPTARBResponseParser> { GPTARBResponseParser(get()) }
             single<ObjectMapper> { ObjectMapperProvider().provideObjectMapper(null) }
             single<ARBFileContentParser> { ARBFileContentParser(get(), get()) }
-            single<TranslationService> { GPTTranslationService(get(), get(), get(), get(), get(), get()) }
             single<SingleTranslationRequestClient> { GPTARBRequester(get(), get(), get()) }
             single<OpenAIConfigProvider> { OpenAIConfigProvider(get()) }
             single<ImmediateTranslationService> { ImmediateTranslationService(get(), get()) }
@@ -107,8 +116,18 @@ class DIConfig {
             single<TaskAmountCalculator> { TranslateKeyTaskAmountCalculator() }
             single<PostTranslationTriggerService> { TranslateKeyPostTranslationTriggerService(get(), get()) }
             single<FlutterGenCommandProcessService> { FlutterGenCommandProcessService(get(), get()) }
-            single<OngoingTranslationHandler> { OngoingTranslationHandler(get(), get(), get())}
-            single<FlutterArbCurrentFileModificationService> { FlutterArbCurrentFileModificationService(get(), get(), get(), get())}
+            single<OngoingTranslationHandler> { OngoingTranslationHandler(get(), get(), get()) }
+            single<FlutterArbCurrentFileModificationService> { FlutterArbCurrentFileModificationService(get(), get(), get(), get()) }
+            single<ContextProvider> { ContextProvider() }
+            single<GatherFileTranslationContext> { IdeaGatherFileTranslationContext(get(), get(), get()) }
+            single<TargetLanguageProvider> { TargetLanguageProvider(get()) }
+            single<TranslationClient> { GPTTranslationClient(get(), get()) }
+            single<PartialFileResponseHandler> { ArbFlutterPartialFileTranslationResponseHandler(get(), get()) }
+            single<TranslationRequestFactory> { TranslationRequestFactoryImpl(get()) }
+            single<FileTranslationProcessController> { FileTranslationProcessController(get(), get(), get(), get(), get(), get(), get(), get()) }
+            single<TargetLanguageProvider> { IdeaTargetLanguageProvider(get()) }
+            single<ArbFileContentModificationService> { ArbFileContentModificationService(get()) }
+            single<FinishedFileTranslationHandler> { FlutterArbTranslateFileFinished(get(), get(), get()) }
         }
     }
 }

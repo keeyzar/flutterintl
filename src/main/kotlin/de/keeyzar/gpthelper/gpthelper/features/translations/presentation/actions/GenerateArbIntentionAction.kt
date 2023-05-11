@@ -81,9 +81,9 @@ class GenerateArbIntentionAction : PsiElementBaseIntentionAction(), IntentionAct
             getInitializer().lastStatementProviderForFlutterArbTranslation.lastStatement = element
             val translationProcessController = getInitializer().translationProcessController
 
-            getInitializer().translationTaskBackgroundProgress.triggerInBlockingContext(project) {
+            getInitializer().translationTaskBackgroundProgress.triggerInBlockingContext(project, {
                 translationProcessController.startTranslationProcess()
-            }
+            })
         }
     }
 

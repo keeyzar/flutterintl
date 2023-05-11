@@ -1,25 +1,32 @@
 package de.keeyzar.gpthelper.gpthelper.features.shared.infrastructure.utils
 
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.ObjectNode
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.SimpleTranslationEntry
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.exceptions.ReplacementOfTranslationFailedException
 import java.util.*
 
 class JsonUtils(private val objectMapper: ObjectMapper) {
-
-    private val trailingCommaRegex = Regex(",\\s*}")
-
-
     fun hasAnyEntry(jsonString: String): Boolean {
         return jsonString.contains(":")
     }
 
-    fun removeTrailingCommas(jsonString: String): String {
-        val replace = jsonString.replace(trailingCommaRegex, "}").trim()
-        if (replace.last() == ',') {
-            return replace.dropLast(1)
+    fun reorderJson(base: String, scrambled: String): String {
+        val objectMapper = ObjectMapper()
+        val baseJsonNode = objectMapper.readTree(base) as ObjectNode
+        val scrambledJsonNode = objectMapper.readTree(scrambled) as ObjectNode
+
+        val orderedJsonNode = objectMapper.createObjectNode()
+
+        baseJsonNode.fieldNames().forEachRemaining { key ->
+            val node = scrambledJsonNode.get(key)
+            if (node != null) {
+                orderedJsonNode.set<JsonNode>(key, node)
+            }
         }
-        return replace
+
+        return objectMapper.writeValueAsString(orderedJsonNode)
     }
 
     fun replaceKeys(oldContent: String, simpleTranslationEntry: SimpleTranslationEntry): String {
@@ -42,68 +49,14 @@ class JsonUtils(private val objectMapper: ObjectMapper) {
         return jsonString.trim().removeSurrounding("{", "}")
     }
 
-    fun removeDuplicatedCommas(jsonString: String): String {
-        val stack = Stack<Char>()
-        var isInsideQuotes = false
-        var result = ""
-        var lastCharCommaOutsideQuotes = true
-
-        for (c in jsonString) {
-            when (c) {
-                ',' -> {
-                    if (isInsideQuotes) {
-                        //we don't really care about commas inside quotes, do whatever you want
-                        result += ","
-                        stack.push(',')
-                    } else if (lastCharCommaOutsideQuotes) {
-                        // do nothing, do not push, because now we have a duplicated comma
-                    } else {
-                        result += ","
-                        stack.push(',')
-                        lastCharCommaOutsideQuotes = true
-                    }
-                }
-
-                '"' -> {
-                    if (quoteNotEscaped(stack)) {
-                        isInsideQuotes = !isInsideQuotes
-                    }
-                    stack.push('"')
-                    result += c
-                    lastCharCommaOutsideQuotes = false
-                }
-
-                else -> {
-                    stack.push(c)
-                    result += c
-                    if (isNotWhitespace(c)) {
-                        lastCharCommaOutsideQuotes = false
-                    }
-                }
-            }
-        }
-
-        return result
-    }
-
-    private fun isNotWhitespace(c: Char): Boolean {
-        return c != ' ' && c != '\n' && c != '\t' && c != '\r'
-    }
-
-    private fun quoteNotEscaped(stack: Stack<Char>) = stack.isNotEmpty() && stack.peek() != '\\'
-
-    fun prettify(newContentCleaned: String): String {
-        val content = objectMapper.readTree(newContentCleaned)
-        return objectMapper.writeValueAsString(content)
-    }
-
-
     private fun entryToMap(simpleTranslationEntry: SimpleTranslationEntry) = simpleTranslationEntry.toMap()
     fun entryToJsonString(simpleTranslationEntry: SimpleTranslationEntry): String = objectMapper.writeValueAsString(simpleTranslationEntry.toMap())
     fun entryToJsonStringWithoutSurroundingBrackets(simpleTranslationEntry: SimpleTranslationEntry) =
         removeSurroundingBrackets(entryToJsonString(simpleTranslationEntry))
 
-    fun SimpleTranslationEntry.toMap(): Map<String, *> {
+    fun mapToJsonString(map: Map<String, *>): String = removeSurroundingBrackets(objectMapper.writeValueAsString(map))
+
+    private fun SimpleTranslationEntry.toMap(): Map<String, *> {
         val map = mutableMapOf<String, Any>()
         map[this.desiredKey] = this.desiredValue
         map["@" + this.desiredKey] = mapOf("description" to this.desiredDescription)

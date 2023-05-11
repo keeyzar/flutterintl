@@ -6,6 +6,7 @@ import com.intellij.ui.dsl.builder.panel
 
 class IdeaTranslationErrorProcessHandlerImpl : TranslationErrorProcessHandler {
     override fun displayErrorToUser(e: Throwable) {
+        e.printStackTrace()
         ApplicationManager.getApplication().invokeAndWait {
             DialogBuilder().apply {
                 setTitle("Error")

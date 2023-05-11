@@ -9,6 +9,7 @@ import java.nio.file.Path
  */
 interface TranslationFileRepository {
     fun getTranslationFileByLanguage(language: Language): FileToTranslate
+    fun createOrGetTranslationFileByLanguage(language: Language): FileToTranslate
     fun saveTranslationFile(fileToTranslate: FileToTranslate)
     fun getPathsToTranslationFiles(): List<Path>
 }

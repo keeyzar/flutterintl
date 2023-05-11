@@ -22,6 +22,7 @@ class TranslationTaskBackgroundProgress {
     fun triggerInBlockingContext(
         project: Project,
         callback: suspend () -> Unit,
+        finishedCallback: (() -> Unit)? = null,
     ) {
         val progressManager = ProgressManager.getInstance()
 
@@ -47,6 +48,11 @@ class TranslationTaskBackgroundProgress {
                     }
                 }
                 con.subscribe(TranslationProgressChangeNotifier.CHANGE_ACTION_TOPIC)
+            }
+
+            override fun onFinished() {
+                super.onFinished()
+                finishedCallback?.invoke()
             }
         }
 

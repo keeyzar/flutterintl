@@ -34,6 +34,27 @@ class LanguageFileFinder(
             )
     }
 
+    fun createOrGetLanguageFile(language: Language, project: Project): Document {
+        return try {
+            findLanguageFile(language, project)
+        } catch (e: Throwable) {
+            println("did not exist")
+            val userSettings = userSettingsRepository.getSettings()
+            val filePath = getAbsoluteFilePath(language, userSettings, project)
+            val parentDirectory = VirtualFileManager.getInstance().findFileByNioPath(filePath.parent) ?: throw TranslationFileNotFound(
+                "Parent directory not found",
+                language,
+                filePath
+            )
+            parentDirectory.createChildData(this, filePath.fileName.toString())?: throw TranslationFileNotFound(
+                "Could not create file",
+                language,
+                filePath
+            )
+            findLanguageFile(language, project)
+        }
+    }
+
     private fun getAbsoluteFilePath(language: Language, settings: UserSettings, project: Project): Path {
         val translationBaseDir = settings.arbDir ?: throw BasePathSettingMissing("You need to set the translation base directory")
         val filePrefix = getArbFilePrefix(settings.templateArbFile)

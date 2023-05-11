@@ -1,5 +1,6 @@
 package de.keeyzar.gpthelper.gpthelper.features.translations.domain.service
 
+import de.keeyzar.gpthelper.gpthelper.features.filetranslation.infrastructure.service.FlutterArbCurrentFileModificationService
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.CurrentFileModificationContext
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.TranslateKeyContext
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.UserTranslationInput

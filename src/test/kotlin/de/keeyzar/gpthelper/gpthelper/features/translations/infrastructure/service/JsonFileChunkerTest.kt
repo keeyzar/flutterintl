@@ -18,20 +18,68 @@ class JsonFileChunkerTest {
             """{"prop4":4,"prop5":5}"""
         )
 
-        val actualChunks = chunker.chunkJson(json, 3L)
+        val actualChunks = chunker.chunkJsonBasedOnTotalStringSize(json, 19L)
 
         assertThat(actualChunks).hasSameSizeAs(expectedChunks)
         assertThat(actualChunks).containsExactlyElementsOf(expectedChunks)
     }
 
     @Test
-    fun `chunkJson should split JSON object into single chunk if size is larger than object`() {
-        val json = """{"prop1": 1, "prop2": 2, "prop3": 3}"""
+    fun `chunkJson should split JSON object into chunks of specified size 2`() {
+        val json = """{"prop1": 1, "prop2": 2, "prop3": 3, "prop4": 4, "prop5": 5}"""
         val expectedChunks = listOf(
-            """{"prop1":1,"prop2":2,"prop3":3}"""
+            """{"prop1":1,"prop2":2}""",
+            """{"prop3":3,"prop4":4}""",
+            """{"prop5":5}"""
         )
 
-        val actualChunks = chunker.chunkJson(json, 5L)
+        val actualChunks = chunker.chunkJsonBasedOnTotalStringSize(json, 13L)
+
+        assertThat(actualChunks).hasSameSizeAs(expectedChunks)
+        assertThat(actualChunks).containsExactlyElementsOf(expectedChunks)
+    }
+
+    @Test
+    fun `chunkJson should split JSON object into chunks of specified size 3`() {
+        val json = """{"prop1": 1, "prop2": 2, "prop3": 3, "prop4": { "prop5": 5, "prop6": 6}}"""
+        val expectedChunks = listOf(
+            """{"prop1":1,"prop2":2}""",
+            """{"prop3":3}""",
+            """{"prop4":{"prop5":5,"prop6":6}}"""
+        )
+
+        val actualChunks = chunker.chunkJsonBasedOnTotalStringSize(json, 13L)
+
+        assertThat(actualChunks).hasSameSizeAs(expectedChunks)
+        assertThat(actualChunks).containsExactlyElementsOf(expectedChunks)
+    }
+    @Test
+    fun `chunkJson should split JSON object into chunks of specified size 4`() {
+        val json = """{"prop1": 1, "prop2": 2, "prop3": 3, "prop4": 4, "prop5": 5}"""
+        val expectedChunks = listOf(
+            """{"prop1":1}""",
+            """{"prop2":2}""",
+            """{"prop3":3}""",
+            """{"prop4":4}""",
+            """{"prop5":5}""",
+        )
+
+        val actualChunks = chunker.chunkJsonBasedOnTotalStringSize(json, 3L)
+
+        assertThat(actualChunks).hasSameSizeAs(expectedChunks)
+        assertThat(actualChunks).containsExactlyElementsOf(expectedChunks)
+    }
+
+    @Test
+    fun `chunkJson should split JSON object into single key-value chunks if size is larger than object`() {
+        val json = """{"prop1": 1, "prop2": 2, "prop3": 3}"""
+        val expectedChunks = listOf(
+            """{"prop1":1}""",
+            """{"prop2":2}""",
+            """{"prop3":3}"""
+        )
+
+        val actualChunks = chunker.chunkJsonBasedOnTotalStringSize(json, 5L)
 
         assertThat(actualChunks).hasSameSizeAs(expectedChunks)
         assertThat(actualChunks).containsExactlyElementsOf(expectedChunks)
@@ -41,7 +89,7 @@ class JsonFileChunkerTest {
     fun `chunkJson should return empty list if JSON object is empty`() {
         val json = "{}"
 
-        val actualChunks = chunker.chunkJson(json, 5L)
+        val actualChunks = chunker.chunkJsonBasedOnTotalStringSize(json, 5L)
 
         assertThat(actualChunks).isEmpty()
     }
@@ -50,18 +98,18 @@ class JsonFileChunkerTest {
     fun `huge size 2` () {
         val json = createJsonWithPropertiesAndLevels(numProperties = 400, numLevels = 3)
 
-        val actualChunks = chunker.chunkJson(json, 30L);
+        val actualChunks = chunker.chunkJsonBasedOnTotalStringSize(json, 400);
 
-        assertThat(actualChunks).hasSize(14)
+        assertThat(actualChunks).hasSize(40)
     }
 
     @Test
     fun `huge size` () {
         val json = createJsonWithPropertiesAndLevels(numProperties = 2000, numLevels = 1)
 
-        val actualChunks = chunker.chunkJson(json, 50L);
+        val actualChunks = chunker.chunkJsonBasedOnTotalStringSize(json, 50L);
 
-        assertThat(actualChunks).hasSize(40)
+        assertThat(actualChunks).hasSize(1000)
     }
 
     private fun createJsonWithPropertiesAndLevels(numProperties: Int, numLevels: Int): String {

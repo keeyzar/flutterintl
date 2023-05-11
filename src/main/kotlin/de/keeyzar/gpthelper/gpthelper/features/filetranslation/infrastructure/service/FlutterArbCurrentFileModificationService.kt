@@ -1,10 +1,11 @@
-package de.keeyzar.gpthelper.gpthelper.features.translations.domain.service
+package de.keeyzar.gpthelper.gpthelper.features.filetranslation.infrastructure.service
 
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.CurrentFileModificationContext
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.exceptions.CurrentFileModificationException
+import de.keeyzar.gpthelper.gpthelper.features.translations.domain.service.CurrentFileModificationService
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.repository.CurrentProjectProvider
 import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.service.ImportFixer
-import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.service.LastStatementProviderForFlutterArbTranslation
+import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.service.LastStatementProviderForFlutterArbTranslation
 import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.service.StatementFixer
 
 class FlutterArbCurrentFileModificationService(

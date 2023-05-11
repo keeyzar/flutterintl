@@ -9,6 +9,7 @@ import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.Tr
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.UserSettingsRepository
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.UserTranslationInputRepository
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.service.GatherTranslationContextService
+import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.service.LastStatementProviderForFlutterArbTranslation
 
 class FlutterArbTranslationContextService(
     private val lastStatementProviderForFlutterArbTranslation: LastStatementProviderForFlutterArbTranslation,
