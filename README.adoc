@@ -3,6 +3,7 @@
 = Flutter Intl with GPT
 
 Generate your l18n keys with this plugin
+Download https://plugins.jetbrains.com/plugin/21732-gpt-flutter-intl[Flutter i18n GPT here]
 
 == Usage
 1. Install the plugin
