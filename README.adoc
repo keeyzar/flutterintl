@@ -1,0 +1,16 @@
+:toc:
+
+= Flutter Intl with GPT
+
+Generate your l18n keys with this plugin
+
+== Usage
+1. Install the plugin
+2. install flutter
+3. edit dart file
+4. In a String literal press `alt+enter` and select `Generate translations`
+
+== Disclaimer
+1. I learned kotlin
+2. I learned IntelliJ Plugin Development
+3. I tried out some DDD stuff, and in the process I had some issues. Time is scarce, you know how that is.
