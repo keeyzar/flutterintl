@@ -7,7 +7,6 @@ class UserSettingsTest {
 
     val sut = UserSettings(
         "arbDir",
-        "openAIKey",
         "outputClass",
         false,
         "templateArbFile",

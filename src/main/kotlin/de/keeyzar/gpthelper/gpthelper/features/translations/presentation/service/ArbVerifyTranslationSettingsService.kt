@@ -10,6 +10,7 @@ import de.keeyzar.gpthelper.gpthelper.features.shared.infrastructure.model.UserS
 import de.keeyzar.gpthelper.gpthelper.features.shared.presentation.GptHelperSettings
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.exceptions.UserSettingsCorruptException
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.exceptions.UserSettingsMissingException
+import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.TranslationCredentialsServiceRepository
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.UserSettingsRepository
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.service.VerifyTranslationSettingsService
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.repository.CurrentProjectProvider
@@ -46,7 +47,7 @@ class ArbVerifyTranslationSettingsService(
         }
 
         //check whether there are some issues with the settings
-        if (validateTranslationClient(userSettings, project)) return false
+        if (validateTranslationClient(project)) return false
 
         return potentiallyRefreshFlutterIntlSettings(userSettings, project)
     }
@@ -80,7 +81,7 @@ class ArbVerifyTranslationSettingsService(
                 }
             }
             true
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             askToNavigateToSettingsPage(
                 project,
                 "Missing Settings",
@@ -91,10 +92,9 @@ class ArbVerifyTranslationSettingsService(
     }
 
     private fun validateTranslationClient(
-        userSettings: UserSettings,
         project: Project
     ): Boolean {
-        val errors = translationClientSettingsValidator.valid(userSettings)
+        val errors = translationClientSettingsValidator.valid()
         if (errors.isNotEmpty()) {
             askToNavigateToSettingsPage(
                 project,
@@ -121,9 +121,11 @@ class ArbVerifyTranslationSettingsService(
                     }
                 )
                 addOkAction()
+                    .setText("Go to Settings")
                 addCancelAction()
+
             }.showAndGet()
-            if(closedWithOk) {
+            if (closedWithOk) {
                 ShowSettingsUtil.getInstance().showSettingsDialog(project, GptHelperSettings::class.java)
             }
         }

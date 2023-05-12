@@ -9,7 +9,6 @@ import de.keeyzar.gpthelper.gpthelper.features.flutter_intl.domain.repository.Fl
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.UserSettingsRepository
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.repository.CurrentProjectProvider
 import java.nio.file.Path
-import java.nio.file.Paths
 
 class IdeaFlutterIntlSettingsRepository(
     private val currentProjectProvider: CurrentProjectProvider,
@@ -30,11 +29,9 @@ class IdeaFlutterIntlSettingsRepository(
             println("Failed to load userSettings, there might be none ${e.message}. Trying to load default settings");
             null
         }
-        val relativePath = userSettings?.intlConfigFile ?: DEFAULT_FLUTTER_INTL_CONFIG_FILE
+        val absolutePath = userSettings?.intlConfigFile ?: DEFAULT_FLUTTER_INTL_CONFIG_FILE
         val project = currentProjectProvider.project;
-        val basePath = project.basePath ?: throw RuntimeException("Project base path is null")
-        val filePath = Paths.get(basePath, relativePath)
-        return load(project, filePath)
+        return load(project, Path.of(absolutePath))
     }
 
     override fun loadFlutterIntlSettingsByPath(path: Path): FlutterIntlSettings {

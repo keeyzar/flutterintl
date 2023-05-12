@@ -3,11 +3,13 @@ package de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.repo
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.*
 import com.intellij.util.xmlb.XmlSerializerUtil
+import kotlin.properties.ReadWriteProperty
+import kotlin.reflect.KProperty
 
 
 @State(name = "FlutterIntlSettings", storages =[Storage(value="plugin_gpt_intl_settings.xml")])
 @Service
-class UserSettingsPersistentStateComponent : PersistentStateComponent<UserSettingsPersistentStateComponent.IdeaUserSettingsModel> {
+class UserSettingsPersistentStateComponent : PersistentStateComponent<UserSettingsPersistentStateComponent.UserSettingsModel> {
 
     companion object {
         fun getInstance(): UserSettingsPersistentStateComponent {
@@ -15,58 +17,60 @@ class UserSettingsPersistentStateComponent : PersistentStateComponent<UserSettin
         }
     }
 
+    private var model = UserSettingsModel()
 
-
-    private var model = IdeaUserSettingsModel(
-        "",
-        "",
-        true,
-        "",
-        "",
-        true,
-        ""
-    )
-
-    override fun getState(): IdeaUserSettingsModel {
+    override fun getState(): UserSettingsModel {
         return model
     }
 
 
 
-    override fun loadState(state: IdeaUserSettingsModel) {
+    override fun loadState(state: UserSettingsModel) {
         XmlSerializerUtil.copyBean(state, model)
     }
 
-    fun setNewState(newState: IdeaUserSettingsModel) {
+    fun setNewState(newState: UserSettingsModel) {
         model = newState;
     }
 
-    data class IdeaUserSettingsModel(
+    class UserSettingsModel {
         /**
          * where is the directory containing the arb files
          */
-        val arbDir: String,
+        var arbDir: String by object: RWProperty<UserSettingsModel, String>("") {}
         /**
          * how is the key names (e.g. S, AppLocalizations)
          */
-        val outputClass: String,
+        var outputClass: String by object: RWProperty<UserSettingsModel, String>("") {}
         /**
          * whether we're working with a nullable getter
          */
-        val nullableGetter: Boolean,
+        var nullableGetter: Boolean by object: RWProperty<UserSettingsModel, Boolean>(true) {}
 
         /**
          * base file for the translations, i.e. here you can find the prefix
          */
-        val templateArbFile: String,
-        val intlConfigFile: String,
-        val watchIntlConfigFile: Boolean,
+        var templateArbFile: String by object: RWProperty<UserSettingsModel, String>("") {}
+        var intlConfigFile: String by object: RWProperty<UserSettingsModel, String>("") {}
+        var watchIntlConfigFile: Boolean by object: RWProperty<UserSettingsModel, Boolean>(true) {}
         /**
          * here you can find the file, where the outputClass is located in
          */
-        val outputLocalizationFile: String
-    ) {
-        constructor() : this("", "", false, "", "", true, "")
+        var outputLocalizationFile: String by object: RWProperty<UserSettingsModel, String>("") {}
+
+        open class RWProperty<R, T>(initValue: T) : ReadWriteProperty<R, T> {
+            private var backingField: T = initValue
+            override fun getValue(thisRef: R, property: KProperty<*>): T {
+                println("State::${property.name}.getValue(), value: '$backingField'")
+                return backingField
+            }
+
+            override fun setValue(thisRef: R, property: KProperty<*>, value: T) {
+                backingField = value
+                println("State::${property.name}.setValue(), value: '$backingField'")
+            }
+        }
     }
+
 
 }

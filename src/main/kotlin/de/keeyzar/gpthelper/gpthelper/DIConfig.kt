@@ -41,9 +41,8 @@ import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.clien
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.client.OpenAIClientConnectionTester
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.client.TranslateKeyTaskAmountCalculator
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.configuration.OpenAIConfigProvider
-import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.mapper.NewUserSettingsMapper
-import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.mapper.TranslationRequestResponseMapper
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.mapper.UserSettingsMapper
+import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.mapper.TranslationRequestResponseMapper
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.parser.ARBFileContentParser
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.parser.GPTARBResponseParser
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.repository.*
@@ -67,7 +66,7 @@ class DIConfig {
             single<SingleTranslationRequestClient> { GPTARBRequester(get(), get(), get()) }
             single<OpenAIConfigProvider> { OpenAIConfigProvider(get()) }
             single<ImmediateTranslationService> { ImmediateTranslationService(get(), get()) }
-            single<UserSettingsRepository> { PropertiesUserSettingsRepository(get(), get(), get(), get()) }
+            single<UserSettingsRepository> { PropertiesUserSettingsRepository(get(), get(), get()) }
             single<DDDSettingsRepository> { PreferencesDDDSettingsRepository(get(), get()) }
             single<DirectoryStructureMapper> { Mappers.getMapper(DirectoryStructureMapper::class.java) }
             single<CreateDirectoryTreeService> { CreateDirectoryTreeService(get()) }
@@ -78,7 +77,6 @@ class DIConfig {
             val ideaTranslationPercentageBus = IdeaTranslationProgressBus()
             single<TranslationProgressBus> { ideaTranslationPercentageBus }
             single<IdeaTranslationProgressBus> { ideaTranslationPercentageBus }
-            single<WholeFileTranslationService> { WholeFileTranslationService(get()) }
             single<IdeaTerminalConsoleService> { IdeaTerminalConsoleService() }
             single<CurrentProjectProvider> { CurrentProjectProvider() }
             single<FlutterIntlSettingsRepository> {
@@ -97,7 +95,7 @@ class DIConfig {
             single<DDDTranslationRequestClient> { GPTTranslationRequestClient(get(), get()) }
             single<ArbFileModificationService> { ArbFileModificationService(get(), get(), get()) }
             single<VerifyTranslationSettingsService> { ArbVerifyTranslationSettingsService(get(), get(), get(), get(), get()) }
-            single<TranslationClientSettingsValidator> { TranslationClientSettingsValidator() }
+            single<TranslationClientSettingsValidator> { TranslationClientSettingsValidator(get()) }
             single<UserTranslationInputRepository> { PropertiesUserTranslationInputRepository(get()) }
             single<GatherTranslationContextService> { FlutterArbTranslationContextService(get(), get(), get(), get(), get(), get()) }
             single<GatherUserInputService> { FlutterArbUserInputService() }
@@ -133,7 +131,7 @@ class DIConfig {
             single<TargetLanguageProvider> { IdeaTargetLanguageProvider(get()) }
             single<ArbFileContentModificationService> { ArbFileContentModificationService(get()) }
             single<FinishedFileTranslationHandler> { FlutterArbTranslateFileFinished(get(), get(), get()) }
-            single<NewUserSettingsMapper> { Mappers.getMapper(NewUserSettingsMapper::class.java) }
+            single<UserSettingsMapper> { Mappers.getMapper(UserSettingsMapper::class.java) }
             single<UserSettingsPersistentStateComponent> { UserSettingsPersistentStateComponent.getInstance() }
             single<TranslationCredentialsServiceRepository> { IdeaTranslationCredentialsServiceRepository() }
             single<UserSettingsDTOMapper> { Mappers.getMapper(UserSettingsDTOMapper::class.java) }

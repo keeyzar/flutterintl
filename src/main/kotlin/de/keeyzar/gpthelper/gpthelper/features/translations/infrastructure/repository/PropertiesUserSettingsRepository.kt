@@ -1,15 +1,13 @@
 package de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.repository
 
 import de.keeyzar.gpthelper.gpthelper.features.shared.infrastructure.model.UserSettings
-import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.TranslationCredentialsServiceRepository
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.UserSettingsRepository
-import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.mapper.NewUserSettingsMapper
+import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.mapper.UserSettingsMapper
 
 class PropertiesUserSettingsRepository(
     private val currentProjectProvider: CurrentProjectProvider,
-    private val userSettingsMapper: NewUserSettingsMapper,
+    private val userSettingsMapper: UserSettingsMapper,
     private val userSettingsPersistentStateComponent: UserSettingsPersistentStateComponent,
-    private val credentialsServiceRepository: TranslationCredentialsServiceRepository,
 ) : UserSettingsRepository {
 
     override fun overrideSettings(callback: (oldUserSettings: UserSettings) -> UserSettings) {
@@ -35,11 +33,6 @@ class PropertiesUserSettingsRepository(
         return userSettings.copy(
             arbDir = userSettings.arbDir?.removePrefix(projectBasePath)?.removePrefix(projectBasePathBackslash),
             intlConfigFile = userSettings.intlConfigFile
-                ?.removePrefix(projectBasePath)
-                ?.removePrefix(projectBasePathBackslash)
-                //sometimes theres something left
-                ?.removePrefix("\\")
-                ?.removePrefix("/")
         )
     }
 
@@ -47,15 +40,13 @@ class PropertiesUserSettingsRepository(
      * if there is no settings, we provide default user settings
      */
     override fun getSettings(): UserSettings {
-        val toEntity = userSettingsMapper.toEntity(userSettingsPersistentStateComponent.state)
-        val key = credentialsServiceRepository.getKey()
-        //TODO need to separate this
-        return toEntity.copy(openAIKey = key)
+        return userSettingsMapper.toEntity(userSettingsPersistentStateComponent.state)
     }
+
     /**
      * wipe the user settings
      */
     override fun wipeUserSettings() {
-        userSettingsPersistentStateComponent.setNewState(UserSettingsPersistentStateComponent.IdeaUserSettingsModel())
+        userSettingsPersistentStateComponent.setNewState(UserSettingsPersistentStateComponent.UserSettingsModel())
     }
 }
