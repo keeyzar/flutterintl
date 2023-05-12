@@ -36,8 +36,6 @@ dsrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/domain/ent
 msrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/domain/entity/UserTranslationResponse.kt,e\b\eb0f0a2f9e163c821e8c1a37ea62bd6eaa1d2edb
 ù
 msrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/ddd/infrastructure/mapper/DirectoryStructureMapper.kt,e\3\e3ba2d654f94c6c23ed6efc3ebed367a8dcfcec5
-°
-qsrc/test/kotlin/de/keeyzar/gpthelper/gpthelper/features/ddd/infrastructure/mapper/DirectoryStructureMapperTest.kt,2\5\25003529f05a4b2de3a5170205fdaa01036d39cd
 ¢
 rsrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/domain/exceptions/FilePrefixSettingMissing.kt,d\2\d22ac25b176437a08b1dbdb1c0b2cae6d1eabda1
 ï
@@ -252,8 +250,6 @@ tsrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/infrastruc
 }src/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/filetranslation/infrastructure/mapper/FileTranslationRequestMapper.kt,f\b\fbcb78e40e25cecf965ed8166425c6ff1947d572
 ô
 isrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/domain/service/TranslationService.kt,b\8\b86904dbac949fd68ee05836ce64768ed07dd73c
-¢
-rsrc/test/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/infrastructure/service/JsonFileChunkerTest.kt,4\2\42bbdfacaaaa92c3efab286615267fd027e22c44
 °
 qsrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/domain/service/ArbFileModificationService.kt,7\d\7d4393ac2892e0cda4a1cca7ec3c6113d893f04b
 •
