@@ -3,7 +3,9 @@ package de.keeyzar.gpthelper.gpthelper.features.translations.presentation.servic
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.WriteAction
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.wm.ToolWindowManager
 import org.jetbrains.plugins.terminal.ShellTerminalWidget
+import org.jetbrains.plugins.terminal.TerminalToolWindowFactory
 import org.jetbrains.plugins.terminal.TerminalView
 
 /**
@@ -19,15 +21,10 @@ class IdeaTerminalConsoleService {
 
         ApplicationManager.getApplication().invokeAndWait {
             val terminalView = TerminalView.getInstance(project)
-            //toolwindow might not be open, therefore ensure open
-            val contentManager = try {
-                terminalView.toolWindow.contentManager
-            } catch (e: Throwable) {
-                terminalView.createLocalShellWidget(project.basePath, TAB_NAME_FOR_L10N_GENERATION)
-                terminalView.toolWindow.contentManager
-            }
+            val window = ToolWindowManager.getInstance(project).getToolWindow(TerminalToolWindowFactory.TOOL_WINDOW_ID)
+            val contentManager = window?.contentManager
 
-            val widget = when (contentManager.findContent(TAB_NAME_FOR_L10N_GENERATION)) {
+            val widget = when (contentManager?.findContent(TAB_NAME_FOR_L10N_GENERATION)) {
                 null -> {
                     println("creating new terminal widget")
                     WriteAction.compute<ShellTerminalWidget, Throwable> {

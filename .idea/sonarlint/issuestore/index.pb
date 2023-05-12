@@ -67,8 +67,6 @@ usrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/domain/exc
 isrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/domain/entity/TranslationProgress.kt,0\0\00ea091d1c926381ab264637058a3fd7772b3778
 ©
 ysrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/infrastructure/service/IdeaTranslationProgressBus.kt,6\3\63f98c6ed840ecb32a6fbe13739a3b9124ba64cc
-³
-‚src/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/domain/exceptions/ExecuteGenCommandProcessServiceException.kt,f\7\f724b1c50f595fa1f226d664c8aef96b10235180
 ª
 zsrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/domain/exceptions/CurrentFileModificationException.kt,0\0\00bb73237211b5fd0ba34aa33ae6820edfdb6838
 Æ
@@ -93,8 +91,6 @@ C
 wsrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/presentation/service/FlutterArbUserInputService.kt,5\8\58011e4c415dda312dc238d08a995a81ff77abf4
 ž
 nsrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/presentation/service/FlutterPsiService.kt,9\7\97eb09d143ad2b57b60dcecf484eaa4e478a2e40
-§
-wsrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/presentation/service/IdeaTerminalConsoleService.kt,a\e\ae65723534f980b18b26c02b85e4af7e2d1863be
 ˜
 hsrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/presentation/service/ImportFixer.kt,f\2\f2f52b3822b70ea78c47782cf2f1207275225ff4
 ›
@@ -274,8 +270,6 @@ rsrc/test/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/infrastruc
 :
 
 .gitignore,a\5\a5cc2925ca8258af241be7e5b0381edf30266302
-@
-build.gradle.kts,d\b\dbcff70658daf80b53ce624f6adcaa529df5ed8d
 ™
 isrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/flutter_intl/domain/entity/FlutterIntlSettings.kt,2\4\2414cdc50e890cfcabbd722d9353a7af4b1bafc3
 ¦
