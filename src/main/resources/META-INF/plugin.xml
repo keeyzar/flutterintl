@@ -14,8 +14,7 @@
          Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
     <description><![CDATA[
-    This plugin adds some flutter functionality to the IDE. E.g. you can extract Text and automatically add it to the localization file.
-    Just press ALT+ENTER on the String and select "Generate Translation"
+    Alt+Enter within a String literal automatically translates to all your .arb files and fixes the import. You can also automatically translate whole files to a new language.
   ]]></description>
 
     <!-- Product and plugin compatibility requirements.
