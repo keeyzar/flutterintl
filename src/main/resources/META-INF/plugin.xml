@@ -8,7 +8,7 @@
     <name>GPT Flutter Intl</name>
 
     <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
-    <vendor email="info@kevin-kekule.de" url="info@kevin-kekule.de">Keeyzar</vendor>
+    <vendor email="info@kevin-kekule.de" url="https://kevin-kekule.de">Keeyzar</vendor>
 
     <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
          Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
@@ -35,7 +35,7 @@
         <postStartupActivity implementation="de.keeyzar.gpthelper.gpthelper.ApplicationGptHelper"/>
         <applicationConfigurable
                 groupId="de.keeyzar.gpthelper"
-                displayName="GPTHelper Settings"
+                displayName="GPT Flutter Intl Settings"
                 id="de.keeyzar.gpthelper.settings"
                 parentId="tools"
                 instance="de.keeyzar.gpthelper.gpthelper.features.shared.presentation.GptHelperSettings"
