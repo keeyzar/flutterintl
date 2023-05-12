@@ -13,9 +13,6 @@ fsrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/ddd/domain/repository/D
 ysrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/ddd/infrastructure/repository/PreferencesDDDSettingsRepository.kt,d\9\d99e5cc9d30e16ca78fe29f6955f77041287741c
 ž
 nsrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/ddd/presentation/service/CreateDirectoryTreeService.kt,7\3\736fbeea8f4e664bf3f554bb0ed4a2d046711185
-:
-
-.gitignore,a\5\a5cc2925ca8258af241be7e5b0381edf30266302
 ±
 €src/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/infrastructure/service/TranslationProgressChangeNotifier.kt,8\c\8c471db633fd0c9ee9b6599eb8e72c9c439befe2
 ¢
