@@ -17,6 +17,18 @@
     Alt+Enter within a String literal automatically translates to all your .arb files and fixes the import. You can also automatically translate whole files to a new language.
   ]]></description>
 
+    <change-notes>
+        <![CDATA[
+      <ul>
+        <li>
+          <b>1.5.0</b> Use project level persistence
+        </li>
+        <li><b>1.4</b> Added Logo</li>
+        <li><b>1.0</b> initial release</li>
+      </ul>
+    ]]>
+    </change-notes>
+
     <!-- Product and plugin compatibility requirements.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
     <depends>com.intellij.modules.platform</depends>
@@ -32,7 +44,7 @@
             <category>SDK intentions</category>
         </intentionAction>
         <postStartupActivity implementation="de.keeyzar.gpthelper.gpthelper.ApplicationGptHelper"/>
-        <applicationConfigurable
+        <projectConfigurable
                 groupId="de.keeyzar.gpthelper"
                 displayName="GPT Flutter Intl Settings"
                 id="de.keeyzar.gpthelper.settings"

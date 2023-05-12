@@ -3,6 +3,8 @@ package de.keeyzar.gpthelper.gpthelper.features.shared.presentation
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.observable.properties.AtomicProperty
 import com.intellij.openapi.options.Configurable
+import com.intellij.openapi.progress.util.BackgroundTaskUtil.submitTask
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogBuilder
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
@@ -11,17 +13,21 @@ import com.intellij.ui.components.JBTextField
 import com.intellij.ui.dsl.builder.*
 import com.intellij.ui.dsl.gridLayout.HorizontalAlign
 import com.intellij.ui.layout.ComponentPredicate
+import com.intellij.ui.layout.selected
 import de.keeyzar.gpthelper.gpthelper.features.flutter_intl.domain.repository.FlutterIntlSettingsRepository
 import de.keeyzar.gpthelper.gpthelper.features.shared.infrastructure.model.UserSettings
+import de.keeyzar.gpthelper.gpthelper.features.shared.presentation.dto.UserSettingsDTO
+import de.keeyzar.gpthelper.gpthelper.features.shared.presentation.mapper.UserSettingsDTOMapper
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.exceptions.UserSettingsCorruptException
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.exceptions.UserSettingsMissingException
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.UserSettingsRepository
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.repository.CurrentProjectProvider
+import kotlinx.coroutines.runBlocking
 import java.nio.file.Path
 import javax.swing.JCheckBox
 import javax.swing.JComponent
 
-class GptHelperSettings : Configurable {
+class GptHelperSettings(val project: Project) : Configurable {
     private var panel: DialogPanel? = null
     private lateinit var openAIKeyField: Cell<JBPasswordField>
     private lateinit var intlConfigFile: Cell<TextFieldWithBrowseButton>
@@ -34,15 +40,22 @@ class GptHelperSettings : Configurable {
     private lateinit var userSettingsRepository: UserSettingsRepository
     private lateinit var flutterIntlSettingsRepository: FlutterIntlSettingsRepository
     private lateinit var currentProjectProvider: CurrentProjectProvider
+    private lateinit var settingsMapper: UserSettingsDTOMapper
     private var corruptSettings = false;
     private var errorListener: ((Boolean) -> Unit)? = null
-    private val model = Model()
+    private var connectionErrorListener: ((Boolean) -> Unit)? = null
+    private var connectionSuccessListener: ((Boolean) -> Unit)? = null
+    private var connectionSuccess = false;
+    private val myModel = MyModel()
+    private var success = false
 
     override fun getDisplayName(): String = "GPTHelper Settings"
     override fun createComponent(): JComponent {
         userSettingsRepository = Initializer().userSettingsRepository
         flutterIntlSettingsRepository = Initializer().flutterIntlSettingsRepository
         currentProjectProvider = Initializer().currentProjectProvider
+        settingsMapper = Initializer().userSettingsDTOMapper
+
 
         panel = panel {
             group("General") {
@@ -58,12 +71,21 @@ class GptHelperSettings : Configurable {
                         savePassword(openAIKeyField.component.password)
                     }
                 }.layout(RowLayout.PARENT_GRID)
+                row("Connection failed") {
+                    textArea()
+                        .bindText(myModel::connectionTestErrorStackTrace)
+                        .enabled(false)
+                        .resizableColumn()
+                        .horizontalAlign(HorizontalAlign.FILL)
+                }.visibleIf(connectionErrorPredicate())
+                row("Success, don't forget to press save!") {
+                }.visibleIf(connectionSuccessPredicate())
             }
             group("Flutter Intl") {
                 row {
                     label("Intl Config File:")
                     intlConfigFile = textFieldWithBrowseButton()
-                        .bindText(model::intlConfigFile)
+                        .bindText(myModel.userSettings::intlConfigFile)
                         .resizableColumn()
                         .horizontalAlign(HorizontalAlign.FILL)
                     button("Refresh Settings based on intl config file") {
@@ -72,7 +94,7 @@ class GptHelperSettings : Configurable {
                 }
                 row {
                     watchIntlConfigFile = checkBox("Watch Intl Config File")
-                        .bindSelected(model::watchIntlConfigFile)
+                        .bindSelected(myModel.userSettings::watchIntlConfigFile)
                         .comment("If enabled, the settings will be refreshed automatically if the intl config file changes. (I.e. on each invoke of the plugin.")
 
                 }
@@ -82,14 +104,14 @@ class GptHelperSettings : Configurable {
                     arbDirectory = textFieldWithBrowseButton()
                         .horizontalAlign(HorizontalAlign.FILL)
                         .resizableColumn()
-                        .bindText(model::arbDir)
+                        .bindText(myModel.userSettings::arbDir)
                         .comment("The directory where the arb files are located")
                 }.layout(RowLayout.PARENT_GRID)
                 row {
                     label("Template Arb File:")
                     templateArbFile = textFieldWithBrowseButton()
                         .horizontalAlign(HorizontalAlign.FILL)
-                        .bindText(model::templateArbFile)
+                        .bindText(myModel.userSettings::templateArbFile)
                         .comment(
                             """
                             |The template arb file, i.e. which is the main arb file, most of the time it's app_en.arb.
@@ -99,22 +121,22 @@ class GptHelperSettings : Configurable {
                         )
                 }.layout(RowLayout.PARENT_GRID)
                 row {
-                    label("Output Localization File:")
+                    label("Output localization file:")
                     outputLocalizationFile = textField()
                         .horizontalAlign(HorizontalAlign.FILL)
-                        .bindText(model::outputLocalizationFile)
+                        .bindText(myModel.userSettings::outputLocalizationFile)
                         .comment("The output localization file, i.e. the file used to import the generated localization class.")
                 }.layout(RowLayout.PARENT_GRID)
                 row {
-                    label("Output Class:")
+                    label("Output class:")
                     outputClass = textField()
                         .horizontalAlign(HorizontalAlign.FILL)
-                        .bindText(model::outputClass)
+                        .bindText(myModel.userSettings::outputClass)
                         .comment("The output class, i.e. the class which will be generated, most of the time it's AppLocalizations, but also S, which is concise.")
                 }.layout(RowLayout.PARENT_GRID)
                 row {
                     nullableGetter = checkBox("Nullable Getter")
-                        .bindSelected(model::nullableGetter)
+                        .bindSelected(myModel.userSettings::nullableGetter)
                         .comment("If enabled, the generated getter will be nullable, i.e. S.of(context)?.helloWorld instead of S.of(context).helloWorld")
                 }
             }
@@ -125,15 +147,16 @@ class GptHelperSettings : Configurable {
                         AllIcons.General.Error
                     )
                     label("")
-                        .bindText(model.errorMessage)
+                        .bindText(myModel.errorMessage)
                     button("Clear Corrupt Settings") {
-                        resetSettings()
+                        wipeSettings()
                     }
                 }
             }.visibleIf(corruptSettingPredicate())
 
         }
         initSettingsFromSavedSettings()
+        panel!!.apply() //no changes yet
         return panel!!;
     }
 
@@ -147,10 +170,32 @@ class GptHelperSettings : Configurable {
         }
     }
 
-    private fun resetSettings() {
+
+    private fun connectionErrorPredicate() = object : ComponentPredicate() {
+        override fun addListener(listener: (Boolean) -> Unit) {
+            connectionErrorListener = listener
+        }
+
+        override fun invoke(): Boolean {
+            return myModel.connectionTestError
+        }
+    }
+
+
+    private fun connectionSuccessPredicate() = object : ComponentPredicate() {
+        override fun addListener(listener: (Boolean) -> Unit) {
+            connectionSuccessListener = listener
+        }
+
+        override fun invoke(): Boolean {
+            return connectionSuccess
+        }
+    }
+
+    private fun wipeSettings() {
         corruptSettings = false
         errorListener?.invoke(false)
-        model.errorMessage.set("")
+        myModel.errorMessage.set("")
         userSettingsRepository.wipeUserSettings()
         initSettingsFromSavedSettings()
     }
@@ -158,28 +203,60 @@ class GptHelperSettings : Configurable {
     private fun initSettingsFromSavedSettings() {
         try {
             val settings = userSettingsRepository.getSettings()
-            openAIKeyField.component.text = settings.openAIKey
-            intlConfigFile.component.text = settings.intlConfigFile ?: "${currentProjectProvider.project.basePath}/l10n.yaml"
-            arbDirectory.component.text = settings.arbDir ?: "${currentProjectProvider.project.basePath}/lib/l10n"
-            templateArbFile.component.text = settings.templateArbFile
-            outputLocalizationFile.component.text = settings.outputLocalizationFile
-            outputClass.component.text = settings.outputClass
-            watchIntlConfigFile.component.isSelected = settings.watchIntlConfigFile
-            nullableGetter.component.isSelected = settings.nullableGetter
+            myModel.userSettings = settingsMapper.toDTO(settings)
+            //now I need to set the fields of all things...
+            intlConfigFile.component.text = myModel.userSettings.intlConfigFile
+            watchIntlConfigFile.component.isSelected = myModel.userSettings.watchIntlConfigFile
+            arbDirectory.component.text = project.basePath + "/" + myModel.userSettings.arbDir
+            templateArbFile.component.text = myModel.userSettings.templateArbFile
+            outputLocalizationFile.component.text = myModel.userSettings.outputLocalizationFile
+            outputClass.component.text = myModel.userSettings.outputClass
+            nullableGetter.component.isSelected = myModel.userSettings.nullableGetter
         } catch (e: UserSettingsMissingException) {
             println("looks like we have no settings yet: ${e.message}")
             intlConfigFile.component.text = "${currentProjectProvider.project.basePath}/l10n.yaml"
             return
         } catch (e: UserSettingsCorruptException) {
             corruptSettings = true
-            model.errorMessage.set("Looks like the settings are corrupt, do you want to delete clear all settings? ErrorMessage: ${e.message}")
+            myModel.errorMessage.set("Looks like the settings are corrupt, do you want to delete clear all settings? ErrorMessage: ${e.message}")
             errorListener?.invoke(true)
         }
     }
 
+    override fun reset() {
+        initSettingsFromSavedSettings()
+    }
+
+
     private fun testPassword(text: CharArray) {
-        text.fill('0')
-        TODO("Not yet implemented")
+        submitTask({}, {
+            runBlocking {
+                val it: Throwable? = try {
+                    Initializer().connectionTester.testClientConnection(text.concatToString())
+                } catch (e: Throwable) {
+                    println("eh what")
+                    e
+                }
+                when (it) {
+                    null -> {
+                        myModel.connectionTestErrorStackTrace = ""
+                        myModel.connectionTestError = false
+                        connectionErrorListener?.invoke(false)
+                        connectionSuccess = true
+                        connectionSuccessListener?.invoke(true)
+                    }
+                    else -> {
+                        myModel.connectionTestErrorStackTrace = "Message:" + it.message + "\n\nStackTrace:\n" + it.stackTraceToString()
+                        myModel.connectionTestError = true
+                        connectionErrorListener?.invoke(true)
+                        //i guess must be called from EDT?
+                        connectionSuccess = false
+                        connectionSuccessListener?.invoke(false)
+                    }
+                }
+            }
+        })
+
     }
 
     private fun savePassword(text: CharArray) {
@@ -188,10 +265,6 @@ class GptHelperSettings : Configurable {
         }
         text.fill('0')
         openAIKeyField.text("")
-    }
-
-    override fun isModified(): Boolean {
-        return panel?.isModified() ?: false
     }
 
     private fun loadIntlSettingsFromFile(text: String) {
@@ -222,15 +295,16 @@ class GptHelperSettings : Configurable {
     }
 
     override fun apply() {
+        panel?.apply()
         try {
             Initializer().userSettingsRepository.overrideSettings { settings ->
                 settings.copy(
-                    intlConfigFile = intlConfigFile.component.text,
-                    arbDir = arbDirectory.component.text,
-                    templateArbFile = templateArbFile.component.text,
-                    outputClass = outputLocalizationFile.component.text,
-                    nullableGetter = nullableGetter.component.isSelected,
-                    watchIntlConfigFile = watchIntlConfigFile.component.isSelected
+                    intlConfigFile = myModel.userSettings.intlConfigFile,
+                    arbDir = myModel.userSettings.arbDir,
+                    templateArbFile = myModel.userSettings.templateArbFile,
+                    outputClass = myModel.userSettings.outputClass,
+                    nullableGetter = myModel.userSettings.nullableGetter,
+                    watchIntlConfigFile = myModel.userSettings.watchIntlConfigFile
                 )
             }
         } catch (e: UserSettingsMissingException) {
@@ -247,20 +321,24 @@ class GptHelperSettings : Configurable {
             )
         } catch (e: UserSettingsCorruptException) {
             corruptSettings = true
-            model.errorMessage.set("Looks like the settings are corrupt, do you want to delete clear all settings? ErrorMessage: ${e.message}")
+            myModel.errorMessage.set("Looks like the settings are corrupt, do you want to delete clear all settings? ErrorMessage: ${e.message}")
             errorListener?.invoke(true)
         }
     }
 
-    internal data class Model(
-        var arbDir: String = "",
-        var intlConfigFile: String = "",
-        var templateArbFile: String = "",
-        var outputLocalizationFile: String = "",
-        var outputClass: String = "",
-        var nullableGetter: Boolean = false,
-        var watchIntlConfigFile: Boolean = true,
+    override fun isModified(): Boolean {
+        return panel?.isModified()?: false
+        //return myModel.userSettings != settingsMapper.toDTO(userSettingsRepository.getSettings())
+    }
+
+
+    //ok, these values are only set, when we save, how annoying is this?
+    //binding therefore is not what I had hoped
+    internal data class MyModel(
+        var userSettings: UserSettingsDTO = UserSettingsDTO(),
         var dataCorrupt: Boolean = false,
-        var errorMessage: AtomicProperty<String> = AtomicProperty("")
+        var errorMessage: AtomicProperty<String> = AtomicProperty(""),
+        var connectionTestError: Boolean = false,
+        var connectionTestErrorStackTrace: String = "",
     )
 }

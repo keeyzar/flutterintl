@@ -22,6 +22,8 @@ import de.keeyzar.gpthelper.gpthelper.features.flutter_intl.infrastructure.repos
 import de.keeyzar.gpthelper.gpthelper.features.flutter_intl.infrastructure.repository.IdeaFlutterIntlSettingsRepository
 import de.keeyzar.gpthelper.gpthelper.features.shared.infrastructure.utils.JsonUtils
 import de.keeyzar.gpthelper.gpthelper.features.shared.infrastructure.utils.ObjectMapperProvider
+import de.keeyzar.gpthelper.gpthelper.features.shared.presentation.mapper.UserSettingsDTOMapper
+import de.keeyzar.gpthelper.gpthelper.features.translations.domain.client.ClientConnectionTester
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.client.DDDTranslationRequestClient
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.client.SingleTranslationRequestClient
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.client.TaskAmountCalculator
@@ -29,14 +31,17 @@ import de.keeyzar.gpthelper.gpthelper.features.translations.domain.controller.Tr
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.mapper.TranslationRequestMapper
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.parser.ArbFilenameParser
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.parser.UserTranslationInputParser
+import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.TranslationCredentialsServiceRepository
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.TranslationFileRepository
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.UserSettingsRepository
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.UserTranslationInputRepository
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.service.*
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.client.GPTARBRequester
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.client.GPTTranslationRequestClient
+import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.client.OpenAIClientConnectionTester
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.client.TranslateKeyTaskAmountCalculator
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.configuration.OpenAIConfigProvider
+import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.mapper.NewUserSettingsMapper
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.mapper.TranslationRequestResponseMapper
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.mapper.UserSettingsMapper
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.parser.ARBFileContentParser
@@ -62,7 +67,7 @@ class DIConfig {
             single<SingleTranslationRequestClient> { GPTARBRequester(get(), get(), get()) }
             single<OpenAIConfigProvider> { OpenAIConfigProvider(get()) }
             single<ImmediateTranslationService> { ImmediateTranslationService(get(), get()) }
-            single<UserSettingsRepository> { PropertiesUserSettingsRepository(get(), get(), get()) }
+            single<UserSettingsRepository> { PropertiesUserSettingsRepository(get(), get(), get(), get()) }
             single<DDDSettingsRepository> { PreferencesDDDSettingsRepository(get(), get()) }
             single<DirectoryStructureMapper> { Mappers.getMapper(DirectoryStructureMapper::class.java) }
             single<CreateDirectoryTreeService> { CreateDirectoryTreeService(get()) }
@@ -128,6 +133,11 @@ class DIConfig {
             single<TargetLanguageProvider> { IdeaTargetLanguageProvider(get()) }
             single<ArbFileContentModificationService> { ArbFileContentModificationService(get()) }
             single<FinishedFileTranslationHandler> { FlutterArbTranslateFileFinished(get(), get(), get()) }
+            single<NewUserSettingsMapper> { Mappers.getMapper(NewUserSettingsMapper::class.java) }
+            single<UserSettingsPersistentStateComponent> { UserSettingsPersistentStateComponent.getInstance() }
+            single<TranslationCredentialsServiceRepository> { IdeaTranslationCredentialsServiceRepository() }
+            single<UserSettingsDTOMapper> { Mappers.getMapper(UserSettingsDTOMapper::class.java) }
+            single<ClientConnectionTester> { OpenAIClientConnectionTester(get()) }
         }
     }
 }

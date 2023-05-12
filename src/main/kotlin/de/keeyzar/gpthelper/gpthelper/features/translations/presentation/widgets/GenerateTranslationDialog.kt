@@ -1,9 +1,12 @@
 package de.keeyzar.gpthelper.gpthelper.features.translations.presentation.widgets
 
 import com.intellij.openapi.ui.DialogWrapper
+import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.components.JBScrollPane
+import com.intellij.ui.components.JBTextField
 import com.intellij.ui.components.panels.VerticalBox
+import com.intellij.ui.dsl.builder.Cell
 import com.intellij.ui.dsl.builder.RowLayout
 import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.panel
@@ -21,8 +24,8 @@ import javax.swing.JScrollPane
 class GenerateTranslationDialog(
     private val translateKeyContext: TranslateKeyContext,
 ) : DialogWrapper(true) {
-
-    private val pattern = Regex("^[a-z][a-z_]*\$")
+    private lateinit var desiredValue: Cell<JBTextField>
+    private val pattern = Regex("^[a-z][a-z_]*$")
     private var isValid = false;
 
 
@@ -35,6 +38,10 @@ class GenerateTranslationDialog(
         fillModelData()
         init() //creates center panel
         isKeyValid()
+    }
+
+    override fun getPreferredFocusedComponent(): JComponent {
+        return desiredValue.component;
     }
 
     private fun fillModelData() {
@@ -56,6 +63,7 @@ class GenerateTranslationDialog(
         return ""
     }
 
+
     private fun isKeyValid(): Boolean {
         isValid = pattern.find(model.desiredKey) != null
         return isValid
@@ -66,7 +74,7 @@ class GenerateTranslationDialog(
             group {
                 row {
                     label("To translate:")
-                    textField()
+                    desiredValue = textField()
                         .bindText(model::desiredValue)
                         .resizableColumn()
                         .horizontalAlign(HorizontalAlign.FILL)
@@ -78,6 +86,13 @@ class GenerateTranslationDialog(
                         .bindText(model::desiredKey)
                         .resizableColumn()
                         .horizontalAlign(HorizontalAlign.FILL)
+                        .validation {
+                            return@validation if (pattern.matches(it.text)) {
+                                null
+                            } else {
+                                ValidationInfo("Begins with letter [a-z] and should contain only lowercase letters and underscores '_'")
+                            }
+                        }
                         .comment("The key is used to identify the translation in the code. It must start with a letter and can only contain letters and underscores")
 
                 }.layout(RowLayout.PARENT_GRID)

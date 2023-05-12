@@ -19,5 +19,15 @@ class OpenAIConfigProvider(private val userSettingsRepository: UserSettingsRepos
         )
         return OpenAI(config)
     }
+
+    fun withKey(key: String): OpenAI{
+        val config = OpenAIConfig(
+            token = key,
+            timeout = Timeout(socket = 60.seconds),
+            logLevel = LogLevel.All,
+            headers = mapOf(),
+        )
+        return OpenAI(config)
+    }
 }
 
