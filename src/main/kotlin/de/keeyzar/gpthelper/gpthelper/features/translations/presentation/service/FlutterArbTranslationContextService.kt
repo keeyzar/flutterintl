@@ -1,11 +1,9 @@
 package de.keeyzar.gpthelper.gpthelper.features.translations.presentation.service
 
-import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.Language
+import de.keeyzar.gpthelper.gpthelper.features.flutter_intl.infrastructure.service.ArbFilesService
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.TranslateKeyContext
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.exceptions.GatherContextException
-import de.keeyzar.gpthelper.gpthelper.features.translations.domain.exceptions.NoTranslationFilesException
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.parser.ArbFilenameParser
-import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.TranslationFileRepository
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.UserSettingsRepository
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.UserTranslationInputRepository
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.service.GatherTranslationContextService
@@ -17,7 +15,7 @@ class FlutterArbTranslationContextService(
     private val userTranslationInputRepository: UserTranslationInputRepository,
     private val arbFilenameParser: ArbFilenameParser,
     private val psiElementService: FlutterPsiService,
-    private val translationFileRepository: TranslationFileRepository,
+    private val arbFilesService: ArbFilesService
 ) : GatherTranslationContextService {
     override fun gatherTranslationContext(): TranslateKeyContext {
         val lastStatement = getLastStatement()
@@ -39,7 +37,7 @@ class FlutterArbTranslationContextService(
                 e
             )
         }
-        val availableLanguages = findAvailableLanguages()
+        val availableLanguages = arbFilesService.findAvailableLanguages()
 
         return TranslateKeyContext(
             statement = lastStatement,
@@ -47,15 +45,6 @@ class FlutterArbTranslationContextService(
             lastUserInput = lastUserInput,
             availableLanguages = availableLanguages,
         )
-    }
-
-    private fun findAvailableLanguages(): List<Language> {
-        val pathsToTranslationFiles = translationFileRepository.getPathsToTranslationFiles()
-        if (pathsToTranslationFiles.isEmpty()) {
-            throw NoTranslationFilesException("There are no translation files in your project, you might want to create some")
-        }
-        return pathsToTranslationFiles
-            .map { it -> arbFilenameParser.getLanguageFromPath(it) }
     }
 
     /**

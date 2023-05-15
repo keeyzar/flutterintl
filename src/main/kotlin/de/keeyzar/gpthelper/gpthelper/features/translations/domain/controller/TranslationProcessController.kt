@@ -14,11 +14,11 @@ import java.util.concurrent.atomic.AtomicInteger
 class TranslationProcessController(
     private val translationPreprocessor: TranslationPreprocessor,
     private val userTranslationInputParser: UserTranslationInputParser,
-    private val translationServiceRef: OngoingTranslationHandler,
+    private val ongoingTranslationHandler: OngoingTranslationHandler,
     private val translationProgressBus: TranslationProgressBus,
     private val translationErrorProcessHandler: TranslationErrorProcessHandler,
     private val taskAmountCalculator: TaskAmountCalculator,
-    private val postTranslationTriggerService: PostTranslationTriggerService,
+    private val translationTriggeredHooks: TranslationTriggeredHooks,
 ) {
     /**
      * Listen via the [TranslationProgressBus], but beware you might need to unregister yourself
@@ -47,11 +47,11 @@ class TranslationProcessController(
         coroutineScope {
             val request = async {
                 //I need a translation service, that translates and reports progress
-                translationServiceRef.translateAsynchronously(translationRequest) {
+                ongoingTranslationHandler.translateAsynchronously(translationRequest) {
                     reportProgress(translatedCounter, taskAmount)
                 }
             }
-            postTranslationTriggerService.translationTriggered(translationContext, userTranslationInput)
+            translationTriggeredHooks.translationTriggered(translationRequest.baseTranslation)
             request.await()
         }
         //we might need to revert this, if something happened in the overall process

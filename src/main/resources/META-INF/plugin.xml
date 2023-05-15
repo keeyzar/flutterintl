@@ -21,6 +21,9 @@
         <![CDATA[
       <ul>
         <li>
+          <b>1.6.0</b> Allow for auto localization of file
+        </li>
+        <li>
           <b>1.5.0</b> Use project level persistence
         </li>
         <li><b>1.4</b> Added Logo</li>
@@ -70,6 +73,11 @@
                 class="de.keeyzar.gpthelper.gpthelper.features.filetranslation.presentation.actions.TranslateWholeFileAction"
                 text="Translate this to new Arb file" description="Will translate all the keys in the background and put them into a new file">
             <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
+        </action>
+        <action id="de.keeyzar.gpthelper.gpthelper.features.autofilefixer.presentation.actions.AutoLocalizeFile"
+                class="de.keeyzar.gpthelper.gpthelper.features.autofilefixer.presentation.actions.AutoLocalizeFile" text="Auto Localize File"
+                description="Extract all strings and localize in one go">
+            <add-to-group group-id="GenerateGroup" anchor="first"/>
         </action>
     </actions>
 </idea-plugin>

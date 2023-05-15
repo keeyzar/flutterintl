@@ -18,6 +18,7 @@ class TranslationRequestResponseMapper(private val objectMapper: ObjectMapper) {
         val map: Map<*,*> = objectMapper.readValue(gptResponse, Map::class.java)
         val desiredKey = baseTranslation.entry.desiredKey
         val entry = SimpleTranslationEntry(
+            id = null,
             desiredKey = desiredKey,
             desiredValue = map[desiredKey] as String,
             desiredDescription = ((map["@${desiredKey}"] as Map<*, *>)["description"] ?: "") as String

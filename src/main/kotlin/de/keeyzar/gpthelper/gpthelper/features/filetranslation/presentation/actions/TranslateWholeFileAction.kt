@@ -5,7 +5,7 @@ import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.ui.DialogBuilder
 import com.intellij.ui.dsl.builder.panel
-import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.model.FileContext
+import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.model.TranslateWholeFileContext
 import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.dependencyinjection.FlutterArbTranslationInitializer
 import java.util.*
 
@@ -21,8 +21,8 @@ class TranslateWholeFileAction : DumbAwareAction() {
             val translationTaskBackgroundProgress = flutterArbTranslationInitializer.translationTaskBackgroundProgress
             val fileTranslationProcessController = flutterArbTranslationInitializer.fileTranslationProcessController
 
-            contextProvider.putContext(
-                processId, FileContext(
+            contextProvider.putTranslateWholeFileContext(
+                processId, TranslateWholeFileContext(
                     baseFile = event.getData(PlatformDataKeys.PSI_FILE)!!,
                     project = event.project!!
                 )
@@ -31,7 +31,7 @@ class TranslateWholeFileAction : DumbAwareAction() {
             translationTaskBackgroundProgress.triggerInBlockingContext(event.project!!, {
                 fileTranslationProcessController.startTranslationProcess(processId)
             }, {
-                contextProvider.removeContext(processId)
+                contextProvider.removeWholeFileContext(processId)
             })
 
         } else {

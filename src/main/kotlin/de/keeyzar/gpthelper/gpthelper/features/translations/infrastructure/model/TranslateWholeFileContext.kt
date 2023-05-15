@@ -2,9 +2,8 @@ package de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.mode
 
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
-import java.util.UUID
 
-class FileContext(
+class TranslateWholeFileContext(
     val baseFile: PsiFile,
     val project: Project,
 ) {

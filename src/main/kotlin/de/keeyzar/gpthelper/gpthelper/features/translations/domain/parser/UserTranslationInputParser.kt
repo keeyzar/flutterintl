@@ -25,6 +25,8 @@ class UserTranslationInputParser(
         return Translation(
             lang = baseLanguage,
             entry = SimpleTranslationEntry(
+                //TODO WHERE DO I GET THE ID FROM?
+                id = null,
                 desiredKey = userTranslationInput.desiredKey,
                 desiredValue = userTranslationInput.desiredValue,
                 desiredDescription = userTranslationInput.desiredDescription,

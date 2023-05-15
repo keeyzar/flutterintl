@@ -13,7 +13,7 @@ class FlutterGenCommandProcessService(
     private val currentProjectProvider: CurrentProjectProvider,
 ) : ExternalTranslationProcessService {
     companion object {
-        const val FLUTTER_GEN_COMMAND = "flutter pub run flutter_gen"
+        const val FLUTTER_GEN_COMMAND = "flutter gen-l10n"
     }
     override fun postTranslationProcess() {
         //should be obsolete in some time

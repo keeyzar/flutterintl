@@ -26,15 +26,28 @@ class OngoingTranslationHandler(
      * as a dummy translation (true, Translation) or as a real translation (false, Translation)
      */
     suspend fun translateAsynchronously(userTranslationRequest: UserTranslationRequest, progressReport: () -> Unit) {
+        translateWithPlaceholder(userTranslationRequest) {
+            arbFileModificationService.addSimpleTranslationEntry(it)
+        }
+        return translateAsynchronouslyWithoutPlaceholder(userTranslationRequest, progressReport)
+    }
+
+    suspend fun translateAsynchronouslyWithoutPlaceholder(userTranslationRequest: UserTranslationRequest, progressReport: () -> Unit) {
         concurrentTranslationTasks.withPermit {
-            translateWithPlaceholder(userTranslationRequest) {
-                arbFileModificationService.addSimpleTranslationEntry(it)
-            }
             val clientRequest = mapper.toClientRequest(userTranslationRequest);
             return translateInBackground(clientRequest) {
                 arbFileModificationService.replaceSimpleTranslationEntry(it)
                 progressReport()
             }
+        }
+    }
+
+    /**
+     * trigger only the placeholders (when you have multiple placeholders
+     */
+    fun translateWithPlaceholder(userTranslationRequest: UserTranslationRequest) {
+        translateWithPlaceholder(userTranslationRequest) {
+            arbFileModificationService.addSimpleTranslationEntry(it)
         }
     }
 

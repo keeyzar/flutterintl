@@ -1,11 +1,12 @@
 package de.keeyzar.gpthelper.gpthelper.features.filetranslation.infrastructure.service
 
-import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.CurrentFileModificationContext
+import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.service.PsiElementIdReferenceProvider
+import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.Translation
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.exceptions.CurrentFileModificationException
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.service.CurrentFileModificationService
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.repository.CurrentProjectProvider
-import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.service.ImportFixer
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.service.LastStatementProviderForFlutterArbTranslation
+import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.service.ImportFixer
 import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.service.StatementFixer
 
 class FlutterArbCurrentFileModificationService(
@@ -13,10 +14,17 @@ class FlutterArbCurrentFileModificationService(
     private val statementFixer: StatementFixer,
     private val lastStatementProviderForFlutterArbTranslation: LastStatementProviderForFlutterArbTranslation,
     private val currentProjectProvider: CurrentProjectProvider,
+    private val psiElementIdReferenceProvider: PsiElementIdReferenceProvider,
 ) : CurrentFileModificationService {
-    override fun modifyCurrentFile(currentFileModificationContext: CurrentFileModificationContext) {
+    override fun modifyCurrentFile(translation: Translation) {
         val lastStatement = try {
-            lastStatementProviderForFlutterArbTranslation.lastStatement!!
+            val id = translation.entry.id
+            if (id == null) {
+                //TODO this is ugly, we should not get the last statement like here... just register it in the psiElementIdReferenceProvider
+                lastStatementProviderForFlutterArbTranslation.lastStatement!!
+            } else {
+                psiElementIdReferenceProvider.getElement(id)!!
+            }
         } catch (e: Exception) {
             throw CurrentFileModificationException(
                 "Could not get last statement, which should not be possible. The last statement should be the String which you tried to modify",
@@ -34,7 +42,7 @@ class FlutterArbCurrentFileModificationService(
         }
 
         try {
-            statementFixer.fixStatement(currentProjectProvider.project, lastStatement, currentFileModificationContext.userTranslationInput.desiredKey)
+            statementFixer.fixStatement(currentProjectProvider.project, lastStatement, translation.entry.desiredKey)
         } catch (e: Exception) {
             throw CurrentFileModificationException(
                 "Could not fix the current statement. You should fix it manually.",

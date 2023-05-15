@@ -2,6 +2,14 @@ package de.keeyzar.gpthelper.gpthelper
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
+import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.client.BestGuessL10nClient
+import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.controller.BestGuessProcessController
+import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.service.*
+import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.client.OpenAIBestGuessClient
+import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.parser.BestGuessOpenAIResponseParser
+import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.service.OpenAIMultiKeyTranslationTaskSizeEstimator
+import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.service.PsiElementIdReferenceProvider
+import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.presentation.service.IdeaWaitingIndicatorService
 import de.keeyzar.gpthelper.gpthelper.features.ddd.domain.repository.DDDSettingsRepository
 import de.keeyzar.gpthelper.gpthelper.features.ddd.infrastructure.mapper.DirectoryStructureMapper
 import de.keeyzar.gpthelper.gpthelper.features.ddd.infrastructure.repository.PreferencesDDDSettingsRepository
@@ -20,6 +28,13 @@ import de.keeyzar.gpthelper.gpthelper.features.filetranslation.presentation.serv
 import de.keeyzar.gpthelper.gpthelper.features.flutter_intl.domain.repository.FlutterIntlSettingsRepository
 import de.keeyzar.gpthelper.gpthelper.features.flutter_intl.infrastructure.repository.FlutterFileRepository
 import de.keeyzar.gpthelper.gpthelper.features.flutter_intl.infrastructure.repository.IdeaFlutterIntlSettingsRepository
+import de.keeyzar.gpthelper.gpthelper.features.flutter_intl.infrastructure.service.ArbFilesService
+import de.keeyzar.gpthelper.gpthelper.features.psiutils.DartAdditiveExpressionExtractor
+import de.keeyzar.gpthelper.gpthelper.features.psiutils.DartStringLiteralFinder
+import de.keeyzar.gpthelper.gpthelper.features.psiutils.LiteralInContextFinder
+import de.keeyzar.gpthelper.gpthelper.features.psiutils.PsiElementIdGenerator
+import de.keeyzar.gpthelper.gpthelper.features.psiutils.filter.DartStringLiteralFilter
+import de.keeyzar.gpthelper.gpthelper.features.psiutils.filter.ImportStatementFilterDartString
 import de.keeyzar.gpthelper.gpthelper.features.shared.infrastructure.utils.JsonUtils
 import de.keeyzar.gpthelper.gpthelper.features.shared.infrastructure.utils.ObjectMapperProvider
 import de.keeyzar.gpthelper.gpthelper.features.shared.presentation.mapper.UserSettingsDTOMapper
@@ -41,8 +56,8 @@ import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.clien
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.client.OpenAIClientConnectionTester
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.client.TranslateKeyTaskAmountCalculator
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.configuration.OpenAIConfigProvider
-import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.mapper.UserSettingsMapper
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.mapper.TranslationRequestResponseMapper
+import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.mapper.UserSettingsMapper
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.parser.ARBFileContentParser
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.parser.GPTARBResponseParser
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.repository.*
@@ -50,6 +65,7 @@ import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.servi
 import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.service.*
 import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.validation.FlutterIntlValidator
 import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.validation.TranslationClientSettingsValidator
+import org.koin.dsl.bind
 import org.koin.dsl.module
 import org.mapstruct.factory.Mappers
 
@@ -91,7 +107,6 @@ class DIConfig {
             single<TranslationFileRepository> { PsiTranslationFileRepository(get(), get(), get()) }
             single<ContentModificationService> { ArbContentModificationService(get()) }
             single<TranslationRequestMapper> { Mappers.getMapper(TranslationRequestMapper::class.java) }
-            single<DDDTranslationService> { DDDTranslationService(get(), get()) }
             single<DDDTranslationRequestClient> { GPTTranslationRequestClient(get(), get()) }
             single<ArbFileModificationService> { ArbFileModificationService(get(), get(), get()) }
             single<VerifyTranslationSettingsService> { ArbVerifyTranslationSettingsService(get(), get(), get(), get(), get()) }
@@ -101,7 +116,7 @@ class DIConfig {
             single<GatherUserInputService> { FlutterArbUserInputService() }
             single<UserTranslationInputParser> { UserTranslationInputParser(get()) }
             single<ArbFilenameParser> { ArbFilenameParser() }
-            single<CurrentFileModificationService> { FlutterArbCurrentFileModificationService(get(), get(), get(), get()) }
+            single<CurrentFileModificationService> { FlutterArbCurrentFileModificationService(get(), get(), get(), get(), get()) }
             single<ExternalTranslationProcessService> { FlutterGenCommandProcessService(get(), get()) }
             single<TranslationErrorProcessHandler> { IdeaTranslationErrorProcessHandlerImpl() }
             single<FlutterPsiService> { FlutterPsiService() }
@@ -117,10 +132,10 @@ class DIConfig {
             single<FlutterFileRepository> { FlutterFileRepository() }
             single<FormatTranslationFileContentService> { ArbFormatTranslationFileContentService(get()) }
             single<TaskAmountCalculator> { TranslateKeyTaskAmountCalculator() }
-            single<PostTranslationTriggerService> { TranslateKeyPostTranslationTriggerService(get(), get()) }
+            single<TranslationTriggeredHooks> { TranslateKeyTranslationTriggeredHooks(get(), get()) }
             single<FlutterGenCommandProcessService> { FlutterGenCommandProcessService(get(), get()) }
             single<OngoingTranslationHandler> { OngoingTranslationHandler(get(), get(), get()) }
-            single<FlutterArbCurrentFileModificationService> { FlutterArbCurrentFileModificationService(get(), get(), get(), get()) }
+            single<FlutterArbCurrentFileModificationService> { FlutterArbCurrentFileModificationService(get(), get(), get(), get(), get()) }
             single<ContextProvider> { ContextProvider() }
             single<GatherFileTranslationContext> { IdeaGatherFileTranslationContext(get(), get(), get()) }
             single<TargetLanguageProvider> { TargetLanguageProvider(get()) }
@@ -136,6 +151,20 @@ class DIConfig {
             single<TranslationCredentialsServiceRepository> { IdeaTranslationCredentialsServiceRepository() }
             single<UserSettingsDTOMapper> { Mappers.getMapper(UserSettingsDTOMapper::class.java) }
             single<ClientConnectionTester> { OpenAIClientConnectionTester(get()) }
+            single<DartAdditiveExpressionExtractor> { DartAdditiveExpressionExtractor() }
+            single<DartStringLiteralFinder> { DartStringLiteralFinder(get(), getAll()) }
+            single { ImportStatementFilterDartString() } bind DartStringLiteralFilter::class
+            single<LiteralInContextFinder> { LiteralInContextFinder() }
+            single<PsiElementIdGenerator> { PsiElementIdGenerator() }
+            single<GatherBestGuessContext> { IdeaGatherBestGuessContext(get(), get(), get(), get()) }
+            single<BestGuessOpenAIResponseParser> { BestGuessOpenAIResponseParser(get()) }
+            single<BestGuessL10nClient> { OpenAIBestGuessClient(get(), get()) }
+            single<PsiElementIdReferenceProvider> { PsiElementIdReferenceProvider() }
+            single<GuessAdaptionService> { IdeaBestGuessAdaptionService(get(), get()) }
+            single<ArbFilesService> { ArbFilesService(get(), get(), get(), get()) }
+            single<BestGuessProcessController> { BestGuessProcessController(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+            single<MultiKeyTranslationTaskSizeEstimator> { OpenAIMultiKeyTranslationTaskSizeEstimator() }
+            single<WaitingIndicatorService> { IdeaWaitingIndicatorService(get()) }
         }
     }
 }
