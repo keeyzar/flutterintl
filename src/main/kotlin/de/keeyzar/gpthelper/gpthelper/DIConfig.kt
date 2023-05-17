@@ -29,10 +29,7 @@ import de.keeyzar.gpthelper.gpthelper.features.flutter_intl.domain.repository.Fl
 import de.keeyzar.gpthelper.gpthelper.features.flutter_intl.infrastructure.repository.FlutterFileRepository
 import de.keeyzar.gpthelper.gpthelper.features.flutter_intl.infrastructure.repository.IdeaFlutterIntlSettingsRepository
 import de.keeyzar.gpthelper.gpthelper.features.flutter_intl.infrastructure.service.ArbFilesService
-import de.keeyzar.gpthelper.gpthelper.features.psiutils.DartAdditiveExpressionExtractor
-import de.keeyzar.gpthelper.gpthelper.features.psiutils.DartStringLiteralFinder
-import de.keeyzar.gpthelper.gpthelper.features.psiutils.LiteralInContextFinder
-import de.keeyzar.gpthelper.gpthelper.features.psiutils.PsiElementIdGenerator
+import de.keeyzar.gpthelper.gpthelper.features.psiutils.*
 import de.keeyzar.gpthelper.gpthelper.features.psiutils.filter.DartStringLiteralFilter
 import de.keeyzar.gpthelper.gpthelper.features.psiutils.filter.ImportStatementFilterDartString
 import de.keeyzar.gpthelper.gpthelper.features.shared.infrastructure.utils.JsonUtils
@@ -126,7 +123,7 @@ class DIConfig {
             single<LanguageFileFinder> { LanguageFileFinder(get()) }
             single<TranslationRequestResponseMapper> { TranslationRequestResponseMapper(get()) }
             single<ImportFixer> { ImportFixer(get()) }
-            single<StatementFixer> { StatementFixer(get()) }
+            single<StatementFixer> { StatementFixer(get(), get()) }
             single<TranslationTaskBackgroundProgress> { TranslationTaskBackgroundProgress() }
             single<UserSettingsMapper> { Mappers.getMapper(UserSettingsMapper::class.java) }
             single<FlutterFileRepository> { FlutterFileRepository() }
@@ -165,6 +162,7 @@ class DIConfig {
             single<BestGuessProcessController> { BestGuessProcessController(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
             single<MultiKeyTranslationTaskSizeEstimator> { OpenAIMultiKeyTranslationTaskSizeEstimator() }
             single<WaitingIndicatorService> { IdeaWaitingIndicatorService(get()) }
+            single<DartConstModifierFinder> { DartConstModifierFinder() }
         }
     }
 }

@@ -3,13 +3,18 @@ package de.keeyzar.gpthelper.gpthelper.features.translations.presentation.servic
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
+import com.intellij.psi.codeStyle.CodeStyleManager
 import com.intellij.psi.util.elementType
 import com.jetbrains.lang.dart.DartTokenTypes
 import com.jetbrains.lang.dart.util.DartElementGenerator
+import de.keeyzar.gpthelper.gpthelper.features.psiutils.DartConstModifierFinder
 import de.keeyzar.gpthelper.gpthelper.features.shared.infrastructure.model.UserSettings
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.UserSettingsRepository
 
-class StatementFixer(private val userSettingsRepository: UserSettingsRepository) {
+class StatementFixer(
+    private val userSettingsRepository: UserSettingsRepository,
+    private val dartConstModifierFinder: DartConstModifierFinder,
+) {
     /**
      * create a statement like this
      * S.of(context).desiredKey
@@ -18,22 +23,34 @@ class StatementFixer(private val userSettingsRepository: UserSettingsRepository)
      */
     fun fixStatement(project: Project, element: PsiElement, desiredKey: String) {
         val userSettings = userSettingsRepository.getSettings()
-        WriteCommandAction.runWriteCommandAction(project) {
+        val newPsiElement = WriteCommandAction.runWriteCommandAction<PsiElement>(project) {
             val newStatement = createStatement(desiredKey, userSettings)
-            replaceStatementWithNewStatement(element, newStatement)
+            checkForConstExpressionsInHierarchy(element)
+            return@runWriteCommandAction replaceStatementWithNewStatement(element, newStatement)
+        }
+        //requires a new write command action
+        WriteCommandAction.runWriteCommandAction(project) {
+            CodeStyleManager.getInstance(project).reformat(newPsiElement)
         }
     }
 
-    private fun replaceStatementWithNewStatement(element: PsiElement, newStatement: String) {
+    /**
+     * otherwise our code is not correct anymore. It's never const anymore.
+     */
+    private fun checkForConstExpressionsInHierarchy(element: PsiElement) {
+        val constModifier = dartConstModifierFinder.checkForConstExpressionsInHierarchy(element)
+        constModifier?.delete()
+    }
+
+    private fun replaceStatementWithNewStatement(element: PsiElement, newStatement: String): PsiElement {
         val keyAccess = DartElementGenerator.createStatementFromText(element.project, newStatement)
         //based on what the element is we need to replace either the parent or the element itself
-        when(element.elementType) {
+        return when (element.elementType) {
             DartTokenTypes.REGULAR_STRING_PART -> element.parent.replace(keyAccess!!)
             DartTokenTypes.OPEN_QUOTE -> element.parent.replace(keyAccess!!)
             DartTokenTypes.CLOSING_QUOTE -> element.parent.replace(keyAccess!!)
             else -> element.replace(keyAccess!!)
         }
-
     }
 
     private fun createStatement(desiredKey: String, userSettings: UserSettings): String {

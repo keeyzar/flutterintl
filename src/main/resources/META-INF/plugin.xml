@@ -14,12 +14,49 @@
          Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
     <description><![CDATA[
-    Alt+Enter within a String literal automatically translates to all your .arb files and fixes the import. You can also automatically translate whole files to a new language.
+    Provides automated, advanced OpenAI GPT-3 based translations for Flutter.
+
+    <p>
+      <b>Features:</b>
+      <ul>
+        <li>Auto Localize whole file (with key suggestion)</li>
+        <li>Convert String to Arb entry and translate into all available languages</li>
+        <li>Translate whole file (also advanced keys)</li>
+        <li>Monitor flutter intl settings, so that the generation adheres to the configured style</li>
+      </ul>
+    </p>
+
+    <p>
+        <b>How to use:</b>
+        <ul>
+            <li>Install the plugin</li>
+            <li>Configure your GPT-3 API Key in the settings (no worries, if you miss it, we'll ask you)</li>
+            <li>Auto Localize File: Press "Generate" Shortcut (default: Alt + Insert) and select "Auto Localize File"</li>
+            <li>Translate whole file: Right-click on the file in the project view and select "Translate this to new Arb file"</li>
+            <li>Convert String to Arb entry: Select the string, open "Intentions" Menu (default: Alt + Enter) and fill in the data</li>
+        </ul>
+    </p>
+
+    <p>
+        <b>OpenAI API Costs:</b>
+        <br/>
+        The translations are fairly small. While developing the Plugin I never crossed the 50 cent mark (as of 2023/05).
+    </p>
+
+    <p>
+        <b>Rate this plugin:</b>
+        <br/>
+        Please, do me a favor and rate this plugin. It took a lot of time. :)
+        <a href="https://plugins.jetbrains.com/plugin/21732-gpt-flutter-intl/reviews">Write GPT Flutter Intl Review</a>
+    </p>
   ]]></description>
 
     <change-notes>
         <![CDATA[
       <ul>
+        <li>
+          <b>1.7.0</b> Remove const modifier if it exists in parent
+        </li>
         <li>
           <b>1.6.0</b> Allow for auto localization of file
         </li>

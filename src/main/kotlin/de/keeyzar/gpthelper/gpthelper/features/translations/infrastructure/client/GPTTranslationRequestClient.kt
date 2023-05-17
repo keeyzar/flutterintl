@@ -24,7 +24,7 @@ class GPTTranslationRequestClient(
 
     override suspend fun requestTranslationOfSingleEntry(
         clientTranslationRequest: ClientTranslationRequest,
-        partialTranslationFinishedCallback: (PartialTranslationResponse) -> Unit
+        partialTranslationFinishedCallback: (PartialTranslationResponse) -> Unit,
     ) {
         val baseContent = translationRequestResponseParser.toGPTContent(clientTranslationRequest.translation)
 
@@ -38,7 +38,7 @@ class GPTTranslationRequestClient(
                             partialTranslationFinishedCallback(PartialTranslationResponse(translation))
                         } catch (e: Throwable) {
                             throw TranslationRequestException(
-                                "Error while requesting translation for $targetLang. Is the file valid json?", e,
+                                "Translation request failed for ${targetLang.toISOLangString()} with message: Is the file valid json?", e,
                                 Translation(lang = targetLang, clientTranslationRequest.translation.entry)
                             )
                         }

@@ -1,3 +1,3 @@
 void main() {
-  String nice = 'nice ' + 'world ' + 'new'
+  String nice = 'nice ' + 'world ' + 'new';
 }

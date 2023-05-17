@@ -87,8 +87,6 @@ xsrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/domain/rep
 tsrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/presentation/validation/FlutterIntlValidator.kt,3\1\313af60856aaa210ab79ff20f812adc0e5c98968
 ®
 xsrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/domain/service/ExternalTranslationProcessService.kt,4\d\4d760bfbf61909aeef2a937431ea95729e019fc4
-•
-usrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/domain/exceptions/TranslationRequestException.kt,4\c\4cf04bae76bd278291504983f18db4145acc67b4
 ù
 msrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/domain/service/GatherUserInputService.kt,f\7\f74a3fdb4919ef1ad2e9015f6ad48d73c0361272
 ö
@@ -238,8 +236,6 @@ ssrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/autofilefixer/presentat
 wsrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/presentation/actions/GenerateArbIntentionAction.kt,9\d\9d10f46ea75cef8680ebcd6f86218a0c70a116e7
 ú
 lsrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/domain/entity/UserTranslationRequest.kt,c\d\cdd57bc527b0c1f2fabfc5b529815e93fe7ce356
-©
-ysrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/infrastructure/client/GPTTranslationRequestClient.kt,b\9\b9485e8936e09ce4e7abeedde911e22762acfe55
 û
 nsrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/domain/client/ClientTranslationRequest.kt,e\6\e67aa18c9a2993193c0a6c4727af512eb5271943
 †
@@ -248,8 +244,6 @@ psrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/domain/ser
 qsrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/autofilefixer/domain/entity/MultiKeyTranslationContext.kt,4\6\46f3f18862ad463ef4104edb1f3f6bb8ad65ae1d
 ê
 `src/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/shared/infrastructure/utils/JsonUtils.kt,f\6\f6ac52b2724c9f4068af2042eb97c071e90b7ecd
-ë
-asrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/domain/entity/Translation.kt,7\2\7284272bac5955637df9db16b41d56c730cc3133
 Æ
 ~src/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/infrastructure/mapper/TranslationRequestResponseMapper.kt,c\f\cf6123206002f3248f3214ca0673cbda1f4abe4f
 †
@@ -290,3 +284,5 @@ tsrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/autofilefixer/domain/se
 Äsrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/presentation/service/FlutterArbTranslationContextService.kt,c\3\c390aa0fd0669beebe7ad729b9059bba68ba050b
 û
 nsrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/presentation/service/FlutterPsiService.kt,9\7\97eb09d143ad2b57b60dcecf484eaa4e478a2e40
+ò
+hsrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/presentation/service/ImportFixer.kt,f\2\f2f52b3822b70ea78c47782cf2f1207275225ff4
