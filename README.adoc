@@ -22,15 +22,13 @@ To use this plugin, you need an OpenAI API key. Please make sure you have the AP
 == Possible Improvements
 Here are some ideas, if you want to improve (sorry for the code base)
 
-=== Settings Page is a little bit bugged on save
+=== placeholder support
+Currently, we can only provide simple translations. It would be nice to have support for placeholders, e.g. "Hello, {name}!".
+- I tried to work a little bit with gpt-3.5 here. It's theoretically possible, but the output is not yet "good enough", and you will do it yourself then.
 
-something with the model I guess
-
-=== Extract Password from UserSettings
-password should be stored in IntelliJ Idea password save
 
 === untranslated keys (e.g. because of an error)
-. read untranslated keys
+. read untranslated keys (from flutter l10n file)
 . get keys (key + @key) from base
 . translate keys
 . append to file
@@ -40,15 +38,11 @@ password should be stored in IntelliJ Idea password save
 === show history of translations in dialog for desired key
 often times you have identical structure, and you want to see the latest one
 
-=== AI generated key guess
-give gpt all the keys of the file, and also the filename, and some context (e.g. current Widget) and let it generate a key as a suggestion
-
 === error on existing keys
 currently you can add existing keys, which is an error
 
 === make error dialog clickable (and allow showing stacktrace)
 there is most definitely some kind of existing function for that (showError or something like that)
-
 
 == Disclaimer
 

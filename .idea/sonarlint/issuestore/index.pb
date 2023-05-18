@@ -149,8 +149,6 @@ vsrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/filetranslation/domain/
 xsrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/filetranslation/domain/service/FinishedFileTranslationHandler.kt,f\a\fa15b3bf3232b8f76df8f48dcae4d19de4570596
 ™
 zsrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/domain/service/FormatTranslationFileContentService.kt,d\9\d911ea1fab69eeeec1643e581b79ca6eacb9fcac
-;
-README.adoc,2\f\2fcabbd3c29fc94d3f6f7f15eb70637d73b2e93f
 ≤
 Åsrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/filetranslation/infrastructure/service/FlutterArbTranslateFileFinished.kt,d\b\db89faca37285a8021e7e18aabab6065539833a6
 §
