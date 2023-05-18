@@ -1,5 +1,6 @@
 package de.keeyzar.gpthelper.gpthelper.features.translations.domain.controller
 
+import de.keeyzar.gpthelper.gpthelper.features.review.domain.service.ReviewService
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.client.TaskAmountCalculator
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.TranslationProgress
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.parser.UserTranslationInputParser
@@ -19,6 +20,7 @@ class TranslationProcessController(
     private val translationErrorProcessHandler: TranslationErrorProcessHandler,
     private val taskAmountCalculator: TaskAmountCalculator,
     private val translationTriggeredHooks: TranslationTriggeredHooks,
+    private val reviewService: ReviewService,
 ) {
     /**
      * Listen via the [TranslationProgressBus], but beware you might need to unregister yourself
@@ -26,6 +28,7 @@ class TranslationProcessController(
     suspend fun startTranslationProcess() {
         return try {
             _startTranslationProcess()
+            reviewService.askUserForReviewIfItIsTime()
         } catch (e: Throwable) {
             translationErrorProcessHandler.displayErrorToUser(e)
         }

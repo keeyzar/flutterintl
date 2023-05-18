@@ -10,7 +10,6 @@ import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.depende
 import java.util.*
 
 class TranslateWholeFileAction : DumbAwareAction() {
-
     override fun actionPerformed(event: AnActionEvent) {
         val selectedFile = event.getData(PlatformDataKeys.VIRTUAL_FILE)
         if (selectedFile != null && !selectedFile.isDirectory && selectedFile.extension == "arb") {

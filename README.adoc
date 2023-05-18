@@ -26,6 +26,8 @@ Here are some ideas, if you want to improve (sorry for the code base)
 Currently, we can only provide simple translations. It would be nice to have support for placeholders, e.g. "Hello, {name}!".
 - I tried to work a little bit with gpt-3.5 here. It's theoretically possible, but the output is not yet "good enough", and you will do it yourself then.
 
+=== ask for a review after some translations
+
 
 === untranslated keys (e.g. because of an error)
 . read untranslated keys (from flutter l10n file)

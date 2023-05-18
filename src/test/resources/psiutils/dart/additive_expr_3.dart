@@ -1,4 +1,4 @@
-import 'something.dart';
+import 'dart:io';
 
 void main() {
 }

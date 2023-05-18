@@ -55,6 +55,9 @@
         <![CDATA[
       <ul>
         <li>
+          <b>1.8.0</b> Ask user to rate plugin, if he uses it for a while
+        </li>
+        <li>
           <b>1.7.0</b> Remove const modifier if it exists in parent
         </li>
         <li>
