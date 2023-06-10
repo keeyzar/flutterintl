@@ -21,7 +21,7 @@ class GPTTranslationClient(
         val chunkedStrings = jsonFileChunker.chunkJsonBasedOnTotalStringSize(fileTranslationRequest.content, 500);
         // request translation for each chunk in parallel
         //not sure, whether this will block the caller
-        val requestSemaphore = Semaphore(3)
+        val requestSemaphore = Semaphore(9)
         coroutineScope {
             return@coroutineScope chunkedStrings.map {
                 async {

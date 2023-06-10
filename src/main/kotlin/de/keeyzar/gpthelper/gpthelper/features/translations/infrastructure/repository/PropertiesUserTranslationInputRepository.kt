@@ -17,7 +17,11 @@ class PropertiesUserTranslationInputRepository(
     }
 
     override fun appendTranslationDialogData(userTranslationInput: UserTranslationInput) {
-        saveTranslationDialogData(getAllTranslationDialogData() + userTranslationInput)
+        try {
+            saveTranslationDialogData(getAllTranslationDialogData() + userTranslationInput)
+        } catch (e: TranslationDialogDataMissingException) {
+            saveTranslationDialogData(listOf(userTranslationInput))
+        }
     }
 
     override fun saveTranslationDialogData(userTranslationDialogData: List<UserTranslationInput>) {

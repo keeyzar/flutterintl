@@ -28,23 +28,23 @@ class GPTTranslationRequestClient(
     ) {
         val baseContent = translationRequestResponseParser.toGPTContent(clientTranslationRequest.translation)
 
-        clientTranslationRequest.targetLanguages
-            .map { targetLang ->
-                coroutineScope {
-                    async {
-                        try {
-                            val response = requestTranslation(baseContent, targetLang.toISOLangString())
-                            val translation = translationRequestResponseParser.fromResponse(targetLang, response, clientTranslationRequest.translation)
-                            partialTranslationFinishedCallback(PartialTranslationResponse(translation))
-                        } catch (e: Throwable) {
-                            throw TranslationRequestException(
-                                "Translation request failed for ${targetLang.toISOLangString()} with message: Is the file valid json?", e,
-                                Translation(lang = targetLang, clientTranslationRequest.translation.entry)
-                            )
-                        }
+        coroutineScope {
+            val deferredTranslations = clientTranslationRequest.targetLanguages.map { targetLang ->
+                async {
+                    try {
+                        val response = requestTranslation(baseContent, targetLang.toISOLangString())
+                        val translation = translationRequestResponseParser.fromResponse(targetLang, response, clientTranslationRequest.translation)
+                        partialTranslationFinishedCallback(PartialTranslationResponse(translation))
+                    } catch (e: Throwable) {
+                        throw TranslationRequestException(
+                            "Translation request failed for ${targetLang.toISOLangString()} with message: Is the file valid json?", e,
+                            Translation(lang = targetLang, clientTranslationRequest.translation.entry)
+                        )
                     }
                 }
             }
+            deferredTranslations.forEach { it.await() }
+        }
     }
 
     @OptIn(BetaOpenAI::class)

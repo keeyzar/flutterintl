@@ -5,5 +5,4 @@ data class TranslationDialogUserInput(
     var desiredValue: String,
     var desiredKey: String,
     var desiredDescription: String,
-
 )
