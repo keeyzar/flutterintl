@@ -55,6 +55,20 @@
         <![CDATA[
       <ul>
         <li>
+          <b>1.9.0</b>
+          <ul>
+            <li>
+              parallel translations
+            </li>
+            <li>
+              fix nullable getter generated code
+            </li>
+            <li>
+              use old translation data
+            </li>
+          </ul>
+        </li>
+        <li>
           <b>1.8.0</b> Ask user to rate plugin, if he uses it for a while
         </li>
         <li>

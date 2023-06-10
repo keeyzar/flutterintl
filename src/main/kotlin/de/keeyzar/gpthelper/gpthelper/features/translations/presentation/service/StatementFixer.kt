@@ -55,7 +55,7 @@ class StatementFixer(
 
     private fun createStatement(desiredKey: String, userSettings: UserSettings): String {
         val nullableGetter = when (userSettings.nullableGetter) {
-            true -> "?"
+            true -> "!"
             false -> ""
         }
         val outputClass = userSettings.outputClass

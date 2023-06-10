@@ -119,7 +119,7 @@ class DIConfig {
             single<TranslationClientSettingsValidator> { TranslationClientSettingsValidator(get()) }
             single<UserTranslationInputRepository> { PropertiesUserTranslationInputRepository(get()) }
             single<GatherTranslationContextService> { FlutterArbTranslationContextService(get(), get(), get(), get(), get(), get()) }
-            single<GatherUserInputService> { FlutterArbUserInputService() }
+            single<GatherUserInputService> { FlutterArbUserInputService(get()) }
             single<UserTranslationInputParser> { UserTranslationInputParser(get()) }
             single<ArbFilenameParser> { ArbFilenameParser() }
             single<CurrentFileModificationService> { FlutterArbCurrentFileModificationService(get(), get(), get(), get(), get()) }
