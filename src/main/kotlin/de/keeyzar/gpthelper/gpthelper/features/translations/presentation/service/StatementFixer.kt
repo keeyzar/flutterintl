@@ -28,9 +28,15 @@ class StatementFixer(
             checkForConstExpressionsInHierarchy(element)
             return@runWriteCommandAction replaceStatementWithNewStatement(element, newStatement)
         }
-        //requires a new write command action
-        WriteCommandAction.runWriteCommandAction(project) {
-            CodeStyleManager.getInstance(project).reformat(newPsiElement)
+        //this caused a lot of headaches in the past, so we postpone it a little bit
+        try {
+            WriteCommandAction.runWriteCommandAction(project) {
+                CodeStyleManager.getInstance(project).reformat(newPsiElement)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            print("failed to reformat the code..., but this should not interrupt the whole process..")
+            //sometimes this just fails, for whatever reason
         }
     }
 

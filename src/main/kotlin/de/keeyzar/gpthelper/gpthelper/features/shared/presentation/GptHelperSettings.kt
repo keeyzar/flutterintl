@@ -14,11 +14,7 @@ import com.intellij.ui.dsl.builder.*
 import com.intellij.ui.dsl.gridLayout.HorizontalAlign
 import com.intellij.ui.layout.ComponentPredicate
 import de.keeyzar.gpthelper.gpthelper.features.flutter_intl.domain.repository.FlutterIntlSettingsRepository
-import de.keeyzar.gpthelper.gpthelper.features.shared.infrastructure.model.UserSettings
-import de.keeyzar.gpthelper.gpthelper.features.shared.presentation.dto.UserSettingsDTO
 import de.keeyzar.gpthelper.gpthelper.features.shared.presentation.mapper.UserSettingsDTOMapper
-import de.keeyzar.gpthelper.gpthelper.features.translations.domain.exceptions.UserSettingsCorruptException
-import de.keeyzar.gpthelper.gpthelper.features.translations.domain.exceptions.UserSettingsMissingException
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.UserSettingsRepository
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.repository.CurrentProjectProvider
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.repository.UserSettingsPersistentStateComponent
@@ -33,6 +29,7 @@ import javax.swing.JComponent
 class GptHelperSettings(val project: Project) : Configurable {
     private var panel: DialogPanel? = null
     private lateinit var openAIKeyField: Cell<JBPasswordField>
+    private lateinit var translationParallelism: Cell<JBTextField>
     private lateinit var intlConfigFile: Cell<TextFieldWithBrowseButton>
     private lateinit var watchIntlConfigFile: Cell<JCheckBox>
     private lateinit var arbDirectory: Cell<TextFieldWithBrowseButton>
@@ -82,6 +79,16 @@ class GptHelperSettings(val project: Project) : Configurable {
                 }.visibleIf(connectionErrorPredicate())
                 row("Success, don't forget to press save!") {
                 }.visibleIf(connectionSuccessPredicate())
+            }
+            group("OpenAI Client Configuration") {
+                row {
+                    label("Translation parallelism")
+                    translationParallelism = cell(JBTextField())
+                        .bindIntText(UserSettingsPersistentStateComponent.getInstance().state::parallelism)
+                        .resizableColumn()
+                        .horizontalAlign(HorizontalAlign.FILL)
+                        .comment("Each file is translated in parallel. A new openAI Account can only make 3 parallel requests. If your Account is older than a week, I suggest increasing to 10 (or how many translation files you have)")
+                }.layout(RowLayout.PARENT_GRID)
             }
             group("Flutter Intl") {
                 row {

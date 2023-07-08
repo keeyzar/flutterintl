@@ -52,7 +52,7 @@ class GPTARBRequester(
 
     @OptIn(BetaOpenAI::class)
     suspend fun translateWithGPTTurbo(requestTemplate: String, content: String, targetLanguage: String): GPTArbTranslationResponse {
-        val modelToUse = "gpt-3.5-turbo-0301"
+        val modelToUse = openAIConfigProvider.getConfiguredModel()
 
         val request = """
             $requestTemplate
@@ -60,7 +60,7 @@ class GPTARBRequester(
         """.trimIndent()
 
         val chatCompletionRequest = ChatCompletionRequest(
-            model = ModelId(modelToUse),
+            model = ModelId(modelToUse.id),
             messages = listOf(
                 ChatMessage(
                     role = ChatRole.User,

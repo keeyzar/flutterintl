@@ -23,7 +23,8 @@ data class UserSettings(
     /**
      * here you can find the file, where the outputClass is located in
      */
-    val outputLocalizationFile: String
+    val outputLocalizationFile: String,
+    val parallelism: Int,
 ) {
 
     fun getArbFilePrefix(): String {

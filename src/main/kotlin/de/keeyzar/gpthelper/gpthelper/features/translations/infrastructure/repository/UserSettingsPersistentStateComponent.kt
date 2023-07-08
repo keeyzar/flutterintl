@@ -23,8 +23,6 @@ class UserSettingsPersistentStateComponent : PersistentStateComponent<UserSettin
         return model
     }
 
-
-
     override fun loadState(state: UserSettingsModel) {
         XmlSerializerUtil.copyBean(state, model)
     }
@@ -57,6 +55,7 @@ class UserSettingsPersistentStateComponent : PersistentStateComponent<UserSettin
          * here you can find the file, where the outputClass is located in
          */
         var outputLocalizationFile: String by object: RWProperty<UserSettingsModel, String>("") {}
+        var parallelism: Int by object: RWProperty<UserSettingsModel, Int>(3) {}
 
         open class RWProperty<R, T>(initValue: T) : ReadWriteProperty<R, T> {
             private var backingField: T = initValue

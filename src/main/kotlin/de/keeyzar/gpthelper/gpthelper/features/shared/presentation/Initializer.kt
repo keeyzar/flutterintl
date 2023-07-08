@@ -1,11 +1,8 @@
 package de.keeyzar.gpthelper.gpthelper.features.shared.presentation
 
-import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.controller.BestGuessProcessController
 import de.keeyzar.gpthelper.gpthelper.features.ddd.presentation.service.CreateDirectoryTreeService
 import de.keeyzar.gpthelper.gpthelper.features.ddd.presentation.service.SaveDirectoryTreeService
 import de.keeyzar.gpthelper.gpthelper.features.flutter_intl.domain.repository.FlutterIntlSettingsRepository
-import de.keeyzar.gpthelper.gpthelper.features.psiutils.DartStringLiteralFinder
-import de.keeyzar.gpthelper.gpthelper.features.psiutils.LiteralInContextFinder
 import de.keeyzar.gpthelper.gpthelper.features.shared.presentation.mapper.UserSettingsDTOMapper
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.client.ClientConnectionTester
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.TranslationCredentialsServiceRepository

@@ -36,7 +36,7 @@ class OpenAIConfigProvider(private val credentialsServiceRepository: Translation
      * TODO make configurable from outside, because we can't update each time, when there is a new model
      */
     fun getConfiguredModel(): ModelId{
-        return ModelId("gpt-3.5-turbo-0301")
+        return ModelId("gpt-3.5-turbo-0613")
     }
 }
 

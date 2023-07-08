@@ -57,10 +57,7 @@ import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.Tr
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.UserSettingsRepository
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.UserTranslationInputRepository
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.service.*
-import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.client.GPTARBRequester
-import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.client.GPTTranslationRequestClient
-import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.client.OpenAIClientConnectionTester
-import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.client.TranslateKeyTaskAmountCalculator
+import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.client.*
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.configuration.OpenAIConfigProvider
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.mapper.TranslationRequestResponseMapper
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.mapper.UserSettingsMapper
@@ -113,7 +110,8 @@ class DIConfig {
             single<TranslationFileRepository> { PsiTranslationFileRepository(get(), get(), get()) }
             single<ContentModificationService> { ArbContentModificationService(get()) }
             single<TranslationRequestMapper> { Mappers.getMapper(TranslationRequestMapper::class.java) }
-            single<DDDTranslationRequestClient> { GPTTranslationRequestClient(get(), get()) }
+            single<DispatcherConfiguration> {DispatcherConfiguration(get())}
+            single<DDDTranslationRequestClient> { GPTTranslationRequestClient(get(), get(), get()) }
             single<ArbFileModificationService> { ArbFileModificationService(get(), get(), get()) }
             single<VerifyTranslationSettingsService> { ArbVerifyTranslationSettingsService(get(), get(), get(), get(), get()) }
             single<TranslationClientSettingsValidator> { TranslationClientSettingsValidator(get()) }

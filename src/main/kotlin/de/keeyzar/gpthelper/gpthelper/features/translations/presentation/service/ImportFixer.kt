@@ -19,7 +19,6 @@ class ImportFixer(
 ) {
     fun addTranslationImportIfMissing(project: Project, element: PsiElement) {
         val userSettings = userSettingsRepository.getSettings()
-
         WriteCommandAction.runWriteCommandAction(project) {
             val dartFile = element.findParentOfType<DartFile>();
             //refresh the file, because it might be changed by another action inbetween
