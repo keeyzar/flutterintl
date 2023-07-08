@@ -55,6 +55,20 @@
         <![CDATA[
       <ul>
         <li>
+          <b>1.10.0</b>
+          <ul>
+            <li>
+              configure parallel translations - because openAI blocks new account parallelism
+            </li>
+            <li>
+              fix errors in context of formatting after removing const modifier
+            </li>
+            <li>
+              allow undoing all localizations with two UNDO commands - wow was that annoying...
+            </li>
+          </ul>
+        </li>
+        <li>
           <b>1.9.0</b>
           <ul>
             <li>

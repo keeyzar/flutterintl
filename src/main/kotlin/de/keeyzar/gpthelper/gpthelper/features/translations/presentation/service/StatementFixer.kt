@@ -1,5 +1,6 @@
 package de.keeyzar.gpthelper.gpthelper.features.translations.presentation.service
 
+import com.intellij.openapi.command.CommandProcessor
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
@@ -23,21 +24,24 @@ class StatementFixer(
      */
     fun fixStatement(project: Project, element: PsiElement, desiredKey: String) {
         val userSettings = userSettingsRepository.getSettings()
-        val newPsiElement = WriteCommandAction.runWriteCommandAction<PsiElement>(project) {
-            val newStatement = createStatement(desiredKey, userSettings)
-            checkForConstExpressionsInHierarchy(element)
-            return@runWriteCommandAction replaceStatementWithNewStatement(element, newStatement)
+        WriteCommandAction.runWriteCommandAction(project) {
+            CommandProcessor.getInstance().executeCommand(project, {
+                val newStatement = createStatement(desiredKey, userSettings)
+                checkForConstExpressionsInHierarchy(element)
+                replaceStatementWithNewStatement(element, newStatement)
+            }, "translation", "translate")
         }
         //this caused a lot of headaches in the past, so we postpone it a little bit
-        try {
-            WriteCommandAction.runWriteCommandAction(project) {
-                CodeStyleManager.getInstance(project).reformat(newPsiElement)
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            print("failed to reformat the code..., but this should not interrupt the whole process..")
-            //sometimes this just fails, for whatever reason
-        }
+        //TODO allow formatting again - currently I do not know how to get the statement, also it's bugged oftentimes..
+//        try {
+//            WriteCommandAction.runWriteCommandAction(project) {
+//                CodeStyleManager.getInstance(project).reformat(newPsiElement)
+//            }
+//        } catch (e: Exception) {
+//            e.printStackTrace()
+//            print("failed to reformat the code..., but this should not interrupt the whole process..")
+//            //sometimes this just fails, for whatever reason
+//        }
     }
 
     /**

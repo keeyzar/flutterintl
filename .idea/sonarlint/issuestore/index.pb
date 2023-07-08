@@ -87,8 +87,6 @@ osrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/filetranslation/domain/
 `src/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/filetranslation/domain/entity/Context.kt,4\2\426e309f41245333df60ce2d81dcd004bf9086af
 °
 qsrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/filetranslation/domain/service/FileTranslationFinished.kt,1\5\1542fb6bef682be9e6670ec7433111fd10cc7a73
-°
-qsrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/domain/service/ContentModificationService.kt,8\5\85896f4205cdc7f6ac780c9fda7f6dc03f0e9279
 ù
 msrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/domain/service/TranslationProgressBus.kt,8\d\8df9609fa63e033fbb064552f5d471cbefe88025
 •
@@ -130,8 +128,6 @@ tsrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/filetranslation/domain/
 :
 
 .gitignore,a\5\a5cc2925ca8258af241be7e5b0381edf30266302
-ô
-isrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/flutter_intl/domain/entity/FlutterIntlSettings.kt,2\4\2414cdc50e890cfcabbd722d9353a7af4b1bafc3
 æ
 çsrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/infrastructure/repository/IdeaTranslationCredentialsServiceRepository.kt,e\2\e24d2823bc36fa9967f58857a0a247086296caee
 °
@@ -152,8 +148,6 @@ wsrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/domain/ser
 psrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/infrastructure/mapper/UserSettingsMapper.kt,2\1\21c82f13a4aff7f3077cd4dec1eb971790bfbdcb
 õ
 ksrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/shared/presentation/mapper/UserSettingsDTOMapper.kt,4\1\41b408ce9623cd8687a3665d1e91c88745d6ee2d
-ß
-wsrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/flutter_intl/domain/repository/FlutterIntlSettingsRepository.kt,a\d\ad089b350facb447f2c50939964a079cd24bc7f8
 í
 bsrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/shared/presentation/dto/UserSettingsDTO.kt,2\9\296e1b956d6733dedd6d573e590e07398deee874
 ≥

@@ -1,8 +1,10 @@
 package de.keeyzar.gpthelper.gpthelper.features.translations.presentation.service
 
+import com.intellij.openapi.command.CommandProcessor
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
+import com.intellij.psi.codeStyle.CodeStyleManager
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.util.findParentOfType
 import com.jetbrains.lang.dart.psi.DartFile
@@ -20,13 +22,15 @@ class ImportFixer(
     fun addTranslationImportIfMissing(project: Project, element: PsiElement) {
         val userSettings = userSettingsRepository.getSettings()
         WriteCommandAction.runWriteCommandAction(project) {
-            val dartFile = element.findParentOfType<DartFile>();
-            //refresh the file, because it might be changed by another action inbetween
+            CommandProcessor.getInstance().executeCommand(project, {
+                val dartFile = element.findParentOfType<DartFile>();
+                //refresh the file, because it might be changed by another action inbetween
 
-            if (isImportMissing(dartFile, userSettings)) {
-                val newImportStatement = createStatement(element, userSettings)
-                dartFile?.addBefore(newImportStatement, dartFile.firstChild);
-            }
+                if (isImportMissing(dartFile, userSettings)) {
+                    val newImportStatement = createStatement(element, userSettings)
+                    dartFile?.addBefore(newImportStatement, dartFile.firstChild);
+                }
+            }, "translation", "translate")
         }
     }
     private fun createStatement(element: PsiElement, userSettings: UserSettings): DartImportStatement {

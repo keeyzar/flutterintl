@@ -16,6 +16,5 @@ class ApplicationGptHelper() : StartupActivity {
         val initializer = Initializer()
         initializer.translationPercentageBus.init(project)
         initializer.currentProjectProvider.project = project
-
     }
 }
