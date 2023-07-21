@@ -127,7 +127,7 @@ class DIConfig {
             single<LanguageFileFinder> { LanguageFileFinder(get()) }
             single<TranslationRequestResponseMapper> { TranslationRequestResponseMapper(get()) }
             single<ImportFixer> { ImportFixer(get()) }
-            single<StatementFixer> { StatementFixer(get(), get()) }
+            single<StatementFixer> { StatementFixer(get(), get(), get()) }
             single<TranslationTaskBackgroundProgress> { TranslationTaskBackgroundProgress() }
             single<UserSettingsMapper> { Mappers.getMapper(UserSettingsMapper::class.java) }
             single<FlutterFileRepository> { FlutterFileRepository() }
@@ -153,7 +153,7 @@ class DIConfig {
             single<UserSettingsDTOMapper> { Mappers.getMapper(UserSettingsDTOMapper::class.java) }
             single<ClientConnectionTester> { OpenAIClientConnectionTester(get()) }
             single<DartAdditiveExpressionExtractor> { DartAdditiveExpressionExtractor() }
-            single<DartStringLiteralFinder> { DartStringLiteralFinder(get(), getAll()) }
+            single<DartStringLiteralHelper> { DartStringLiteralHelper(get(), getAll()) }
             single { ImportStatementFilterDartString() } bind DartStringLiteralFilter::class
             single<LiteralInContextFinder> { LiteralInContextFinder() }
             single<PsiElementIdGenerator> { PsiElementIdGenerator() }

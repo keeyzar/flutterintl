@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.SimpleTranslationEntry
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.exceptions.ReplacementOfTranslationFailedException
-import java.util.*
 
 class JsonUtils(private val objectMapper: ObjectMapper) {
     fun hasAnyEntry(jsonString: String): Boolean {
@@ -59,7 +58,13 @@ class JsonUtils(private val objectMapper: ObjectMapper) {
     private fun SimpleTranslationEntry.toMap(): Map<String, *> {
         val map = mutableMapOf<String, Any>()
         map[this.desiredKey] = this.desiredValue
-        map["@" + this.desiredKey] = mapOf("description" to this.desiredDescription)
+        val additionalContent: MutableMap<String, Any> = mutableMapOf(
+            "description" to this.desiredDescription,
+        )
+        if (this.placeholder != null) {
+            additionalContent["placeholders"] = this.placeholder
+        }
+        map["@" + this.desiredKey] = additionalContent
         return map;
     }
 }

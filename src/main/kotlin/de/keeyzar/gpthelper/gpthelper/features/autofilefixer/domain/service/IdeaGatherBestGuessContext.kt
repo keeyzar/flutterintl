@@ -7,14 +7,14 @@ import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.entity.FileB
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.entity.SingleLiteral
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.service.PsiElementIdReferenceProvider
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.presentation.widgets.FoundStringsSelectionDialog
-import de.keeyzar.gpthelper.gpthelper.features.psiutils.DartStringLiteralFinder
+import de.keeyzar.gpthelper.gpthelper.features.psiutils.DartStringLiteralHelper
 import de.keeyzar.gpthelper.gpthelper.features.psiutils.PsiElementIdGenerator
 import de.keeyzar.gpthelper.gpthelper.features.shared.domain.exception.ProgrammerException
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.service.ContextProvider
 import java.util.*
 
 class IdeaGatherBestGuessContext(
-    private val dartStringLiteralFinder: DartStringLiteralFinder,
+    private val dartStringLiteralHelper: DartStringLiteralHelper,
     private val contextProvider: ContextProvider,
     private val psiElementIdGenerator: PsiElementIdGenerator,
     private val psiElementReferenceContainer: PsiElementIdReferenceProvider
@@ -23,7 +23,7 @@ class IdeaGatherBestGuessContext(
     override fun getFileBestGuessContext(processUUID: UUID): FileBestGuessContext? {
         val context = contextProvider.getAutoLocalizeContext(processUUID)
             ?: throw ProgrammerException("The programmer forgot to set the context, or there was some other strange mystery. Anyways, we did not find the context for the process with id: '$processUUID'")
-        val stringLiteralsAsPSIElements = dartStringLiteralFinder.findStringPsiElements(context.baseFile)
+        val stringLiteralsAsPSIElements = dartStringLiteralHelper.findStringPsiElements(context.baseFile)
         var bestGuessContext: FileBestGuessContext? = null
         ApplicationManager.getApplication().invokeAndWait{
 //            val bestGuessList = stringLiteralsAsPSIElements.map {

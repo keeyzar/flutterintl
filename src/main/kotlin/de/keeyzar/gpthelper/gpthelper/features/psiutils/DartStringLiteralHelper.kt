@@ -11,7 +11,7 @@ import de.keeyzar.gpthelper.gpthelper.features.psiutils.filter.DartStringLiteral
 /**
  * in a given PsiFile find all the DartStringLiterals
  */
-class DartStringLiteralFinder(
+class DartStringLiteralHelper(
     private val dartAdditiveExpressionExtractor: DartAdditiveExpressionExtractor,
     private val dartStringLiteralFilters: List<DartStringLiteralFilter>,
 ) {
@@ -34,6 +34,12 @@ class DartStringLiteralFinder(
                     }
                 }.toSet()
         }
+    }
+
+    /**
+     * a string with "You have $credits Credits" might provide only part of the string
+     */
+    fun getWholeStringExpression(psiElement: PsiElement) {
 
     }
 

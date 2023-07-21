@@ -9,15 +9,15 @@ import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory
 import com.intellij.testFramework.fixtures.impl.LightTempDirTestFixtureImpl
 import com.jetbrains.lang.dart.psi.DartStringLiteralExpression
 import de.keeyzar.gpthelper.gpthelper.features.psiutils.DartAdditiveExpressionExtractor
-import de.keeyzar.gpthelper.gpthelper.features.psiutils.DartStringLiteralFinder
+import de.keeyzar.gpthelper.gpthelper.features.psiutils.DartStringLiteralHelper
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
 
-class DartStringLiteralFinderTest {
+class DartStringLiteralHelperTest {
 
-    private val sut: DartStringLiteralFinder = DartStringLiteralFinder(DartAdditiveExpressionExtractor(), emptyList())
+    private val sut: DartStringLiteralHelper = DartStringLiteralHelper(DartAdditiveExpressionExtractor(), emptyList())
 
     private lateinit var project: Project
     private lateinit var fixture: CodeInsightTestFixture

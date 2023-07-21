@@ -124,7 +124,7 @@ class GptHelperSettings(val project: Project) : Configurable {
                 }.layout(RowLayout.PARENT_GRID)
                 row {
                     advancedKeyTranslation = checkBox("Use advanced key translation? (BETA)")
-                        //.bindSelected(UserSettingsPersistentStateComponent.getInstance().state::translateAdvancedArbKeys)
+                        .bindSelected(UserSettingsPersistentStateComponent.getInstance().state::translateAdvancedArbKeys)
                         .comment("Choose the GPT Model to use. Pricing differs for the Models, though all should be fairly cheap anyways.")
                 }.layout(RowLayout.PARENT_GRID)
             }
