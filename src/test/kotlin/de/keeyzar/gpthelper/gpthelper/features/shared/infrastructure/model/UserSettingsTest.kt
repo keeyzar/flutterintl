@@ -13,7 +13,8 @@ class UserSettingsTest {
         "intlConfigFile",
         true,
         "outputLocalizationFile",
-        3
+        3,
+        "",
     )
 
     @Test

@@ -13,15 +13,24 @@ class TranslationRequestResponseMapper(private val objectMapper: ObjectMapper) {
         map["@${simpleTranslationEntry.desiredKey}"] = mapOf("description" to simpleTranslationEntry.desiredDescription)
         return objectMapper.writeValueAsString(map)
     }
+    fun toGPTContentAdvanced(translation: Translation): String {
+        return """
+            key: "${translation.entry.desiredKey}"
+            value: "${translation.entry.desiredValue}"
+            description: "${translation.entry.desiredDescription}"
+        """.trimIndent()
+    }
 
     fun fromResponse(targetLanguage: Language, gptResponse: String, baseTranslation: Translation): Translation {
         val map: Map<*,*> = objectMapper.readValue(gptResponse, Map::class.java)
         val desiredKey = baseTranslation.entry.desiredKey
+        val metadata = map.get("@${desiredKey}") as Map<*, *>
         val entry = SimpleTranslationEntry(
             id = null,
             desiredKey = desiredKey,
             desiredValue = map[desiredKey] as String,
-            desiredDescription = ((map["@${desiredKey}"] as Map<*, *>)["description"] ?: "") as String
+            desiredDescription = metadata.getOrDefault("description", "") as String,
+            placeholder = metadata.getOrDefault("placeholders", null) as Map<String, *>?
         )
         return Translation(targetLanguage, entry)
     }

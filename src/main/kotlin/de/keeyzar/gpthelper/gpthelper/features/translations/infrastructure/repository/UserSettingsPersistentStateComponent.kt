@@ -57,7 +57,8 @@ class UserSettingsPersistentStateComponent : PersistentStateComponent<UserSettin
         var outputLocalizationFile: String by object: RWProperty<UserSettingsModel, String>("") {}
         var parallelism: Int by object: RWProperty<UserSettingsModel, Int>(3) {}
         var tonality: String by object: RWProperty<UserSettingsModel, String>("informal") {}
-
+        var gptModel: String? by object: RWProperty<UserSettingsModel, String?>("gpt-3.5-turbo-0613") {}
+        val translateAdvancedArbKeys: Boolean by object: RWProperty<UserSettingsModel, Boolean>(true) {}
         open class RWProperty<R, T>(initValue: T) : ReadWriteProperty<R, T> {
             private var backingField: T = initValue
             override fun getValue(thisRef: R, property: KProperty<*>): T {

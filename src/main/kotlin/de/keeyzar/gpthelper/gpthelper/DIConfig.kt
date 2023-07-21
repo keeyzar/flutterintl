@@ -44,10 +44,7 @@ import de.keeyzar.gpthelper.gpthelper.features.review.infrastructure.service.Ide
 import de.keeyzar.gpthelper.gpthelper.features.shared.infrastructure.utils.JsonUtils
 import de.keeyzar.gpthelper.gpthelper.features.shared.infrastructure.utils.ObjectMapperProvider
 import de.keeyzar.gpthelper.gpthelper.features.shared.presentation.mapper.UserSettingsDTOMapper
-import de.keeyzar.gpthelper.gpthelper.features.translations.domain.client.ClientConnectionTester
-import de.keeyzar.gpthelper.gpthelper.features.translations.domain.client.DDDTranslationRequestClient
-import de.keeyzar.gpthelper.gpthelper.features.translations.domain.client.SingleTranslationRequestClient
-import de.keeyzar.gpthelper.gpthelper.features.translations.domain.client.TaskAmountCalculator
+import de.keeyzar.gpthelper.gpthelper.features.translations.domain.client.*
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.controller.TranslationProcessController
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.mapper.TranslationRequestMapper
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.parser.ArbFilenameParser
@@ -176,6 +173,7 @@ class DIConfig {
             single<ReviewService> {ReviewService(get(), get(), get(), get())}
             single< AskUserForReviewService> { IdeaAskUserForReviewService() }
             single<ReviewConfig> {ReviewConfig()}
+            single<GPTModelProvider> { GptModelProviderImpl(get())}
         }
     }
 }

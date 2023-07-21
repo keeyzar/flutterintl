@@ -5,6 +5,7 @@ import com.intellij.openapi.observable.properties.AtomicProperty
 import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.progress.util.BackgroundTaskUtil.submitTask
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogBuilder
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
@@ -15,11 +16,14 @@ import com.intellij.ui.dsl.gridLayout.HorizontalAlign
 import com.intellij.ui.layout.ComponentPredicate
 import de.keeyzar.gpthelper.gpthelper.features.flutter_intl.domain.repository.FlutterIntlSettingsRepository
 import de.keeyzar.gpthelper.gpthelper.features.shared.presentation.mapper.UserSettingsDTOMapper
+import de.keeyzar.gpthelper.gpthelper.features.translations.domain.client.GPTModelProvider
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.UserSettingsRepository
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.repository.CurrentProjectProvider
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.repository.UserSettingsPersistentStateComponent
 import kotlinx.coroutines.runBlocking
 import java.nio.file.Path
+import java.util.*
+import javax.swing.DefaultComboBoxModel
 import javax.swing.JCheckBox
 import javax.swing.JComponent
 
@@ -31,6 +35,8 @@ class GptHelperSettings(val project: Project) : Configurable {
     private lateinit var openAIKeyField: Cell<JBPasswordField>
     private lateinit var translationParallelism: Cell<JBTextField>
     private lateinit var translationTonality: Cell<JBTextField>
+    private lateinit var gptModel: Cell<ComboBox<String>>
+    private lateinit var advancedKeyTranslation: Cell<JCheckBox>
     private lateinit var intlConfigFile: Cell<TextFieldWithBrowseButton>
     private lateinit var watchIntlConfigFile: Cell<JCheckBox>
     private lateinit var arbDirectory: Cell<TextFieldWithBrowseButton>
@@ -42,6 +48,7 @@ class GptHelperSettings(val project: Project) : Configurable {
     private lateinit var flutterIntlSettingsRepository: FlutterIntlSettingsRepository
     private lateinit var currentProjectProvider: CurrentProjectProvider
     private lateinit var settingsMapper: UserSettingsDTOMapper
+    private lateinit var gptModelProvider: GPTModelProvider
     private var corruptSettings = false;
     private var errorListener: ((Boolean) -> Unit)? = null
     private var connectionErrorListener: ((Boolean) -> Unit)? = null
@@ -51,10 +58,12 @@ class GptHelperSettings(val project: Project) : Configurable {
 
     override fun getDisplayName(): String = "GPTHelper Settings"
     override fun createComponent(): JComponent {
-        userSettingsRepository = Initializer().userSettingsRepository
-        flutterIntlSettingsRepository = Initializer().flutterIntlSettingsRepository
-        currentProjectProvider = Initializer().currentProjectProvider
-        settingsMapper = Initializer().userSettingsDTOMapper
+        val initializer = Initializer()
+        userSettingsRepository = initializer.userSettingsRepository
+        flutterIntlSettingsRepository = initializer.flutterIntlSettingsRepository
+        currentProjectProvider = initializer.currentProjectProvider
+        settingsMapper = initializer.userSettingsDTOMapper
+        gptModelProvider = initializer.gptModelProvider
 
 
         panel = panel {
@@ -99,6 +108,25 @@ class GptHelperSettings(val project: Project) : Configurable {
                         .comment("Provide english instructions on the tonality of the text, i.e. in german there is a difference between a formal you(Sie) " +
                                 "and informal you(du). Choose something like 'formal' or 'informal and funny' etc.")
                 }.layout(RowLayout.PARENT_GRID)
+                row {
+                    label("GPT Model to use")
+                    gptModel = comboBox(initialValueForModel())
+                        .bindItemNullable(UserSettingsPersistentStateComponent.getInstance().state::gptModel)
+                        .resizableColumn()
+                        .horizontalAlign(HorizontalAlign.FILL)
+                        .comment("Choose the GPT Model to use. Pricing differs for the Models, though all should be fairly cheap anyways.")
+                    button("Refresh GPT Models") {
+                        val previousSelected = gptModel.component.selectedItem
+                        gptModel.component.model = DefaultComboBoxModel(Vector(getValuesFromGPT()))
+                        gptModel.component.selectedItem = previousSelected
+                    }
+                        .comment("You must have set a valid openAI key set for this to work.")
+                }.layout(RowLayout.PARENT_GRID)
+                row {
+                    advancedKeyTranslation = checkBox("Use advanced key translation? (BETA)")
+                        //.bindSelected(UserSettingsPersistentStateComponent.getInstance().state::translateAdvancedArbKeys)
+                        .comment("Choose the GPT Model to use. Pricing differs for the Models, though all should be fairly cheap anyways.")
+                }.layout(RowLayout.PARENT_GRID)
             }
             group("Flutter Intl") {
                 row {
@@ -115,7 +143,6 @@ class GptHelperSettings(val project: Project) : Configurable {
                     watchIntlConfigFile = checkBox("Watch intl config file")
                         .bindSelected(UserSettingsPersistentStateComponent.getInstance().state::watchIntlConfigFile)
                         .comment("If enabled, the settings will be refreshed automatically if the intl config file changes. (I.e. on each invoke of the plugin.")
-
                 }
                 separator()
                 row {
@@ -176,6 +203,17 @@ class GptHelperSettings(val project: Project) : Configurable {
         }
         panel!!.apply() //no changes yet
         return panel!!;
+    }
+
+    private fun initialValueForModel(): List<String> {
+        return mutableListOf(UserSettingsPersistentStateComponent.getInstance().state::gptModel.get()!!);
+    }
+    private fun getValuesFromGPT(): List<String> {
+        return gptModelProvider.getAllModels()
+            .sortedWith(
+                compareBy<String> { !it.startsWith("gpt") }
+                .thenBy { it }
+            )
     }
 
     private fun corruptSettingPredicate() = object : ComponentPredicate() {

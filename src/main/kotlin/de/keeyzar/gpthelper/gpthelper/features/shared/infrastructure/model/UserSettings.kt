@@ -24,8 +24,22 @@ data class UserSettings(
      * here you can find the file, where the outputClass is located in
      */
     val outputLocalizationFile: String,
+    /**
+     * how many requests should be done in parallel
+     */
     val parallelism: Int,
-    val tonality: String
+    /**
+     * the tonality of the voice (i.e. formal, informal)
+     */
+    val tonality: String,
+    /**
+     * which model should be used?
+     */
+    val gptModel: String,
+    /**
+     * whether to use the new advanced arb key translation
+     */
+    val translateAdvancedArbKeys: Boolean
 ) {
 
     fun getArbFilePrefix(): String {

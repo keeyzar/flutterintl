@@ -10,6 +10,10 @@ data class SimpleTranslationEntry(
     val desiredKey: String,
     val desiredValue: String,
     val desiredDescription: String,
+    /**
+     * placeholder might be null, when there is nothing to replace
+     */
+    val placeholder: Map<String,*>? = null
 ) {
 
 }
