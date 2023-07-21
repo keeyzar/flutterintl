@@ -56,6 +56,7 @@ class UserSettingsPersistentStateComponent : PersistentStateComponent<UserSettin
          */
         var outputLocalizationFile: String by object: RWProperty<UserSettingsModel, String>("") {}
         var parallelism: Int by object: RWProperty<UserSettingsModel, Int>(3) {}
+        var tonality: String by object: RWProperty<UserSettingsModel, String>("informal") {}
 
         open class RWProperty<R, T>(initValue: T) : ReadWriteProperty<R, T> {
             private var backingField: T = initValue

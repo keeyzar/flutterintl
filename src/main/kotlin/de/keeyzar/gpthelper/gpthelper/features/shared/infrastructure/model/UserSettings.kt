@@ -25,6 +25,7 @@ data class UserSettings(
      */
     val outputLocalizationFile: String,
     val parallelism: Int,
+    val tonality: String
 ) {
 
     fun getArbFilePrefix(): String {

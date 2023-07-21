@@ -111,7 +111,7 @@ class DIConfig {
             single<ContentModificationService> { ArbContentModificationService(get()) }
             single<TranslationRequestMapper> { Mappers.getMapper(TranslationRequestMapper::class.java) }
             single<DispatcherConfiguration> {DispatcherConfiguration(get())}
-            single<DDDTranslationRequestClient> { GPTTranslationRequestClient(get(), get(), get()) }
+            single<DDDTranslationRequestClient> { GPTTranslationRequestClient(get(), get(), get(), get()) }
             single<ArbFileModificationService> { ArbFileModificationService(get(), get(), get()) }
             single<VerifyTranslationSettingsService> { ArbVerifyTranslationSettingsService(get(), get(), get(), get(), get()) }
             single<TranslationClientSettingsValidator> { TranslationClientSettingsValidator(get()) }

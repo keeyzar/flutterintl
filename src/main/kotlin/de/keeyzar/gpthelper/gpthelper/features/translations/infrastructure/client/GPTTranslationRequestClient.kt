@@ -10,18 +10,19 @@ import de.keeyzar.gpthelper.gpthelper.features.translations.domain.client.DDDTra
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.client.PartialTranslationResponse
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.Translation
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.exceptions.TranslationRequestException
+import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.UserSettingsRepository
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.configuration.OpenAIConfigProvider
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.mapper.TranslationRequestResponseMapper
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
-import java.util.concurrent.Executors
 
 
 class GPTTranslationRequestClient(
     private val openAIConfigProvider: OpenAIConfigProvider,
     private val translationRequestResponseParser: TranslationRequestResponseMapper,
     private val dispatcherConfiguration: DispatcherConfiguration,
-) : DDDTranslationRequestClient {
+    private val userSettingsRepository: UserSettingsRepository,
+    ) : DDDTranslationRequestClient {
 
     override suspend fun requestTranslationOfSingleEntry(
         clientTranslationRequest: ClientTranslationRequest,
@@ -68,6 +69,7 @@ class GPTTranslationRequestClient(
 
     @OptIn(BetaOpenAI::class)
     suspend fun requestTranslation(content: String, targetLanguage: String): String {
+        val formality = userSettingsRepository.getSettings().tonality
         val initialRequest = """
             Please Translate the following content. Do not modify keys. Please feel free to improve the wording, but stay consistent with length.
             It's in an app context for users of ages 14-50. If you see typos, fix them (except for keys).
@@ -81,7 +83,7 @@ class GPTTranslationRequestClient(
                     "description": "Not activated state"
                 }
             }
-            target Language: DE
+            target Language: "DE"
         """.trimIndent()
         val initialAnswer = """
             {"expert_not_active":"Nicht aktiviert.","@expert_not_active":{"description":"Nicht aktivierter Zustand"}}
@@ -89,7 +91,7 @@ class GPTTranslationRequestClient(
 
         val realRequest = """
             $content
-            target language: $targetLanguage
+            Please translate to target language: "$targetLanguage" and with tonality: "$formality"
         """.trimIndent()
         val chatCompletionRequest = ChatCompletionRequest(
             model = openAIConfigProvider.getConfiguredModel(),

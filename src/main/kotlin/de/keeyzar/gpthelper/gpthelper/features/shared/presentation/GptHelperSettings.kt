@@ -30,6 +30,7 @@ class GptHelperSettings(val project: Project) : Configurable {
     private var panel: DialogPanel? = null
     private lateinit var openAIKeyField: Cell<JBPasswordField>
     private lateinit var translationParallelism: Cell<JBTextField>
+    private lateinit var translationTonality: Cell<JBTextField>
     private lateinit var intlConfigFile: Cell<TextFieldWithBrowseButton>
     private lateinit var watchIntlConfigFile: Cell<JCheckBox>
     private lateinit var arbDirectory: Cell<TextFieldWithBrowseButton>
@@ -88,6 +89,15 @@ class GptHelperSettings(val project: Project) : Configurable {
                         .resizableColumn()
                         .horizontalAlign(HorizontalAlign.FILL)
                         .comment("Each file is translated in parallel. A new openAI Account can only make 3 parallel requests. If your Account is older than a week, I suggest increasing to 10 (or how many translation files you have)")
+                }.layout(RowLayout.PARENT_GRID)
+                row {
+                    label("Tonality of translation")
+                    translationTonality = cell(JBTextField())
+                        .bindText(UserSettingsPersistentStateComponent.getInstance().state::tonality)
+                        .resizableColumn()
+                        .horizontalAlign(HorizontalAlign.FILL)
+                        .comment("Provide english instructions on the tonality of the text, i.e. in german there is a difference between a formal you(Sie) " +
+                                "and informal you(du). Choose something like 'formal' or 'informal and funny' etc.")
                 }.layout(RowLayout.PARENT_GRID)
             }
             group("Flutter Intl") {
