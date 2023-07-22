@@ -14,8 +14,6 @@ import com.intellij.ui.dsl.gridLayout.HorizontalAlign
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.TranslateKeyContext
 import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.pojo.TranslationDialogUserInput
 import java.awt.event.ActionEvent
-import java.awt.event.KeyAdapter
-import java.awt.event.KeyEvent
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.swing.AbstractAction
@@ -85,6 +83,12 @@ class GenerateTranslationDialog(
                 (currentLastUserInputIndex + 1) % lenOfInputHistory
             } else {
                 (currentLastUserInputIndex - 1) % lenOfInputHistory
+            }
+            //ensure that it is at least 0 or at most lenOfInputHistory - 1
+            currentLastUserInputIndex = if (currentLastUserInputIndex < 0) {
+                lenOfInputHistory - 1
+            } else {
+                currentLastUserInputIndex
             }
             val lastUserInput = translateKeyContext.lastUserInput?.getOrNull(currentLastUserInputIndex)
             model.desiredKey = lastUserInput?.desiredKey ?: model.desiredKey

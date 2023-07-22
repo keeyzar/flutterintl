@@ -6,10 +6,12 @@ import com.intellij.openapi.application.ReadAction
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.UserTranslationInput
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.exceptions.translationdialogdata.TranslationDialogDataCorruptException
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.exceptions.translationdialogdata.TranslationDialogDataMissingException
+import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.UserSettingsRepository
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.UserTranslationInputRepository
 
 class PropertiesUserTranslationInputRepository(
     private val objectMapper: ObjectMapper,
+    private val userSettingsRepository: UserSettingsRepository
 ) : UserTranslationInputRepository {
 
     companion object {
@@ -18,7 +20,15 @@ class PropertiesUserTranslationInputRepository(
 
     override fun appendTranslationDialogData(userTranslationInput: UserTranslationInput) {
         try {
-            saveTranslationDialogData(getAllTranslationDialogData() + userTranslationInput)
+            val allTranslationDialogData = getAllTranslationDialogData()
+            val maxHistoryLength = userSettingsRepository.getSettings().maxTranslationHistory;
+            //make a sublist from len - maxHistoryLength to len, when len > maxHistoryLength
+            val shortenedHistoryLen = allTranslationDialogData.subList(
+                maxOf(allTranslationDialogData.size - maxHistoryLength, 0),
+                allTranslationDialogData.size
+            )
+            //max size of all Translation Dialog Data
+            saveTranslationDialogData(shortenedHistoryLen + userTranslationInput)
         } catch (e: TranslationDialogDataMissingException) {
             saveTranslationDialogData(listOf(userTranslationInput))
         }

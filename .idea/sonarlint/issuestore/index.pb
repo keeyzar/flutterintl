@@ -286,8 +286,6 @@ psrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/domain/cli
 lsrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/domain/entity/SimpleTranslationEntry.kt,1\a\1ade44d0a8323e57ae4e94272bf7d1a8b49c3c7f
 †
 psrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/infrastructure/mapper/UserSettingsMapper.kt,2\1\21c82f13a4aff7f3077cd4dec1eb971790bfbdcb
-ì
-csrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/shared/infrastructure/model/UserSettings.kt,5\8\589e0f3781932e9f22e6bae4c288eca76640cef4
 ù
 msrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/infrastructure/client/GPTARBRequester.kt,3\4\3432cb9fb0c077df6e7103dc9056c3b8cbecb5e8
 ä

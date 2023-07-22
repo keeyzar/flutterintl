@@ -39,7 +39,8 @@ data class UserSettings(
     /**
      * whether to use the new advanced arb key translation
      */
-    val translateAdvancedArbKeys: Boolean
+    val translateAdvancedArbKeys: Boolean,
+    val maxTranslationHistory: Int,
 ) {
 
     fun getArbFilePrefix(): String {

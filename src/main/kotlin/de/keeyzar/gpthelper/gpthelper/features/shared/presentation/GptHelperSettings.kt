@@ -186,6 +186,15 @@ class GptHelperSettings(val project: Project) : Configurable {
                         .comment("If enabled, the generated getter will be nullable, i.e. S.of(context)?.helloWorld instead of S.of(context).helloWorld")
                 }
             }
+            group ("Other Settings") {
+                row {
+                    label("Max translation history size")
+                    textField()
+                        .horizontalAlign(HorizontalAlign.FILL)
+                        .bindIntText(UserSettingsPersistentStateComponent.getInstance().state::maxTranslationHistory)
+                        .comment("we store the latest translations in a history, so that you may look up translation key structure while translating. You can specify the maximum size here")
+                }.layout(RowLayout.PARENT_GRID)
+            }
             group("Corrupt Settings") {
                 row {
                     //Intellij error icon
