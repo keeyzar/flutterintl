@@ -152,18 +152,18 @@ class GPTTranslationRequestClient(
              }}
         """.trimIndent()
         val secondRequest = """
-            text: "There are ${'$'}{user.wombats}"
+            text: "There are ${'$'}{user.wombatState.amount}"
             key: "nWombats"
             description: "A plural message"
             target Language: en
             add plural, if required, add placeholders, if required, the tonality is informal
         """.trimIndent()
         val secondResponse = """
-            "nWombats": "There are {user_wombat, plural, =0{no wombats} =1{1 wombat} other{{user_wombat} wombats}}",
+            "nWombats": "There are {user_wombatState_amount, plural, =0{no wombats} =1{1 wombat} other{{user_wombatState_amount} wombats}}",
             "@nWombats": {
               "description": "A plural message",
               "placeholders": {
-                "user_wombat": {
+                "user_wombatState_amount": {
                   "type": "num",
                   "format": "compact"
                 }
