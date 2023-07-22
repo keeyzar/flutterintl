@@ -1,22 +1,25 @@
 package de.keeyzar.gpthelper.gpthelper.features.translations.presentation.widgets
 
+import com.intellij.openapi.ui.ComboBox
+import com.intellij.openapi.ui.DialogPanel
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
+import com.intellij.ui.KeyStrokeAdapter.getKeyStroke
 import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.components.panels.VerticalBox
-import com.intellij.ui.dsl.builder.Cell
-import com.intellij.ui.dsl.builder.RowLayout
-import com.intellij.ui.dsl.builder.bindText
-import com.intellij.ui.dsl.builder.panel
+import com.intellij.ui.dsl.builder.*
 import com.intellij.ui.dsl.gridLayout.HorizontalAlign
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.TranslateKeyContext
 import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.pojo.TranslationDialogUserInput
+import java.awt.event.ActionEvent
+import java.awt.event.KeyAdapter
+import java.awt.event.KeyEvent
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
+import javax.swing.AbstractAction
 import javax.swing.JComponent
-import javax.swing.JPanel
 import javax.swing.JScrollPane
 
 
@@ -25,11 +28,19 @@ class GenerateTranslationDialog(
     private val translateKeyContext: TranslateKeyContext,
 ) : DialogWrapper(true) {
     private lateinit var desiredValue: Cell<JBTextField>
+    private lateinit var desiredKey: Cell<JBTextField>
+    private lateinit var desiredDescription: Cell<JBTextField>
+    private lateinit var historyCombobox: Cell<ComboBox<String>>
     private val pattern = Regex("^[a-z][a-z_]*$")
-    private var isValid = false;
+    private var isValid = false
+
+    /**
+     * used as a pointer as to what the user currently wants to translate
+     */
+    private var currentLastUserInputIndex = 0
 
 
-    private lateinit var _centerPanel: JPanel
+    private lateinit var _centerPanel: DialogPanel
     private var model = Model()
 
     init {
@@ -48,12 +59,13 @@ class GenerateTranslationDialog(
         model.desiredValue = translateKeyContext.statement;
         //most of the time the user is going to translate in the same file one after another, and they will have mostly identical structure
         model.desiredKey = translateToTranslationKey(translateKeyContext.statement);
-        model.desiredKey = translateKeyContext.lastUserInput?.desiredKey ?: model.desiredKey
+        val directLastUserInput = translateKeyContext.lastUserInput?.getOrNull(0)
+        model.desiredKey = directLastUserInput?.desiredKey ?: model.desiredKey
         model.desiredDescription = calculateDesiredDescription(translateKeyContext)
-        model.desiredDescription = translateKeyContext.lastUserInput?.desiredDescription ?: model.desiredDescription
+        model.desiredDescription = directLastUserInput?.desiredDescription ?: model.desiredDescription
 
 
-        (translateKeyContext.lastUserInput?.languagesToTranslate?.toMutableMap()
+        (directLastUserInput?.languagesToTranslate?.toMutableMap()
             ?: translateKeyContext.availableLanguages.associate { it.toISOLangString() to true }.toMutableMap())
             .forEach { (key, value) -> model.translationsChecked[key] = value }
     }
@@ -61,6 +73,42 @@ class GenerateTranslationDialog(
     private fun calculateDesiredDescription(translateKeyContext: TranslateKeyContext): String {
         //in the future we could theoretically ask chatgpt for a fitting key, based on the old keys, and where the file is
         return ""
+    }
+
+    /**
+     * sets model.desiredKey and model.desiredDescription to the next pointer, starting with 0, when there is none
+     */
+    private fun traversalLastInput(next: Boolean) {
+        val lenOfInputHistory = translateKeyContext.lastUserInput?.size ?: 0
+        if (lenOfInputHistory > 0) {
+            currentLastUserInputIndex = if (next) {
+                (currentLastUserInputIndex + 1) % lenOfInputHistory
+            } else {
+                (currentLastUserInputIndex - 1) % lenOfInputHistory
+            }
+            val lastUserInput = translateKeyContext.lastUserInput?.getOrNull(currentLastUserInputIndex)
+            model.desiredKey = lastUserInput?.desiredKey ?: model.desiredKey
+            model.desiredDescription = lastUserInput?.desiredDescription ?: model.desiredDescription
+            desiredKey.component.text = model.desiredKey
+            desiredDescription.component.text = model.desiredDescription
+            historyCombobox.component.selectedIndex = currentLastUserInputIndex
+        }
+//        val lenOfInputHistory = translateKeyContext.lastUserInput?.size ?: 0
+//        if (lenOfInputHistory > 0) {
+//            currentLastUserInputIndex = (currentLastUserInputIndex + 1) % lenOfInputHistory
+//            val lastUserInput = translateKeyContext.lastUserInput?.getOrNull(currentLastUserInputIndex)
+//            model.desiredKey = lastUserInput?.desiredKey ?: model.desiredKey
+//            model.desiredDescription = lastUserInput?.desiredDescription ?: model.desiredDescription
+//        }
+    }
+
+
+    private fun selectLastInput(lastDesiredKey: String) {
+        val lastUserInput = translateKeyContext.lastUserInput?.find { it.desiredKey == lastDesiredKey }
+        model.desiredKey = lastUserInput?.desiredKey ?: model.desiredKey
+        model.desiredDescription = lastUserInput?.desiredDescription ?: model.desiredDescription
+        desiredKey.component.text = model.desiredKey
+        desiredDescription.component.text = model.desiredDescription
     }
 
 
@@ -73,6 +121,20 @@ class GenerateTranslationDialog(
         _centerPanel = panel {
             group {
                 row {
+                    label("History:")
+                    historyCombobox = comboBox(historyToCombobox())
+                        .whenItemSelectedFromUi {
+                            selectLastInput(it)
+                        }
+                        .comment("The history of your last translations, helpful, when you want to maintain structure for keys without closing the window. You can also traverse with alt up / down.")
+                    button("Next") {
+                        traversalLastInput(true)
+                    }
+                    button("Previous") {
+                        traversalLastInput(false)
+                    }
+                }
+                row {
                     label("To translate:")
                     desiredValue = textField()
                         .bindText(model::desiredValue)
@@ -82,7 +144,7 @@ class GenerateTranslationDialog(
                 }.layout(RowLayout.PARENT_GRID)
                 row {
                     label("Translation key:")
-                    textField()
+                    desiredKey = textField()
                         .bindText(model::desiredKey)
                         .resizableColumn()
                         .horizontalAlign(HorizontalAlign.FILL)
@@ -98,7 +160,7 @@ class GenerateTranslationDialog(
                 }.layout(RowLayout.PARENT_GRID)
                 row {
                     label("Description:")
-                    textField()
+                    desiredDescription = textField()
                         .bindText(model::desiredDescription)
                         .resizableColumn()
                         .horizontalAlign(HorizontalAlign.FILL)
@@ -113,7 +175,42 @@ class GenerateTranslationDialog(
                 }
             }
         }.withPreferredSize(500, 500)
+
+        addTraverseInputHistoryListener(_centerPanel)
         return _centerPanel
+    }
+
+    private fun addTraverseInputHistoryListener(panel: DialogPanel) {
+        // Create an action with a shortcut
+        // Create an action with a shortcut
+
+        // Create an action with a shortcut
+        val altUpAction = object : AbstractAction() {
+            override fun actionPerformed(e: ActionEvent) {
+                // Whatever you want to do, e.g. modify the text field
+                traversalLastInput(false)
+            }
+        }
+        val altDownAction = object : AbstractAction() {
+            override fun actionPerformed(e: ActionEvent) {
+                // Whatever you want to do, e.g. modify the text field
+                traversalLastInput(true)
+            }
+        }
+
+        // Assign a shortcut to the action
+        val keyStrokeAltUp = getKeyStroke("alt UP")
+        val keyStrokeAltDown = getKeyStroke("alt DOWN")
+        val inputMap = panel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+        val actionMap = panel.actionMap
+        inputMap.put(keyStrokeAltUp, "altUpAction")
+        inputMap.put(keyStrokeAltDown, "altDownAction")
+        actionMap.put("altUpAction", altUpAction)
+        actionMap.put("altDownAction", altDownAction)
+    }
+
+    private fun historyToCombobox(): List<String> {
+        return translateKeyContext.lastUserInput?.map { it.desiredKey } ?: listOf()
     }
 
     private fun createScrollPane(): JScrollPane {

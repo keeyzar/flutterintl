@@ -25,7 +25,7 @@ class FlutterArbTranslationContextService(
             throw GatherContextException("Could not get the user settings, these should've been verified by now", e)
         }
         val lastUserInput = try {
-            userTranslationInputRepository.getLatestTranslationDialogData()
+            userTranslationInputRepository.getAllTranslationDialogData()
         } catch (e: Exception) {
             throw GatherContextException("There was an issue getting information from your latest translations", e)
         }

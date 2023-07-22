@@ -298,8 +298,6 @@ fsrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/domain/cli
 rsrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/infrastructure/client/GptModelProviderImpl.kt,4\9\490329080e8a23a230e7f1014989623caff3c352
 ©
 ysrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/translations/infrastructure/configuration/OpenAIConfigProvider.kt,f\6\f6cb523ca245d78aee22e56b2d96518c6e1a1811
-@
-build.gradle.kts,d\b\dbcff70658daf80b53ce624f6adcaa529df5ed8d
 ¥
 usrc/main/kotlin/de/keeyzar/gpthelper/gpthelper/features/autofilefixer/domain/controller/BestGuessProcessController.kt,9\7\970312576bb4f86363a888f7a18b5f6566541824
 ¯
