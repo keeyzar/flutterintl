@@ -27,6 +27,7 @@ class FlutterPsiService {
     private fun removeSurroundingQuotes(psiElement: PsiElement) = psiElement.parent.text
         .removeSurrounding("\"\"\"")
         .removeSurrounding("\"")
+        .removeSurrounding("'")
         .trim()
 
     fun isDartString(element: PsiElement): Boolean {

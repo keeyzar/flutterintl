@@ -120,11 +120,12 @@ class GenerateTranslationDialog(
         //create checkboxes for each language
         val vbox = VerticalBox();
 
-        translateKeyContext.availableLanguages.map { lang ->
-            val checkBox = JBCheckBox(lang.toISOLangString())
-            checkBox.isSelected = true
+
+        model.translationsChecked.map { entry ->
+            val checkBox = JBCheckBox(entry.key)
+            checkBox.isSelected = entry.value
             checkBox.addActionListener {
-                model.translationsChecked[lang.toISOLangString()] = checkBox.isSelected
+                model.translationsChecked[entry.key] = checkBox.isSelected
             }
             vbox.add(checkBox)
         }
