@@ -55,6 +55,26 @@
         <![CDATA[
       <ul>
         <li>
+          <b>1.11.0</b>
+          <ul>
+            <li>
+              allow creation of complex arb entries, i.e. with placeholder, with plural, with numbers! YAY!
+            </li>
+            <li>
+              translation history in translation input dialog, so that one can easily look up old key structure
+            </li>
+            <li>
+              allow selecting gpt model in settings
+            </li>
+            <li>
+              allow usage of the old translation prompting without complex keys
+            </li>
+            <li>
+              allow configuration of translation history length
+            </li>
+          </ul>
+        </li>
+        <li>
           <b>1.10.0</b>
           <ul>
             <li>
