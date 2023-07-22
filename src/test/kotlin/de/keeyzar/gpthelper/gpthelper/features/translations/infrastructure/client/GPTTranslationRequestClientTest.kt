@@ -107,7 +107,7 @@ class GPTTranslationRequestClientTest {
                     SimpleTranslationEntry(
                         "none",
                         "message_amount",
-                        "You have %messageAmount new messages.",
+                        "You have \${user.messageAmount} new messages.",
                         "How much messages the user has"
                     )
                 )
@@ -119,9 +119,9 @@ class GPTTranslationRequestClientTest {
                 //parse placeholder to jsonnode for easy access
                 val placeholderJson = objectMapper.valueToTree<JsonNode>(placeholder)
                 assertThat(placeholderJson).isNotNull
-                assertThat(placeholderJson["messageAmount"]).isNotNull
-                assertThat(placeholderJson["messageAmount"]["type"].asText()).isEqualTo("num")
-                assertThat(placeholderJson["messageAmount"]["format"].asText()).isEqualTo("compact")
+                assertThat(placeholderJson["user_messageAmount"]).isNotNull
+                assertThat(placeholderJson["user_messageAmount"]["type"].asText()).isEqualTo("num")
+                assertThat(placeholderJson["user_messageAmount"]["format"].asText()).isEqualTo("compact")
             }
         }
     }
@@ -155,8 +155,7 @@ class GPTTranslationRequestClientTest {
                 val placeholderJson = objectMapper.valueToTree<JsonNode>(placeholder)
                 assertThat(placeholderJson).isNotNull
                 assertThat(placeholderJson["credits"]).isNotNull
-                assertThat(placeholderJson["credits"]["type"].asText()).isEqualTo("num")
-                assertThat(placeholderJson["credits"]["format"].asText()).isEqualTo("compact")
+                assertThat(placeholderJson["credits"]["type"].asText()).isEqualTo("int")
                 assertThat(placeholderJson["premiumStatus"]).isNotNull
                 assertThat(placeholderJson["premiumStatus"]["type"].asText()).isEqualTo("String")
             }

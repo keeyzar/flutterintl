@@ -137,14 +137,13 @@ class GPTTranslationRequestClient(
     @OptIn(BetaOpenAI::class)
     suspend fun requestComplexTranslation(content: String, targetLanguage: String): String {
         val tonality = userSettingsRepository.getSettings().tonality
-        val initialRequest = """
-            Can you please provide a flutter arb entry based on the content?
+        val initialRequest = """Can you please provide a flutter arb entry based on the content?
             There are different kinds of localization possibilities, either plain simple, without a variable
             text: "You have the option to enable this setting"
             key: "some_key"
             description: "explains user what is happening"
-            tonality: informal
-            targetLanguage: de
+            targetLanguage: en
+            add plural, if required, add placeholders, if required, the tonality is informal
         """.trimIndent()
         val initialAnswer = """
              {"some_key" : "Du hast die Möglichkeit diese Einstellung zu aktivieren",
@@ -153,23 +152,23 @@ class GPTTranslationRequestClient(
              }}
         """.trimIndent()
         val secondRequest = """
-            text: "There are ${'$'}wombats"
+            text: "There are ${'$'}{user.wombats}"
             key: "nWombats"
             description: "A plural message"
-            tonality: formal
             target Language: en
+            add plural, if required, add placeholders, if required, the tonality is informal
         """.trimIndent()
         val secondResponse = """
-            {"nWombats": "There are {count, plural, =0{no wombats} =1{1 wombat} other{{count} wombats}}",
+            "nWombats": "There are {user_wombat, plural, =0{no wombats} =1{1 wombat} other{{user_wombat} wombats}}",
             "@nWombats": {
               "description": "A plural message",
               "placeholders": {
-                "count": {
+                "user_wombat": {
                   "type": "num",
                   "format": "compact"
                 }
               }
-            }}
+            }
         """.trimIndent()
 
         val thirdRequest = """
@@ -177,6 +176,7 @@ class GPTTranslationRequestClient(
             key: "pronoun"
             description: "A gendered message"
             targetLanguage: en
+            add plural, if required, add placeholders, if required, the tonality is informal
         """.trimIndent()
 
         val thirdResponse = """
@@ -192,14 +192,17 @@ class GPTTranslationRequestClient(
 
         val realRequest = """
             $content
-            Please take care of plural, if required, target language: "$targetLanguage" and with tonality: "$tonality. Do not add placeholder if it is not required"
+            target language: $targetLanguage
+            add plural, if required, add placeholders, if required, the tonality is: $tonality
+            - Check if you did it correct
         """.trimIndent()
         val chatCompletionRequest = ChatCompletionRequest(
             model = ModelId(userSettingsRepository.getSettings().gptModel),
             messages = listOf(
                 ChatMessage(
                     role = ChatRole.System,
-                    content = "You are responsible for internationalization of flutter strings. Because the user does not exactly know what he needs, you need to make a best guess regarding the target translation"
+                    content = "You are responsible for internationalization of flutter strings. Internationalization can be done with or without plural.\n" +
+                            "Types are: String, num(with format compact), DateTime (with format, e.g. yMd)"
                 ),
                 ChatMessage(
                     role = ChatRole.User,

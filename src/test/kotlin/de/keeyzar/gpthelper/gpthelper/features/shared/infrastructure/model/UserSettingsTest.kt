@@ -15,7 +15,8 @@ class UserSettingsTest {
         "outputLocalizationFile",
         3,
         "",
-    )
+        "gpt-3.5-turbo-0613",
+        true,)
 
     @Test
     fun `getArbFilePrefix returns correct prefix`() {
