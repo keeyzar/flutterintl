@@ -122,11 +122,6 @@ class GptHelperSettings(val project: Project) : Configurable {
                     }
                         .comment("You must have set a valid openAI key set for this to work.")
                 }.layout(RowLayout.PARENT_GRID)
-                row {
-                    advancedKeyTranslation = checkBox("Use advanced key translation? (BETA)")
-                        .bindSelected(UserSettingsPersistentStateComponent.getInstance().state::translateAdvancedArbKeys)
-                        .comment("Choose the GPT Model to use. Pricing differs for the Models, though all should be fairly cheap anyways.")
-                }.layout(RowLayout.PARENT_GRID)
             }
             group("Flutter Intl") {
                 row {
@@ -277,6 +272,7 @@ class GptHelperSettings(val project: Project) : Configurable {
                     Initializer().connectionTester.testClientConnection(text.concatToString())
                 } catch (e: Throwable) {
                     println("eh what")
+                    e.printStackTrace()
                     e
                 }
                 when (it) {

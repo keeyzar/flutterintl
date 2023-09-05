@@ -62,7 +62,7 @@ class PropertiesUserTranslationInputRepository(
                 throw TranslationDialogDataCorruptException("Found translation dialog data settings, but could not parse them", e)
             }
         } else {
-            throw TranslationDialogDataMissingException("No translation dialog data found in properties with key $PROPERTIES_KEY_TRANSLATION_DIALOG_DATA")
+            return emptyList()
         }
     }
 }

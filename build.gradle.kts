@@ -1,12 +1,12 @@
 plugins {
     id("java")
-    id("org.jetbrains.kotlin.jvm") version "1.7.20"
-    id("org.jetbrains.intellij") version "1.13.3"
+    id("org.jetbrains.kotlin.jvm") version "1.8.21"
+    id("org.jetbrains.intellij") version "1.15.0"
     kotlin("kapt") version "1.5.10"
 }
 
 group = "de.keeyzar.gpt-helper"
-version = "1.11"
+version = "1.16"
 
 repositories {
     mavenCentral()
@@ -58,15 +58,64 @@ tasks {
 val ktor_version = "2.3.0"
 val koin_version = "3.4.0"
 
+//finally got it working, holy moly shit, such an annoying error...
 dependencies {
-    implementation("com.aallam.openai:openai-client:3.2.3")
-    implementation("io.ktor:ktor-client-apache5:$ktor_version")
-    implementation("io.insert-koin:koin-core:$koin_version")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.+")
+    implementation("com.aallam.openai:openai-client:3.2.5") {
+        if (System.getenv("excludeDeps") == "true") {
+            exclude(group = "org.slf4j", module = "slf4j-api")
+            // Prevents java.lang.LinkageError: java.lang.LinkageError: loader constraint violation:when resolving method 'long kotlin.time.Duration.toLong-impl(long, kotlin.time.DurationUnit)'
+            exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib")
+            exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-common")
+            exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-jdk7")
+            exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-jdk8")
+            exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core-jvm")
+            exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
+            exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-jdk8")
+        }
+    }
+    implementation("io.ktor:ktor-client-cio:2.3.0") {
+        if (System.getenv("excludeDeps") == "true") {
+            exclude(group = "org.slf4j", module = "slf4j-api")
+            // Prevents java.lang.LinkageError: java.lang.LinkageError: loader constraint violation: when resolving method 'long kotlin.time.Duration.toLong-impl(long, kotlin.time.DurationUnit)'
+            exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib")
+            exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-common")
+            exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-jdk7")
+            exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-jdk8")
+            exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core-jvm")
+            exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
+            exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-jdk8")
+        }
+    }
+
+    implementation("io.insert-koin:koin-core:$koin_version") {
+        if (System.getenv("excludeDeps") == "true") {
+            // Prevents java.lang.LinkageError: java.lang.LinkageError: loader constraint violation: when resolving method 'long kotlin.time.Duration.toLong-impl(long, kotlin.time.DurationUnit)'
+            exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib")
+            exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-common")
+            exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-jdk7")
+            exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-jdk8")
+            exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core-jvm")
+            exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
+            exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-jdk8")
+        }
+    }
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.+") {
+        println("befooore")
+        if (System.getenv("excludeDeps") == "true") {
+            println("excluding!!")
+            // Prevents java.lang.LinkageError: java.lang.LinkageError: loader constraint violation: when resolving method 'long kotlin.time.Duration.toLong-impl(long, kotlin.time.DurationUnit)'
+            exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib")
+            exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-common")
+            exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-jdk7")
+            exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-jdk8")
+            exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core-jvm")
+            exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
+            exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-jdk8")
+        }
+    }
     implementation("com.fasterxml.jackson.core:jackson-core:2.14.+")
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.14.+")
     implementation("org.slf4j:slf4j-api:2.0.7")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
 
     implementation("org.mapstruct:mapstruct:1.5.5.Final")
     kapt("org.mapstruct:mapstruct-processor:1.5.5.Final")

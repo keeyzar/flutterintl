@@ -26,17 +26,27 @@ class OngoingTranslationHandler(
      * as a dummy translation (true, Translation) or as a real translation (false, Translation)
      */
     suspend fun translateAsynchronously(userTranslationRequest: UserTranslationRequest, progressReport: () -> Unit) {
-        translateWithPlaceholder(userTranslationRequest) {
-            arbFileModificationService.addSimpleTranslationEntry(it)
-        }
+        arbFileModificationService.addSimpleTranslationEntry(userTranslationRequest.baseTranslation)
         return translateAsynchronouslyWithoutPlaceholder(userTranslationRequest, progressReport)
     }
 
     suspend fun translateAsynchronouslyWithoutPlaceholder(userTranslationRequest: UserTranslationRequest, progressReport: () -> Unit) {
+        //what we actually want to do is to get the initial conversion of the request done by GPT
+        //and then, when the conversion has been done, a simple translation, which does not need to be done by an expensive model, but that
+        //is an optimization for later
+
+        val baseLanguage = userTranslationRequest.baseTranslation.lang
+
+
+
         concurrentTranslationTasks.withPermit {
             val clientRequest = mapper.toClientRequest(userTranslationRequest);
             return translateInBackground(clientRequest) {
-                arbFileModificationService.replaceSimpleTranslationEntry(it)
+                if(baseLanguage == it.lang) {
+                    arbFileModificationService.replaceSimpleTranslationEntry(it)
+                } else {
+                    arbFileModificationService.addSimpleTranslationEntry(it)
+                }
                 progressReport()
             }
         }
@@ -61,8 +71,12 @@ class OngoingTranslationHandler(
         clientRequest: ClientTranslationRequest,
         translationListener: (Translation) -> Unit
     ) {
+        //first translate the base language with placeholder
+        val createdArbEntry = translationRequestClient.createARBEntry(clientRequest)
+        arbFileModificationService.replaceSimpleTranslationEntry(createdArbEntry.translation)
+        //then translate the other languages
         return translationRequestClient
-            .requestTranslationOfSingleEntry(clientRequest) { partialTranslation ->
+            .translateValueOnly(clientRequest, createdArbEntry) { partialTranslation ->
                 println("got translation for ${partialTranslation.getTargetLanguage()}")
                 translationListener(partialTranslation.translation)
             }

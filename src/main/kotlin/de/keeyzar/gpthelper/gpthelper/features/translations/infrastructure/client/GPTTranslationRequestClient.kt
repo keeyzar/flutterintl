@@ -243,5 +243,167 @@ class GPTTranslationRequestClient(
         //this is a single response
         return completion.choices[0].message?.content!!
     }
+    @OptIn(BetaOpenAI::class)
+    suspend fun requestComplexTranslationLong(content: String, targetLanguage: String): String {
+        val tonality = userSettingsRepository.getSettings().tonality
+        val initialRequest = """
+            Can you create the most fitting flutter intl arb json entry for me?
 
+            just for your reminder, an arb entry looks like this
+
+              "page_title_browse_image" : "Browse Images",
+              "@page_title_browse_image" : {
+                "description" : "page title showing images"
+              },
+
+            a more complex example looks like this:
+              "reward_dialog_text" : "You just got {count, plural, =0{no credits} =1{1 credit} other{{count} credits}}",
+              "@reward_dialog_text" : {
+                "description" : "A message indicating the number of credits received",
+                "placeholders" : {
+                  "count" : {
+                    "type" : "num",
+                    "format" : "compact"
+                  }
+                }
+              },
+
+            in general, you either have simple text without placeholders, or you have placeholders. WHen you have placeholders, then you can decide between
+            "Hello {username}"
+            with the corresponding placeholder username, or you need to pluralize
+            "You just got {count, plural, =0{no credits} =1{1 credit} other{{count} credits}}"
+            with the corresponding placeholder count
+            the format is
+            {placeholderName, plural, =AMOUNT{text} =OTHER_AMOUNT{other text {placeholderName}}
+
+            the type is either num, string
+
+            now, please create a fitting example - the description sometimes gives you hints
+
+            key: "upgrade_popup_name"
+            value: "Upgrade achieved"
+            description: "User has received an upgrade"
+            Please translate the value to ISO CODE en, tonality: formal
+        """.trimIndent()
+        val initialAnswer = """{
+            "upgrade_popup_name": "Upgrade achieved",
+            "@upgrade_popup_name": {
+              "description": "User has received an upgrade"
+            }
+            }
+        """.trimIndent()
+
+        val realRequest = """
+            Target Language: ISO CODE $targetLanguage, tonality: $tonality 
+            $content
+        """.trimIndent()
+
+        val chatCompletionRequest = ChatCompletionRequest(
+            model = ModelId(userSettingsRepository.getSettings().gptModel),
+            messages = listOf(
+                ChatMessage(
+                    role = ChatRole.System,
+                    content = """
+                        You're a flutter intl expert. You return valid intl translations, but you need to guess the most fitting one. You answer only in JSON. If you encounter variables in the value (e.g. ${'$'}{y.x}, ${'$'}x, ${'$'}{x} you must make a valid placeholderName out of that => {x}
+                        A valid placeholderName is always letters only.
+                    """.trimIndent()
+
+                ),
+                ChatMessage(
+                    role = ChatRole.User,
+                    content = initialRequest
+                ),
+                ChatMessage(
+                    role = ChatRole.Assistant,
+                    content = initialAnswer
+                ),
+                ChatMessage(
+                    role = ChatRole.User,
+                    content = realRequest
+                )
+            )
+        )
+
+        val openAI = openAIConfigProvider.getInstance();
+        val completion: ChatCompletion = openAI.chatCompletion(chatCompletionRequest);
+        if (completion.choices.isEmpty()) {
+            throw Exception("Could not translate content");
+        }
+        //this is a single response
+        return completion.choices[0].message?.content!!
+    }
+
+    @OptIn(BetaOpenAI::class)
+    suspend fun requestTranslationOnly(content: String, targetLanguage: String): String {
+        val tonality = userSettingsRepository.getSettings().tonality
+        val request = """
+            Can you please translate this flutter arb entry into a the language '$targetLanguage' (ISO 639-1 Code language code)? do not change keys
+            $content
+            the translated tonality should be $tonality
+        """.trimIndent()
+
+        val chatCompletionRequest = ChatCompletionRequest(
+            model = ModelId(userSettingsRepository.getSettings().gptModel),
+            messages = listOf(
+                ChatMessage(
+                    role = ChatRole.System,
+                    content = "You are a helpful assistant, that creates flutter intl ARB entries, based on DART STRINGS.\n" +
+                            "After the initial message you only answer in JSON"
+                ),
+                ChatMessage(
+                    role = ChatRole.User,
+                    content = request
+                )
+            )
+        )
+
+        val openAI = openAIConfigProvider.getInstance();
+        val completion: ChatCompletion = openAI.chatCompletion(chatCompletionRequest);
+        if (completion.choices.isEmpty()) {
+            throw Exception("Could not translate content");
+        }
+        //this is a single response
+        return completion.choices[0].message?.content!!
+    }
+
+
+        /**
+     * use this as to initially convert to the fitting arb entry
+     */
+    override suspend fun createARBEntry(clientTranslationRequest: ClientTranslationRequest) : PartialTranslationResponse {
+        val baseContent = translationRequestResponseParser.toGPTContentAdvanced(clientTranslationRequest.translation)
+        val targetLang = clientTranslationRequest.translation.lang
+        val requestComplexTranslation = requestComplexTranslationLong(baseContent, targetLang.toISOLangString())
+        val response: Translation = translationRequestResponseParser.fromResponse(targetLang, requestComplexTranslation, clientTranslationRequest.translation)
+        return PartialTranslationResponse(response)
+    }
+
+    override suspend fun translateValueOnly(clientTranslationRequest: ClientTranslationRequest, partialTranslationResponse: PartialTranslationResponse, partialTranslationFinishedCallback: (PartialTranslationResponse) -> Unit) {
+        //I need to translate all the stuff except the english one
+        val baseContent = translationRequestResponseParser.toTranslationOnly(partialTranslationResponse.translation)
+        val dispatcher = dispatcherConfiguration.getDispatcher()
+        val parallelism = dispatcherConfiguration.getLevelOfParallelism()
+        val allLanguagesExceptBaseLanguage = clientTranslationRequest.targetLanguages.filter { it != clientTranslationRequest.translation.lang }
+        coroutineScope {
+            val deferredTranslations = allLanguagesExceptBaseLanguage.chunked(parallelism).flatMap { chunk ->
+                chunk.map { targetLang ->
+                    async(dispatcher) {
+                        try {
+                            retryCall(2) {
+                                val response = requestTranslationOnly(baseContent, targetLang.toISOLangString())
+                                val translation = translationRequestResponseParser.fromTranslationOnlyResponse(targetLang, response, partialTranslationResponse.translation)
+                                partialTranslationFinishedCallback(PartialTranslationResponse(translation))
+                            }
+                        } catch (e: Throwable) {
+                            throw TranslationRequestException(
+                                "Translation request failed for ${targetLang.toISOLangString()} with message: Is the file valid json?", e,
+                                Translation(lang = targetLang, clientTranslationRequest.translation.entry)
+                            )
+                        }
+                    }
+                }
+            }
+            deferredTranslations.forEach { it.await() }
+        }
+    }
 }

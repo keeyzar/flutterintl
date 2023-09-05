@@ -54,6 +54,26 @@
     <change-notes>
         <![CDATA[
       <ul>
+      <li>
+          <b>1.16.0</b>
+          <ul>
+            <li>
+              Plugin works again, after fixing class loader issues.. :)
+            </li>
+            <li>
+              Use gpt 3.5 with nice speed for complex translations.
+            </li>
+            <li>
+              allow selecting gpt model in settings
+            </li>
+            <li>
+              allow usage of the old translation prompting without complex keys
+            </li>
+            <li>
+              allow configuration of translation history length
+            </li>
+          </ul>
+        </li>
         <li>
           <b>1.11.0</b>
           <ul>

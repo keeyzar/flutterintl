@@ -21,6 +21,12 @@ class TranslationRequestResponseMapper(private val objectMapper: ObjectMapper) {
         """.trimIndent()
     }
 
+    fun toTranslationOnly(translation: Translation): String {
+        return """
+            "${translation.entry.desiredKey}": "${translation.entry.desiredValue}"
+        """.trimIndent()
+    }
+
     fun fromResponse(targetLanguage: Language, gptResponse: String, baseTranslation: Translation): Translation {
         val map: Map<*,*> = objectMapper.readValue(gptResponse, Map::class.java)
         val desiredKey = baseTranslation.entry.desiredKey
@@ -31,6 +37,19 @@ class TranslationRequestResponseMapper(private val objectMapper: ObjectMapper) {
             desiredValue = map[desiredKey] as String,
             desiredDescription = metadata.getOrDefault("description", "") as String,
             placeholder = metadata.getOrDefault("placeholders", null) as Map<String, *>?
+        )
+        return Translation(targetLanguage, entry)
+    }
+
+    fun fromTranslationOnlyResponse(targetLanguage: Language, gptResponse: String, baseTranslation: Translation): Translation {
+        val map: Map<*,*> = objectMapper.readValue(gptResponse, Map::class.java)
+        val desiredKey = baseTranslation.entry.desiredKey
+        val entry = SimpleTranslationEntry(
+            id = null,
+            desiredKey = desiredKey,
+            desiredValue = map[desiredKey] as String,
+            desiredDescription = "",
+            placeholder = null
         )
         return Translation(targetLanguage, entry)
     }

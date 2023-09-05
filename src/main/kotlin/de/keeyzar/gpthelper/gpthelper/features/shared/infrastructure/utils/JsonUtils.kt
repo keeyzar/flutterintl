@@ -49,7 +49,13 @@ class JsonUtils(private val objectMapper: ObjectMapper) {
     }
 
     private fun entryToMap(simpleTranslationEntry: SimpleTranslationEntry) = simpleTranslationEntry.toMap()
-    fun entryToJsonString(simpleTranslationEntry: SimpleTranslationEntry): String = objectMapper.writeValueAsString(simpleTranslationEntry.toMap())
+    fun entryToJsonString(simpleTranslationEntry: SimpleTranslationEntry): String {
+        if (simpleTranslationEntry.desiredDescription.isBlank()) {
+            return objectMapper.writeValueAsString(mapOf(simpleTranslationEntry.desiredKey to simpleTranslationEntry.desiredValue))
+        }
+        return objectMapper.writeValueAsString(simpleTranslationEntry.toMap())
+    }
+
     fun entryToJsonStringWithoutSurroundingBrackets(simpleTranslationEntry: SimpleTranslationEntry) =
         removeSurroundingBrackets(entryToJsonString(simpleTranslationEntry))
 

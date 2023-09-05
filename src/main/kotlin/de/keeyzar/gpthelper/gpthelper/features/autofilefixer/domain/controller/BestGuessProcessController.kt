@@ -69,7 +69,9 @@ class BestGuessProcessController(
                 .map { UserTranslationRequest(targetLanguages, Translation(baseLanguage, it)) }
             //we need to run this placeholder stuff, otherwise we can't proceed
             requests.forEach {
-                ongoingTranslationHandler.translateWithPlaceholder(it)
+                if(baseLanguage != it.baseTranslation.lang) {
+                    ongoingTranslationHandler.translateWithPlaceholder(it) //don't add it there yet :)
+                }
             }
 
             //flutter gen or something like that, because otherwise the keys are not resolvable

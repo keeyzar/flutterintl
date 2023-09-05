@@ -34,8 +34,10 @@ class GPTTranslationRequestClientTest {
     private lateinit var openAIConfigProvider: OpenAIConfigProvider
     private lateinit var sut: GPTTranslationRequestClient
     private lateinit var parser: TranslationRequestResponseMapper
+
     @Mock
     private lateinit var dispatcherConfiguration: DispatcherConfiguration
+
     @Mock
     private lateinit var userSettingsRepository: UserSettingsRepository
     private val objectMapper = ObjectMapper();
@@ -48,15 +50,18 @@ class GPTTranslationRequestClientTest {
             .willReturn(Executors.newFixedThreadPool(parallelism).asCoroutineDispatcher())
         given(dispatcherConfiguration.getLevelOfParallelism())
             .willReturn(parallelism)
-        given(userSettingsRepository.getSettings()).
-            willReturn(UserSettings("", "", false, "", "", false, "", 1, "informal", "gpt-3.5-turbo-0613", true))
+        given(userSettingsRepository.getSettings()).willReturn(UserSettings("", "", false, "", "", false, "", 1, "informal", "gpt-3.5-turbo-0613", true, 10))
         val key = System.getenv("openai_api_key")
-        given(openAIConfigProvider.getInstance()).willReturn(OpenAI(OpenAIConfig(
-            token = key,
-            timeout = Timeout(socket = 60.seconds),
-            logLevel = LogLevel.All,
-            headers = mapOf(),
-        )))
+        given(openAIConfigProvider.getInstance()).willReturn(
+            OpenAI(
+                OpenAIConfig(
+                    token = key,
+                    timeout = Timeout(socket = 60.seconds),
+                    logLevel = LogLevel.All,
+                    headers = mapOf(),
+                )
+            )
+        )
         parser = TranslationRequestResponseMapper(objectMapper)
         sut = GPTTranslationRequestClient(openAIConfigProvider, parser, dispatcherConfiguration, userSettingsRepository)
     }
@@ -64,101 +69,20 @@ class GPTTranslationRequestClientTest {
     @Test
     fun testThatRequestWorks() {
         runBlocking {
-            val req = ClientTranslationRequest(
-                listOf(
-//                    Language("ru", null),
-                    Language("de", null),
-//                    Language("es_ES", null),
-//                    Language("it", null),
-//                    Language("pl", null),
-                    ), Translation(
-                    Language("en", null),
-                    SimpleTranslationEntry(
-                        "someId",
-                        "choose_page_scaffold_expert_mode_text",
-                        "Unable to connect to the payments processor. Has this app been configured correctly? See the example README for instructions.",
-                        "whether to enable expert mode or not"
-                    )
-                )
-            )
-            sut.requestTranslationOfSingleEntry(req) {
-                assertThat(it).isNotNull
-                assertThat(it.translation.entry.desiredKey).isEqualTo("choose_page_scaffold_expert_mode_text")
-                assertThat(it.translation.entry.desiredValue)
-                    .isNotNull()
-                    .isNotEqualTo("Unable to connect to the payments processor. Has this app been configured correctly? See the example README for instructions.")
-                assertThat(it.translation.entry.desiredDescription)
-                    .isNotNull()
-                    .isNotEqualTo("whether to enable expert mode or not")
-            }
-        }
-    }
+            val baseContent = """
+                key: "premium_type"
+                value: "Your premium type is ${'$'}{appUser.premiumType} and you have ${'$'}{credits} Credits"
+                description: "show user his premiumType and the credits (pluralize, int)"
+            """.trimIndent()
 
+            val it = sut.requestComplexTranslationLong(baseContent, "en")
+            assertThat(it).isNotNull
+            val value = objectMapper.readTree(it)
+            assertThat(value.get("premium_type").textValue()).isEqualTo("Your premium type is {premiumType} and you have {credits, plural, =0{no Credits} =1{1 Credit} other{{credits} Credits}}");
+            assertThat(value.path("@premium_type").path("description").textValue()).contains("show user his premiumType and the credits")
+            assertThat(value.path("@premium_type").path("placeholders").path("premiumType").path("type").textValue()).isEqualTo("string")
+            assertThat(value.path("@premium_type").path("placeholders").path("credits").path("type").textValue()).isEqualTo("num")
 
-    @Test
-    fun testPlaceholderWorks() {
-        runBlocking {
-            val req = ClientTranslationRequest(
-                listOf(
-                    Language("ru", null),
-                    Language("de", null),
-                ), Translation(
-                    Language("en", null),
-                    SimpleTranslationEntry(
-                        "none",
-                        "message_amount",
-                        "You have \${user.messageAmount} new messages.",
-                        "How much messages the user has"
-                    )
-                )
-            )
-            sut.requestTranslationOfSingleEntry(req) {
-                assertThat(it).isNotNull
-                assertThat(it.translation.entry.desiredKey).isEqualTo("message_amount")
-                val placeholder = it.translation.entry.placeholder
-                //parse placeholder to jsonnode for easy access
-                val placeholderJson = objectMapper.valueToTree<JsonNode>(placeholder)
-                assertThat(placeholderJson).isNotNull
-                assertThat(placeholderJson["user_messageAmount"]).isNotNull
-                assertThat(placeholderJson["user_messageAmount"]["type"].asText()).isEqualTo("num")
-                assertThat(placeholderJson["user_messageAmount"]["format"].asText()).isEqualTo("compact")
-            }
-        }
-    }
-
-    /**
-     * does not yet work, but I bet with gpt 4 it's working
-     */
-    @Test
-    @Disabled
-    fun testTwoPlaceholderWorks() {
-        runBlocking {
-            val req = ClientTranslationRequest(
-                listOf(
-                    Language("ru", null),
-                    Language("de", null),
-                ), Translation(
-                    Language("en", null),
-                    SimpleTranslationEntry(
-                        "none",
-                        "credits_and_premium",
-                        "You have \$credits Credits and you have Premium: \$premiumStatus",
-                        "How much credits and premium status of the user"
-                    )
-                )
-            )
-            sut.requestTranslationOfSingleEntry(req) {
-                assertThat(it).isNotNull
-                assertThat(it.translation.entry.desiredKey).isEqualTo("credits_and_premium")
-                val placeholder = it.translation.entry.placeholder
-                //parse placeholder to jsonnode for easy access
-                val placeholderJson = objectMapper.valueToTree<JsonNode>(placeholder)
-                assertThat(placeholderJson).isNotNull
-                assertThat(placeholderJson["credits"]).isNotNull
-                assertThat(placeholderJson["credits"]["type"].asText()).isEqualTo("int")
-                assertThat(placeholderJson["premiumStatus"]).isNotNull
-                assertThat(placeholderJson["premiumStatus"]["type"].asText()).isEqualTo("String")
-            }
         }
     }
 }

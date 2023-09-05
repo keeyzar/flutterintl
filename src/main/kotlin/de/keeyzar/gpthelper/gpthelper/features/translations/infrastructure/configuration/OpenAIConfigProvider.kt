@@ -9,26 +9,30 @@ import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.Tr
 import kotlin.time.Duration.Companion.seconds
 
 class OpenAIConfigProvider(private val credentialsServiceRepository: TranslationCredentialsServiceRepository) {
-    fun getInstance(): OpenAI{
-        val key = credentialsServiceRepository.getKey()
-        val token = key ?: throw Exception("OpenAI API Key missing")
-        val config = OpenAIConfig(
-                token = token,
-                timeout = Timeout(socket = 60.seconds),
-                logLevel = LogLevel.All,
-                headers = mapOf(),
-        )
-        return OpenAI(config)
+    fun getInstance(): OpenAI {
+        val key = credentialsServiceRepository.getKey() ?: throw Exception("OpenAI API Key missing")
+        return withKey(key)
     }
 
     fun withKey(key: String): OpenAI{
-        val config = OpenAIConfig(
-            token = key,
-            timeout = Timeout(socket = 60.seconds),
-            logLevel = LogLevel.All,
-            headers = mapOf(),
-        )
-        return OpenAI(config)
+        val currentThread = Thread.currentThread()
+        val originalClassLoader = currentThread.contextClassLoader
+        val pluginClassLoader = this::class.java.classLoader
+        val openAI: OpenAI?
+        try {
+//            currentThread.contextClassLoader = pluginClassLoader
+            val config = OpenAIConfig(
+                token = key,
+                timeout = Timeout(socket = 60.seconds),
+                logLevel = LogLevel.All,
+                headers = mapOf(),
+            )
+            openAI = OpenAI(config)
+        } finally {
+//            currentThread.contextClassLoader = originalClassLoader
+        }
+
+        return openAI ?: throw Exception("OpenAI API Key missing")
     }
 
     /**

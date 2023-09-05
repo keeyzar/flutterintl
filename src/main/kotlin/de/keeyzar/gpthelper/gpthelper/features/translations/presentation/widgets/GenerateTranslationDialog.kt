@@ -57,7 +57,7 @@ class GenerateTranslationDialog(
         model.desiredValue = translateKeyContext.statement;
         //most of the time the user is going to translate in the same file one after another, and they will have mostly identical structure
         model.desiredKey = translateToTranslationKey(translateKeyContext.statement);
-        val directLastUserInput = translateKeyContext.lastUserInput?.getOrNull(0)
+        val directLastUserInput = translateKeyContext.lastUserInput?.lastOrNull()
         model.desiredKey = directLastUserInput?.desiredKey ?: model.desiredKey
         model.desiredDescription = calculateDesiredDescription(translateKeyContext)
         model.desiredDescription = directLastUserInput?.desiredDescription ?: model.desiredDescription
@@ -168,9 +168,9 @@ class GenerateTranslationDialog(
                         .bindText(model::desiredDescription)
                         .resizableColumn()
                         .horizontalAlign(HorizontalAlign.FILL)
-                        .comment("Description is optional, is only for the programmer / translator")
+                        .comment("Description is optional but has 2 functions. 1. You can use it to give Gpt instructions, i.e. to use plural version, e.g. pluralize 1 Credit, 2 Credits, No Credits. 2. For the translator / programmer as an information.")
                 }.layout(RowLayout.PARENT_GRID)
-                separator("Languages to Translate")
+                separator()
                     .comment("Select the languages you want to translate to")
                 row {
                     cell(createScrollPane())
