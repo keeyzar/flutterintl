@@ -33,7 +33,10 @@ class JsonUtils(private val objectMapper: ObjectMapper) {
             .toMutableMap()
         entryToMap(simpleTranslationEntry).forEach { (key, value) ->
             if (!newMap.containsKey(key)) {
-                throw ReplacementOfTranslationFailedException("Translation failed. Key not found in old translations $key")
+                if (!key.startsWith("@")) {
+                    //the translation might be a description, it might've been skipped by the user, so we just ignore if it is missing
+                    throw ReplacementOfTranslationFailedException("Translation failed. Key not found in old translations $key")
+                }
             }
             newMap[key] = value
         }

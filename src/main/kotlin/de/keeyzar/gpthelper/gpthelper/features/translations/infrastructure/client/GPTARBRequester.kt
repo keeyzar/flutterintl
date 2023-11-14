@@ -35,7 +35,7 @@ class GPTARBRequester(
 
         val request = """
             You act as an API Server answering with valid JSON only.
-            please translate this localization arb file content to the following languages: $targetLanguage. 
+            please translate this localization arb file content to the following language: $targetLanguage. 
             Do not modify keys. Please feel free to improve the wording. 
             It's in an app context for users of ages 14-99. If you see typos, fix them (except for keys).
             If you see terms e.g. flutter widget terms like "card", "label" in the descriptions, please do not translate them
@@ -47,11 +47,11 @@ class GPTARBRequester(
             The content is:
         """.trimIndent()
 
-        return translateWithGPTTurbo(request, content, targetLanguage)
+        return translateWithGPTTurbo(request, content)
     }
 
     @OptIn(BetaOpenAI::class)
-    suspend fun translateWithGPTTurbo(requestTemplate: String, content: String, targetLanguage: String): GPTArbTranslationResponse {
+    suspend fun translateWithGPTTurbo(requestTemplate: String, content: String): GPTArbTranslationResponse {
         val modelToUse = openAIConfigProvider.getConfiguredModel()
 
         val request = """

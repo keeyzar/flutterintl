@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "de.keeyzar.gpt-helper"
-version = "1.16"
+version = "1.17"
 
 repositories {
     mavenCentral()
@@ -60,7 +60,7 @@ val koin_version = "3.4.0"
 
 //finally got it working, holy moly shit, such an annoying error...
 dependencies {
-    implementation("com.aallam.openai:openai-client:3.2.5") {
+    implementation("com.aallam.openai:openai-client:3.5.1") {
         if (System.getenv("excludeDeps") == "true") {
             exclude(group = "org.slf4j", module = "slf4j-api")
             // Prevents java.lang.LinkageError: java.lang.LinkageError: loader constraint violation:when resolving method 'long kotlin.time.Duration.toLong-impl(long, kotlin.time.DurationUnit)'

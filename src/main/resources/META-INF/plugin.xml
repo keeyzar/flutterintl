@@ -55,6 +55,20 @@
         <![CDATA[
       <ul>
       <li>
+          <b>1.17.0</b>
+          <ul>
+            <li>
+              With new Open AI API compatible again :)
+            </li>
+            <li>
+              Can use gpt-4 turbo - fixed instructions for it to work
+            </li>
+            <li>
+              allow lowerCamelCase key for translations
+            </li>
+          </ul>
+        </li>
+      <li>
           <b>1.16.0</b>
           <ul>
             <li>

@@ -29,7 +29,7 @@ class GenerateTranslationDialog(
     private lateinit var desiredKey: Cell<JBTextField>
     private lateinit var desiredDescription: Cell<JBTextField>
     private lateinit var historyCombobox: Cell<ComboBox<String>>
-    private val pattern = Regex("^[a-z][a-z_]*$")
+    private val pattern = Regex("^[a-zA-Z][a-z_A-Z]*$")
     private var isValid = false
 
     /**
@@ -156,7 +156,7 @@ class GenerateTranslationDialog(
                             return@validation if (pattern.matches(it.text)) {
                                 null
                             } else {
-                                ValidationInfo("Begins with letter [a-z] and should contain only lowercase letters and underscores '_'")
+                                ValidationInfo("You can do lowerCamelCase or snake_case")
                             }
                         }
                         .comment("The key is used to identify the translation in the code. It must start with a letter and can only contain letters and underscores")

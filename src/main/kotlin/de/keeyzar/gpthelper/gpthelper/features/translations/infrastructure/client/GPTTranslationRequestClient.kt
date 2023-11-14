@@ -23,14 +23,14 @@ class GPTTranslationRequestClient(
     private val translationRequestResponseParser: TranslationRequestResponseMapper,
     private val dispatcherConfiguration: DispatcherConfiguration,
     private val userSettingsRepository: UserSettingsRepository,
-    ) : DDDTranslationRequestClient {
+) : DDDTranslationRequestClient {
 
     override suspend fun requestTranslationOfSingleEntry(
         clientTranslationRequest: ClientTranslationRequest,
         partialTranslationFinishedCallback: (PartialTranslationResponse) -> Unit,
     ) {
         val shouldUseAdvancedMethod = userSettingsRepository.getSettings().translateAdvancedArbKeys
-        val baseContent = if(shouldUseAdvancedMethod) {
+        val baseContent = if (shouldUseAdvancedMethod) {
             translationRequestResponseParser.toGPTContentAdvanced(clientTranslationRequest.translation)
         } else {
             translationRequestResponseParser.toGPTContent(clientTranslationRequest.translation)
@@ -43,7 +43,7 @@ class GPTTranslationRequestClient(
                     async(dispatcher) {
                         try {
                             retryCall(2) {
-                                val response = if(shouldUseAdvancedMethod) {
+                                val response = if (shouldUseAdvancedMethod) {
                                     requestComplexTranslation(baseContent, targetLang.toISOLangString())
                                 } else {
                                     requestTranslation(baseContent, targetLang.toISOLangString())
@@ -243,6 +243,7 @@ class GPTTranslationRequestClient(
         //this is a single response
         return completion.choices[0].message?.content!!
     }
+
     @OptIn(BetaOpenAI::class)
     suspend fun requestComplexTranslationLong(content: String, targetLanguage: String): String {
         val tonality = userSettingsRepository.getSettings().tonality
@@ -333,22 +334,21 @@ class GPTTranslationRequestClient(
         return completion.choices[0].message?.content!!
     }
 
-    @OptIn(BetaOpenAI::class)
     suspend fun requestTranslationOnly(content: String, targetLanguage: String): String {
         val tonality = userSettingsRepository.getSettings().tonality
         val request = """
-            Can you please translate this flutter arb entry into a the language '$targetLanguage' (ISO 639-1 Code language code)? do not change keys
+            Can you please translate this flutter arb entry into the language '$targetLanguage' (ISO 639-1 Code language code)? do not change keys.
             $content
-            the translated tonality should be $tonality
+            the translated tonality should be $tonality . Remember, you're an API server responding in valid JSON only and not in Markdown!. Thank you so much!
         """.trimIndent()
 
         val chatCompletionRequest = ChatCompletionRequest(
             model = ModelId(userSettingsRepository.getSettings().gptModel),
+
             messages = listOf(
                 ChatMessage(
                     role = ChatRole.System,
-                    content = "You are a helpful assistant, that creates flutter intl ARB entries, based on DART STRINGS.\n" +
-                            "After the initial message you only answer in JSON"
+                    content = "You are a helpful REST API Server answering in valid JSON, that creates flutter INTL ARB entries."
                 ),
                 ChatMessage(
                     role = ChatRole.User,
@@ -362,15 +362,25 @@ class GPTTranslationRequestClient(
         if (completion.choices.isEmpty()) {
             throw Exception("Could not translate content");
         }
+        val response = removeMarkdown(completion.choices[0].message?.content!!)
         //this is a single response
-        return completion.choices[0].message?.content!!
+        return response;
+    }
+
+    /**
+     * because somehow chatgpt is annoyingly trying to be smart and showing it in markdown
+     */
+    private fun removeMarkdown(completionResponse: String): String {
+        var response = completionResponse.removePrefix("```json\n")
+        response = response.removeSuffix("\n```")
+        return response
     }
 
 
-        /**
+    /**
      * use this as to initially convert to the fitting arb entry
      */
-    override suspend fun createARBEntry(clientTranslationRequest: ClientTranslationRequest) : PartialTranslationResponse {
+    override suspend fun createARBEntry(clientTranslationRequest: ClientTranslationRequest): PartialTranslationResponse {
         val baseContent = translationRequestResponseParser.toGPTContentAdvanced(clientTranslationRequest.translation)
         val targetLang = clientTranslationRequest.translation.lang
         val requestComplexTranslation = requestComplexTranslationLong(baseContent, targetLang.toISOLangString())
@@ -378,7 +388,11 @@ class GPTTranslationRequestClient(
         return PartialTranslationResponse(response)
     }
 
-    override suspend fun translateValueOnly(clientTranslationRequest: ClientTranslationRequest, partialTranslationResponse: PartialTranslationResponse, partialTranslationFinishedCallback: (PartialTranslationResponse) -> Unit) {
+    override suspend fun translateValueOnly(
+        clientTranslationRequest: ClientTranslationRequest,
+        partialTranslationResponse: PartialTranslationResponse,
+        partialTranslationFinishedCallback: (PartialTranslationResponse) -> Unit,
+    ) {
         //I need to translate all the stuff except the english one
         val baseContent = translationRequestResponseParser.toTranslationOnly(partialTranslationResponse.translation)
         val dispatcher = dispatcherConfiguration.getDispatcher()
@@ -391,7 +405,8 @@ class GPTTranslationRequestClient(
                         try {
                             retryCall(2) {
                                 val response = requestTranslationOnly(baseContent, targetLang.toISOLangString())
-                                val translation = translationRequestResponseParser.fromTranslationOnlyResponse(targetLang, response, partialTranslationResponse.translation)
+                                val translation =
+                                    translationRequestResponseParser.fromTranslationOnlyResponse(targetLang, response, partialTranslationResponse.translation)
                                 partialTranslationFinishedCallback(PartialTranslationResponse(translation))
                             }
                         } catch (e: Throwable) {
