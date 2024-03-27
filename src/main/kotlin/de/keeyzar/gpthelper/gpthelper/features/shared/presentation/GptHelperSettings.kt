@@ -12,7 +12,6 @@ import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.intellij.ui.components.JBPasswordField
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.dsl.builder.*
-import com.intellij.ui.dsl.gridLayout.HorizontalAlign
 import com.intellij.ui.layout.ComponentPredicate
 import de.keeyzar.gpthelper.gpthelper.features.flutter_intl.domain.repository.FlutterIntlSettingsRepository
 import de.keeyzar.gpthelper.gpthelper.features.shared.presentation.mapper.UserSettingsDTOMapper
@@ -36,7 +35,6 @@ class GptHelperSettings(val project: Project) : Configurable {
     private lateinit var translationParallelism: Cell<JBTextField>
     private lateinit var translationTonality: Cell<JBTextField>
     private lateinit var gptModel: Cell<ComboBox<String>>
-    private lateinit var advancedKeyTranslation: Cell<JCheckBox>
     private lateinit var intlConfigFile: Cell<TextFieldWithBrowseButton>
     private lateinit var watchIntlConfigFile: Cell<JCheckBox>
     private lateinit var arbDirectory: Cell<TextFieldWithBrowseButton>
@@ -49,11 +47,11 @@ class GptHelperSettings(val project: Project) : Configurable {
     private lateinit var currentProjectProvider: CurrentProjectProvider
     private lateinit var settingsMapper: UserSettingsDTOMapper
     private lateinit var gptModelProvider: GPTModelProvider
-    private var corruptSettings = false;
+    private var corruptSettings = false
     private var errorListener: ((Boolean) -> Unit)? = null
     private var connectionErrorListener: ((Boolean) -> Unit)? = null
     private var connectionSuccessListener: ((Boolean) -> Unit)? = null
-    private var connectionSuccess = false;
+    private var connectionSuccess = false
     private val myModel = MyModel()
 
     override fun getDisplayName(): String = "GPTHelper Settings"
@@ -206,11 +204,11 @@ class GptHelperSettings(val project: Project) : Configurable {
 
         }
         panel!!.apply() //no changes yet
-        return panel!!;
+        return panel!!
     }
 
     private fun initialValueForModel(): List<String> {
-        return mutableListOf(UserSettingsPersistentStateComponent.getInstance().state::gptModel.get()!!);
+        return mutableListOf(UserSettingsPersistentStateComponent.getInstance().state::gptModel.get()!!)
     }
     private fun getValuesFromGPT(): List<String> {
         return gptModelProvider.getAllModels()
