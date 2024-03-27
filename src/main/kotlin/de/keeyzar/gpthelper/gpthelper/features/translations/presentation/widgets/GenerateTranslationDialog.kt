@@ -143,7 +143,7 @@ class GenerateTranslationDialog(
                     desiredValue = textField()
                         .bindText(model::desiredValue)
                         .resizableColumn()
-                        .horizontalAlign(HorizontalAlign.FILL)
+                        .align(Align.FILL)
                         .comment("The text you want to translate")
                 }.layout(RowLayout.PARENT_GRID)
                 row {
@@ -151,7 +151,7 @@ class GenerateTranslationDialog(
                     desiredKey = textField()
                         .bindText(model::desiredKey)
                         .resizableColumn()
-                        .horizontalAlign(HorizontalAlign.FILL)
+                        .align(Align.FILL)
                         .validation {
                             return@validation if (pattern.matches(it.text)) {
                                 null
@@ -167,7 +167,7 @@ class GenerateTranslationDialog(
                     desiredDescription = textField()
                         .bindText(model::desiredDescription)
                         .resizableColumn()
-                        .horizontalAlign(HorizontalAlign.FILL)
+                        .align(Align.FILL)
                         .comment("Description is optional but has 2 functions. 1. You can use it to give Gpt instructions, i.e. to use plural version, e.g. pluralize 1 Credit, 2 Credits, No Credits. 2. For the translator / programmer as an information.")
                 }.layout(RowLayout.PARENT_GRID)
                 separator()
@@ -175,7 +175,7 @@ class GenerateTranslationDialog(
                 row {
                     cell(createScrollPane())
                         .resizableColumn()
-                        .horizontalAlign(HorizontalAlign.FILL)
+                        .align(Align.FILL)
                 }
             }
         }.withPreferredSize(500, 500)
