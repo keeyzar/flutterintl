@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "de.keeyzar.gpt-helper"
-version = "1.17"
+version = "1.18"
 
 repositories {
     mavenCentral()
@@ -15,13 +15,13 @@ repositories {
 // Configure Gradle IntelliJ Plugin
 // Read more: https://plugins.jetbrains.com/docs/intellij/tools-gradle-intellij-plugin.html
 intellij {
-    version.set("2022.2.4")
+    version.set("2023.1")
     type.set("IC") // Target IDE Platform
 
     plugins.set(
         listOf(
-            "Dart:222.4560",
-            "org.jetbrains.plugins.terminal:222.3739.67"
+            "Dart:231.9065",
+            "org.jetbrains.plugins.terminal:231.8109.126"
         )
     )
 }
@@ -37,7 +37,7 @@ tasks {
     }
 
     patchPluginXml {
-        sinceBuild.set("222")
+        sinceBuild.set("231")
         untilBuild.set("232.*")
     }
 
@@ -51,12 +51,12 @@ tasks {
         token.set(System.getenv("PUBLISH_TOKEN"))
     }
     runPluginVerifier {
-        ideVersions.set(listOf("2022.2.4", "2023.1"))
+        ideVersions.set(listOf("2023.1"))
     }
 }
 
 val ktor_version = "2.3.0"
-val koin_version = "3.4.0"
+val koin_version = "3.5.0"
 
 //finally got it working, holy moly shit, such an annoying error...
 dependencies {
