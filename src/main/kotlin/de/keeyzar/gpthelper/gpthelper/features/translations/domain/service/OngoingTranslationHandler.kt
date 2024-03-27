@@ -45,7 +45,7 @@ class OngoingTranslationHandler(
                 if(baseLanguage == it.lang) {
                     arbFileModificationService.replaceSimpleTranslationEntry(it)
                 } else {
-                    arbFileModificationService.addSimpleTranslationEntry(it)
+                    arbFileModificationService.replaceSimpleTranslationEntry(it)
                 }
                 progressReport()
             }
