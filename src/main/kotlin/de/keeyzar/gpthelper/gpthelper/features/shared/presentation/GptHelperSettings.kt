@@ -72,7 +72,7 @@ class GptHelperSettings(val project: Project) : Configurable {
                     label("OpenAI API Password:")
                     openAIKeyField = cell(JBPasswordField())
                         .resizableColumn()
-                        .horizontalAlign(HorizontalAlign.FILL)
+                        .align(Align.FILL)
                     button("Test Password") {
                         testPassword(openAIKeyField.component.password)
                     }
@@ -85,7 +85,7 @@ class GptHelperSettings(val project: Project) : Configurable {
                         .bindText(myModel::connectionTestErrorStackTrace)
                         .enabled(false)
                         .resizableColumn()
-                        .horizontalAlign(HorizontalAlign.FILL)
+                        .align(Align.FILL)
                 }.visibleIf(connectionErrorPredicate())
                 row("Success, don't forget to press save!") {
                 }.visibleIf(connectionSuccessPredicate())
@@ -96,7 +96,7 @@ class GptHelperSettings(val project: Project) : Configurable {
                     translationParallelism = cell(JBTextField())
                         .bindIntText(UserSettingsPersistentStateComponent.getInstance().state::parallelism)
                         .resizableColumn()
-                        .horizontalAlign(HorizontalAlign.FILL)
+                        .align(Align.FILL)
                         .comment("Each file is translated in parallel. A new openAI Account can only make 3 parallel requests. If your Account is older than a week, I suggest increasing to 10 (or how many translation files you have)")
                 }.layout(RowLayout.PARENT_GRID)
                 row {
@@ -104,7 +104,7 @@ class GptHelperSettings(val project: Project) : Configurable {
                     translationTonality = cell(JBTextField())
                         .bindText(UserSettingsPersistentStateComponent.getInstance().state::tonality)
                         .resizableColumn()
-                        .horizontalAlign(HorizontalAlign.FILL)
+                        .align(Align.FILL)
                         .comment("Provide english instructions on the tonality of the text, i.e. in german there is a difference between a formal you(Sie) " +
                                 "and informal you(du). Choose something like 'formal' or 'informal and funny' etc.")
                 }.layout(RowLayout.PARENT_GRID)
@@ -113,7 +113,7 @@ class GptHelperSettings(val project: Project) : Configurable {
                     gptModel = comboBox(initialValueForModel())
                         .bindItemNullable(UserSettingsPersistentStateComponent.getInstance().state::gptModel)
                         .resizableColumn()
-                        .horizontalAlign(HorizontalAlign.FILL)
+                        .align(Align.FILL)
                         .comment("Choose the GPT Model to use. Pricing differs for the Models, though all should be fairly cheap anyways.")
                     button("Refresh GPT Models") {
                         val previousSelected = gptModel.component.selectedItem
@@ -129,7 +129,7 @@ class GptHelperSettings(val project: Project) : Configurable {
                     intlConfigFile = textFieldWithBrowseButton()
                         .bindText(UserSettingsPersistentStateComponent.getInstance().state::intlConfigFile)
                         .resizableColumn()
-                        .horizontalAlign(HorizontalAlign.FILL)
+                        .align(Align.FILL)
                     button("Refresh Settings Based On Intl Config File") {
                         loadIntlSettingsFromFile(intlConfigFile.component.text)
                     }
@@ -143,7 +143,7 @@ class GptHelperSettings(val project: Project) : Configurable {
                 row {
                     label("Arb directory:")
                     arbDirectory = textFieldWithBrowseButton()
-                        .horizontalAlign(HorizontalAlign.FILL)
+                        .align(Align.FILL)
                         .resizableColumn()
                         .bindText(UserSettingsPersistentStateComponent.getInstance().state::arbDir)
                         .comment("The directory where the arb files are located")
@@ -151,7 +151,7 @@ class GptHelperSettings(val project: Project) : Configurable {
                 row {
                     label("Template arb file:")
                     templateArbFile = textFieldWithBrowseButton()
-                        .horizontalAlign(HorizontalAlign.FILL)
+                        .align(Align.FILL)
                         .bindText(UserSettingsPersistentStateComponent.getInstance().state::templateArbFile)
                         .comment(
                             """
@@ -164,14 +164,14 @@ class GptHelperSettings(val project: Project) : Configurable {
                 row {
                     label("Output localization file:")
                     outputLocalizationFile = textField()
-                        .horizontalAlign(HorizontalAlign.FILL)
+                        .align(Align.FILL)
                         .bindText(UserSettingsPersistentStateComponent.getInstance().state::outputLocalizationFile)
                         .comment("The output localization file, i.e. the file used to import the generated localization class.")
                 }.layout(RowLayout.PARENT_GRID)
                 row {
                     label("Output class:")
                     outputClass = textField()
-                        .horizontalAlign(HorizontalAlign.FILL)
+                        .align(Align.FILL)
                         .bindText(UserSettingsPersistentStateComponent.getInstance().state::outputClass)
                         .comment("The output class, i.e. the class which will be generated, most of the time it's AppLocalizations, but also S, which is concise.")
                 }.layout(RowLayout.PARENT_GRID)
@@ -185,7 +185,7 @@ class GptHelperSettings(val project: Project) : Configurable {
                 row {
                     label("Max translation history size")
                     textField()
-                        .horizontalAlign(HorizontalAlign.FILL)
+                        .align(Align.FILL)
                         .bindIntText(UserSettingsPersistentStateComponent.getInstance().state::maxTranslationHistory)
                         .comment("we store the latest translations in a history, so that you may look up translation key structure while translating. You can specify the maximum size here")
                 }.layout(RowLayout.PARENT_GRID)
