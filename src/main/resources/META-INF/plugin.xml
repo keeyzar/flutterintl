@@ -180,17 +180,6 @@
 
 
     <actions>
-        <action id="de.keeyzar.gpthelper.gpthelper.features.ddd.presentation.actions.CreateDirectoryStructureAction"
-                class="de.keeyzar.gpthelper.gpthelper.features.ddd.presentation.actions.CreateDirectoryStructureAction" text="Generate DDD Directory Tree"
-                description="Generates a directory tree based on a list of directory paths">
-            <add-to-group group-id="NewGroup" anchor="first"/>
-        </action>
-        <action id="de.keeyzar.gpthelper.gpthelper.features.ddd.presentation.actions.MarkDirectoryStructureAction"
-                class="de.keeyzar.gpthelper.gpthelper.features.ddd.presentation.actions.MarkDirectoryStructureAction"
-                text="Mark this as root directory structure for new DDD dir structure"
-                description="all folders are recursively saved, and when you create a new directory structure, than these folders are generated">
-            <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
-        </action>
         <action id="de.keeyzar.gpthelper.gpthelper.features.filetranslation.presentation.actions.TranslateWholeFileAction"
                 class="de.keeyzar.gpthelper.gpthelper.features.filetranslation.presentation.actions.TranslateWholeFileAction"
                 text="Translate this to new Arb file" description="Will translate all the keys in the background and put them into a new file">

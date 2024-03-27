@@ -10,11 +10,6 @@ import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.pars
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.service.OpenAIMultiKeyTranslationTaskSizeEstimator
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.service.PsiElementIdReferenceProvider
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.presentation.service.IdeaWaitingIndicatorService
-import de.keeyzar.gpthelper.gpthelper.features.ddd.domain.repository.DDDSettingsRepository
-import de.keeyzar.gpthelper.gpthelper.features.ddd.infrastructure.mapper.DirectoryStructureMapper
-import de.keeyzar.gpthelper.gpthelper.features.ddd.infrastructure.repository.PreferencesDDDSettingsRepository
-import de.keeyzar.gpthelper.gpthelper.features.ddd.presentation.service.CreateDirectoryTreeService
-import de.keeyzar.gpthelper.gpthelper.features.ddd.presentation.service.SaveDirectoryTreeService
 import de.keeyzar.gpthelper.gpthelper.features.filetranslation.domain.client.TranslationClient
 import de.keeyzar.gpthelper.gpthelper.features.filetranslation.domain.controller.FileTranslationProcessController
 import de.keeyzar.gpthelper.gpthelper.features.filetranslation.domain.factories.TranslationRequestFactory
@@ -83,10 +78,6 @@ class DIConfig {
             single<OpenAIConfigProvider> { OpenAIConfigProvider(get()) }
             single<ImmediateTranslationService> { ImmediateTranslationService(get(), get()) }
             single<UserSettingsRepository> { PropertiesUserSettingsRepository(get(), get(), get()) }
-            single<DDDSettingsRepository> { PreferencesDDDSettingsRepository(get(), get()) }
-            single<DirectoryStructureMapper> { Mappers.getMapper(DirectoryStructureMapper::class.java) }
-            single<CreateDirectoryTreeService> { CreateDirectoryTreeService(get()) }
-            single<SaveDirectoryTreeService> { SaveDirectoryTreeService(get()) }
             single<JsonUtils> { JsonUtils(get()) }
             single<JsonChunkMerger> { JsonChunkMerger(get()) }
             single<JsonFileChunker> { JsonFileChunker(get()) }
