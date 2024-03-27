@@ -6,7 +6,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindowManager
 import org.jetbrains.plugins.terminal.ShellTerminalWidget
 import org.jetbrains.plugins.terminal.TerminalToolWindowFactory
-import org.jetbrains.plugins.terminal.TerminalView
+import org.jetbrains.plugins.terminal.TerminalToolWindowManager
 
 /**
  * this is somehow a little bit buggy...
@@ -20,7 +20,7 @@ class IdeaTerminalConsoleService {
     fun executeCommand(project: Project, command: String) {
 
         ApplicationManager.getApplication().invokeAndWait {
-            val terminalView = TerminalView.getInstance(project)
+            val terminalView = TerminalToolWindowManager.getInstance(project)
             val window = ToolWindowManager.getInstance(project).getToolWindow(TerminalToolWindowFactory.TOOL_WINDOW_ID)
             val contentManager = window?.contentManager
 
@@ -33,7 +33,7 @@ class IdeaTerminalConsoleService {
                 } //don't open a new one all the time, is hella expensive
                 else -> {
                     println("reusing terminal widget")
-                    TerminalView.getWidgetByContent(contentManager.findContent(TAB_NAME_FOR_L10N_GENERATION)) as ShellTerminalWidget
+                    TerminalToolWindowManager.getWidgetByContent(contentManager.findContent(TAB_NAME_FOR_L10N_GENERATION)) as ShellTerminalWidget
                 }
             }
 
