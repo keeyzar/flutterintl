@@ -111,7 +111,7 @@ class GptHelperSettings(val project: Project) : Configurable {
                 row {
                     label("GPT Model to use")
                     gptModel = comboBox(initialValueForModel())
-                        .bindItemNullable(UserSettingsPersistentStateComponent.getInstance().state::gptModel)
+                        .bindItem(UserSettingsPersistentStateComponent.getInstance().state::gptModel)
                         .resizableColumn()
                         .align(Align.FILL)
                         .comment("Choose the GPT Model to use. Pricing differs for the Models, though all should be fairly cheap anyways.")
@@ -187,7 +187,7 @@ class GptHelperSettings(val project: Project) : Configurable {
                     textField()
                         .align(Align.FILL)
                         .bindIntText(UserSettingsPersistentStateComponent.getInstance().state::maxTranslationHistory)
-                        .comment("we store the latest translations in a history, so that you may look up translation key structure while translating. You can specify the maximum size here")
+                        .comment("We store the latest translations in a history, so that you may look up translation key structure while translating. You can specify the maximum size here")
                 }.layout(RowLayout.PARENT_GRID)
             }
             group("Corrupt Settings") {
