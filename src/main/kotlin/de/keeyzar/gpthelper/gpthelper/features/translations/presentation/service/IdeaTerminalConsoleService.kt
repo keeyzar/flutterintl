@@ -18,14 +18,7 @@ class IdeaTerminalConsoleService {
     }
 
     fun executeCommand(project: Project, command: String) {
-        //we need to wait a little bit, because the flutter entry is not yet visible, somehow
-        try {
-            Thread.sleep(2000)
-        } catch (e: InterruptedException) {
-            Thread.interrupted()
-            println("Sleeping was interrupted")
-        }
-
+        //TODO somehow this does not trigger app localization to be executed, although the command IS executed.
         ApplicationManager.getApplication().invokeAndWait {
             val terminalView = TerminalToolWindowManager.getInstance(project)
             val window = ToolWindowManager.getInstance(project).getToolWindow(TerminalToolWindowFactory.TOOL_WINDOW_ID)
