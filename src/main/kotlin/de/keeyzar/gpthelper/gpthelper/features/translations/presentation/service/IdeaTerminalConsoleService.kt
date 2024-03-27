@@ -18,6 +18,13 @@ class IdeaTerminalConsoleService {
     }
 
     fun executeCommand(project: Project, command: String) {
+        //we need to wait a little bit, because the flutter entry is not yet visible, somehow
+        try {
+            Thread.sleep(2000)
+        } catch (e: InterruptedException) {
+            Thread.interrupted()
+            println("Sleeping was interrupted")
+        }
 
         ApplicationManager.getApplication().invokeAndWait {
             val terminalView = TerminalToolWindowManager.getInstance(project)
@@ -38,11 +45,6 @@ class IdeaTerminalConsoleService {
             }
 
             widget.executeCommand(command)
-
         }
-        //actually, I don't need to close it... I'd just like to reuse any of the existing ones not blocked
-        //because of e.g. running continuously. but opening a new shell takes 1 second or longer, which is fairly annoying
-        //alternatives might be, that I just open it in the background, and execute the command, when it is opened
-//        contentManager?.findContent(tabName)?.let { terminalView.closeTab(it) }
     }
 }
