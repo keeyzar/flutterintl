@@ -12,8 +12,12 @@ class TranslateKeyTranslationTriggeredHooks(
     private val currentFileModificationService: FlutterArbCurrentFileModificationService
 ) : TranslationTriggeredHooks {
     override fun translationTriggered(translation: Translation) {
-        translationTriggeredInit()
         translationTriggeredPartial(translation)
+        translationTriggeredPostTranslation()
+    }
+
+    private fun translationTriggeredPostTranslation() {
+        flutterGenCommandProcessService.postTranslationProcess()
     }
 
     override fun translationTriggeredPartial(translation: Translation) {
@@ -21,6 +25,5 @@ class TranslateKeyTranslationTriggeredHooks(
     }
 
     override fun translationTriggeredInit() {
-        flutterGenCommandProcessService.postTranslationProcess()
     }
 }
