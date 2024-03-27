@@ -30,11 +30,13 @@ class BestGuessProcessController(
     /**
      * Listen via the [TranslationProgressBus], but beware you might need to unregister yourself
      */
-    suspend fun startBestGuessProcess(processUUID: UUID) {
+    suspend fun startBestGuessProcess(translationContext: TranslationContext, processUUID: UUID) {
         return try {
             _startBestGuessProcess(processUUID)
         } catch (e: Throwable) {
             translationErrorProcessHandler.displayErrorToUser(e)
+        } finally {
+            translationContext.finished = true
         }
     }
 
@@ -94,7 +96,7 @@ class BestGuessProcessController(
     }
 
     private fun reportProgress(realTaskCounter: AtomicInteger, taskAmount: Int) {
-        val translationProgress = TranslationProgress(realTaskCounter.incrementAndGet(), taskAmount)
+        val translationProgress = TranslationProgress(realTaskCounter.incrementAndGet(), taskAmount, "dummy");
         translationProgressBus.pushPercentage(translationProgress)
     }
 }

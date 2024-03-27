@@ -5,6 +5,7 @@ import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.ui.DialogBuilder
 import com.intellij.ui.dsl.builder.panel
+import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.TranslationContext
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.model.TranslateWholeFileContext
 import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.dependencyinjection.FlutterArbTranslationInitializer
 import java.util.*
@@ -27,9 +28,11 @@ class TranslateWholeFileAction : DumbAwareAction() {
                 )
             )
 
+            val uuid = UUID.randomUUID().toString()
+            val translationContext = TranslationContext(uuid, "Translation Init", 0, null, 0)
             translationTaskBackgroundProgress.triggerInBlockingContext(event.project!!, {
-                fileTranslationProcessController.startTranslationProcess(processId)
-            }, {
+                fileTranslationProcessController.startTranslationProcess(translationContext, processId)
+            }, translationContext = translationContext, {
                 contextProvider.removeWholeFileContext(processId)
             })
 

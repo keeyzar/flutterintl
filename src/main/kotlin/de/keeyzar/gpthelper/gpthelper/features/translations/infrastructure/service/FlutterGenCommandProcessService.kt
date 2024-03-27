@@ -16,7 +16,6 @@ class FlutterGenCommandProcessService(
         const val FLUTTER_GEN_COMMAND = "flutter gen-l10n"
     }
     override fun postTranslationProcess() {
-        //should be obsolete in some time
         try {
             ideaTerminalConsoleService.executeCommand(currentProjectProvider.project, FLUTTER_GEN_COMMAND)
         } catch (e: Exception) {

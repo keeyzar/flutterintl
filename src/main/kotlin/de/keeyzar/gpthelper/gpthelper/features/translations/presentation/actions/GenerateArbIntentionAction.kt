@@ -7,9 +7,11 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.*
 import com.intellij.util.IncorrectOperationException
 import com.jetbrains.lang.dart.psi.DartFile
+import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.TranslationContext
 import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.dependencyinjection.FlutterArbTranslationInitializer
 import org.jetbrains.annotations.NonNls
 import org.jetbrains.annotations.NotNull
+import java.util.UUID
 
 
 @NonNls
@@ -80,10 +82,11 @@ class GenerateArbIntentionAction : PsiElementBaseIntentionAction(), IntentionAct
             //and the domain does not know about this kind of stuff (i.e. PsiElement)
             getInitializer().lastStatementProviderForFlutterArbTranslation.lastStatement = element
             val translationProcessController = getInitializer().translationProcessController
-
+            var taskId = UUID.randomUUID().toString()
+            val translationContext = TranslationContext(taskId, "Translation Init", 0, null, 0)
             getInitializer().translationTaskBackgroundProgress.triggerInBlockingContext(project, {
-                translationProcessController.startTranslationProcess()
-            })
+                translationProcessController.startTranslationProcess(translationContext)
+            }, translationContext = translationContext)
         }
     }
 

@@ -5,6 +5,7 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.progress.impl.BackgroundableProcessIndicator
 import com.intellij.openapi.project.Project
+import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.TranslationContext
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.TranslationProgress
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.service.TranslationProgressChangeNotifier
 import kotlinx.coroutines.runBlocking
@@ -22,15 +23,28 @@ class TranslationTaskBackgroundProgress {
     fun triggerInBlockingContext(
         project: Project,
         callback: suspend () -> Unit,
+        translationContext: TranslationContext,
         finishedCallback: (() -> Unit)? = null,
     ) {
         val progressManager = ProgressManager.getInstance()
 
         val myTask = object : Task.Backgroundable(project, "Translating...", true) {
+            var finished = false
             override fun run(visibleIndicator: ProgressIndicator) {
                 initProgressListener(visibleIndicator)
                 runBlocking {
                     callback()
+                }
+                while (!finished) {
+                    if(translationContext.cancelled) {
+                        break
+                    }
+                    try {
+                        Thread.sleep(1000)
+                    } catch (e: InterruptedException) {
+                        Thread.interrupted()
+                        println("We were interrupted")
+                    }
                 }
             }
 
@@ -40,9 +54,17 @@ class TranslationTaskBackgroundProgress {
                 val con = project.messageBus.connect();
                 con.setDefaultHandler { _, objects ->
                     if (objects[0] != null && objects[0] is TranslationProgress) {
+                        if (translationContext.id != (objects[0] as TranslationProgress).taskId) {
+                            //skip, different task
+                            return@setDefaultHandler
+                        }
                         val progress = objects[0] as TranslationProgress;
                         progressIndicator.fraction = progress.currentTask.toDouble() / max(progress.taskAmount.toDouble(), 1.0)
                         progressIndicator.text2 = "${progress.currentTask}/${progress.taskAmount}"
+                        progressIndicator.text = translationContext.progressText
+                        if (progress.currentTask == progress.taskAmount || translationContext.finished) {
+                            finished = true
+                        }
                     } else {
                         throw IllegalStateException("Unknown message received");
                     }
@@ -52,6 +74,7 @@ class TranslationTaskBackgroundProgress {
 
             override fun onFinished() {
                 super.onFinished()
+                print("finished the task!")
                 finishedCallback?.invoke()
             }
         }

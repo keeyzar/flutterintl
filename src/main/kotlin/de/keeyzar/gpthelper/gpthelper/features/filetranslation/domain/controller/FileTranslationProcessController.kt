@@ -2,10 +2,10 @@ package de.keeyzar.gpthelper.gpthelper.features.filetranslation.domain.controlle
 
 import de.keeyzar.gpthelper.gpthelper.features.filetranslation.domain.client.TranslationClient
 import de.keeyzar.gpthelper.gpthelper.features.filetranslation.domain.factories.TranslationRequestFactory
-import de.keeyzar.gpthelper.gpthelper.features.filetranslation.domain.service.FileTranslationFinished
 import de.keeyzar.gpthelper.gpthelper.features.filetranslation.domain.service.FinishedFileTranslationHandler
 import de.keeyzar.gpthelper.gpthelper.features.filetranslation.domain.service.GatherFileTranslationContext
 import de.keeyzar.gpthelper.gpthelper.features.filetranslation.domain.service.PartialFileResponseHandler
+import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.TranslationContext
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.TranslationProgress
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.service.*
 import kotlinx.coroutines.async
@@ -29,11 +29,13 @@ class FileTranslationProcessController(
     /**
      * Listen via the [TranslationProgressBus], but beware you might need to unregister yourself
      */
-    suspend fun startTranslationProcess(uuid: UUID) {
+    suspend fun startTranslationProcess(translationContext: TranslationContext, uuid: UUID) {
         return try {
             _startTranslationProcess(uuid)
         } catch (e: Throwable) {
             translationErrorProcessHandler.displayErrorToUser(e)
+        } finally {
+            translationContext.finished = true
         }
     }
 
@@ -63,7 +65,7 @@ class FileTranslationProcessController(
     }
 
     private fun reportProgress(realTaskCounter: AtomicInteger, taskAmount: Int) {
-        val translationProgress = TranslationProgress(realTaskCounter.incrementAndGet(), taskAmount)
+        val translationProgress = TranslationProgress(realTaskCounter.incrementAndGet(), taskAmount, "dummy")
         translationProgressBus.pushPercentage(translationProgress)
     }
 }
