@@ -66,15 +66,17 @@ class GPTTranslationRequestClient(
 
     private suspend fun retryCall(retries: Int, block: suspend () -> Unit) {
         var currentTry = 0
+        var lastException: Throwable? = null
         while (currentTry < retries) {
             try {
                 block()
                 return
             } catch (e: Throwable) {
                 currentTry++
+                lastException = e
             }
         }
-        throw Exception("Failed after $retries retries")
+        throw Exception("Failed after $retries retries", lastException)
     }
 
     @OptIn(BetaOpenAI::class)
