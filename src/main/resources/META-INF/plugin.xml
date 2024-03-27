@@ -164,7 +164,7 @@
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
         <intentionAction>
-            <!-- add "<language>JAVA</language>" when targeting 2022.3 and later only -->
+            <language>Dart</language>
             <className>de.keeyzar.gpthelper.gpthelper.features.translations.presentation.actions.GenerateArbIntentionAction</className>
             <category>SDK intentions</category>
         </intentionAction>
@@ -176,8 +176,18 @@
                 parentId="tools"
                 instance="de.keeyzar.gpthelper.gpthelper.features.shared.presentation.GptHelperSettings"
         />
-    </extensions>
+        <fileType name="ARB File" language="JSON" extensions="arb" fileNames="untranslated_messages.txt"
+                  implementationClass="de.keeyzar.gpthelper.gpthelper.features.flutterarb.presentation.handler.ArbFileType"
+                  fieldName="INSTANCE"
+        />
 
+        <intentionAction>
+            <language>JSON</language>
+            <className>de.keeyzar.gpthelper.gpthelper.features.flutterarb.presentation.intention.ArbIntentionAction</className>
+            <category>ARB</category>
+        </intentionAction>
+
+    </extensions>
 
     <actions>
         <action id="de.keeyzar.gpthelper.gpthelper.features.filetranslation.presentation.actions.TranslateWholeFileAction"
