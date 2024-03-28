@@ -6,5 +6,5 @@ import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.Transl
  * gather information required to request the information from the user
  */
 fun interface GatherTranslationContextService {
-    fun gatherTranslationContext(): TranslateKeyContext
+    fun gatherTranslationContext(statement: String?): TranslateKeyContext
 }

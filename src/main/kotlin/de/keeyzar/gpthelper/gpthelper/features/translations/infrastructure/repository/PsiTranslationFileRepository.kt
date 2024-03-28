@@ -58,4 +58,10 @@ class PsiTranslationFileRepository(
             ?.filter { it.isFile && it.extension == "arb" }
             ?.map { it.toPath() } ?: throw UserSettingsException("The setting for Arb directory seems to be incorrect, there is no directory at Path: '$arbDirAbsolute'")
     }
+
+    override fun getPathToFile(language: Language): Path {
+        val arbDir = userSettingsRepository.getSettings().arbDir ?: throw UserSettingsException("The setting for Arb directory is missing")
+        val arbDirAbsolute = "${currentProjectProvider.project.basePath}/$arbDir"
+        return Path.of("$arbDirAbsolute/app_${language.toISOLangString()}.arb")
+    }
 }

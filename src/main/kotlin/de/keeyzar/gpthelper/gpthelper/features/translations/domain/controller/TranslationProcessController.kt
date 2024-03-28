@@ -1,14 +1,13 @@
 package de.keeyzar.gpthelper.gpthelper.features.translations.domain.controller
 
 import de.keeyzar.gpthelper.gpthelper.features.review.domain.service.ReviewService
+import de.keeyzar.gpthelper.gpthelper.features.shared.domain.service.ThreadingService
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.client.TaskAmountCalculator
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.TranslationContext
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.TranslationProgress
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.UserTranslationRequest
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.parser.UserTranslationInputParser
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.service.*
-import kotlinx.coroutines.*
-import java.util.concurrent.LinkedBlockingQueue
 
 /**
  * controls the translation process from start to finish
@@ -22,13 +21,8 @@ class TranslationProcessController(
     private val taskAmountCalculator: TaskAmountCalculator,
     private val translationTriggeredHooks: TranslationTriggeredHooks,
     private val reviewService: ReviewService,
+    private val threadingService: ThreadingService<TranslationContext>
 ) {
-
-    companion object {
-        var QUEUE = LinkedBlockingQueue<TranslationContext>()
-        var initialized = false
-    }
-
     /**
      * Listen via the [TranslationProgressBus], but beware you might need to unregister yourself
      */
@@ -42,38 +36,6 @@ class TranslationProcessController(
         }
     }
 
-    /**
-     *
-     */
-    private fun startQueueIfNotRunning() {
-        //TODO this is not thread safe
-        if (initialized) {
-            return
-        }
-        initialized = true
-
-        val queue = QUEUE
-
-        // Create a background thread to process the queue
-        val backgroundThread = Thread {
-            while (true) {
-                val item = queue.take() // Blocks until an item is available
-                runBlocking {
-                    //we run in blocking context, because it's not required to run in parallel. it's fine to run sequentially,
-                    //but we might do so in the future
-                    try {
-                        translationTaskHandler(item)
-                    } catch (e: Throwable) {
-                        item.finished = true
-                        reportProgress(item)
-                        translationErrorProcessHandler.displayErrorToUser(e)
-                    }
-                }
-            }
-        }
-        backgroundThread.start()
-    }
-
     private suspend fun translationTaskHandler(translationContext: TranslationContext) {
         println(translationContext.translationRequest!!.baseTranslation.entry.desiredValue)
         ongoingTranslationHandler.translateAsynchronouslyWithoutPlaceholder(translationContext.translationRequest!!) {
@@ -83,7 +45,7 @@ class TranslationProcessController(
     }
 
     private suspend fun startTranslationProcessInternal(translationContextNew: TranslationContext) {
-        val preprocess = translationPreprocessor.preprocess()
+        val preprocess = translationPreprocessor.preprocess(translationContextNew)
 
         val (translationContext, userTranslationInput) = if (preprocess != null) {
             preprocess
@@ -98,14 +60,24 @@ class TranslationProcessController(
         val taskAmount = taskAmountCalculator.calculate(translationContext)
         val newTranslationContext = modifyTranslationContext(translationContextNew, translationRequest, taskAmount)
 
-        ongoingTranslationHandler.translateWithPlaceholder(translationRequest) //dummy  translations
-        translationTriggeredHooks.translationTriggered(translationRequest.baseTranslation)
+        if (translationContextNew.changeTranslationContext == null) {
+            //this is only required, if we're not changing a translation - keys etc. are already generated
+            ongoingTranslationHandler.translateWithPlaceholder(translationRequest) //dummy  translations
+            translationTriggeredHooks.translationTriggered(translationRequest.baseTranslation)
+        }
 
         //but we need to prepare all the stuff first
-        withContext(Dispatchers.IO) {
-            QUEUE.put(newTranslationContext)
+        threadingService.putIntoQueue(newTranslationContext)
+
+        threadingService.startQueueIfNotRunning {
+            try {
+                translationTaskHandler(it)
+            } catch (e: Throwable) {
+                it.finished = true
+                reportProgress(it)
+                translationErrorProcessHandler.displayErrorToUser(e)
+            }
         }
-        startQueueIfNotRunning()
 
         reportProgress(translationContextNew) //initial progress reporting
     }
@@ -141,8 +113,8 @@ class TranslationProcessController(
     private fun reportProgress(translationContext: TranslationContext) {
         val taskAmount = translationContext.taskAmount
         val taskAmountHandled = translationContext.taskAmountHandled
-        val translationProgress = TranslationProgress(taskAmount, taskAmountHandled, translationContext.id)
-        if (taskAmountHandled+1 == taskAmount) {
+        val translationProgress = TranslationProgress(taskAmount, taskAmountHandled, translationContext.uuid)
+        if (taskAmountHandled + 1 == taskAmount) {
             translationContext.finished = true
         }
         translationProgressBus.pushPercentage(translationProgress)

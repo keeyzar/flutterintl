@@ -1,12 +1,11 @@
 package de.keeyzar.gpthelper.gpthelper.features.flutterarb.presentation.handler;
 
+import javax.swing.Icon;
+
 import com.intellij.icons.AllIcons;
 import com.intellij.json.JsonLanguage;
 import com.intellij.openapi.fileTypes.LanguageFileType;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import javax.swing.*;
 
 public class ArbFileType extends LanguageFileType {
     public static final ArbFileType INSTANCE = new ArbFileType();
@@ -33,7 +32,6 @@ public class ArbFileType extends LanguageFileType {
         return "arb";
     }
 
-    @Nullable
     @Override
     public Icon getIcon() {
         return AllIcons.FileTypes.Json;

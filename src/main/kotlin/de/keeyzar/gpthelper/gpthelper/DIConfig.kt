@@ -2,6 +2,8 @@ package de.keeyzar.gpthelper.gpthelper
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
+import com.intellij.psi.PsiElement
+import com.vladsch.flexmark.formatter.TranslationContext
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.client.BestGuessL10nClient
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.controller.BestGuessProcessController
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.service.*
@@ -10,6 +12,8 @@ import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.pars
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.service.OpenAIMultiKeyTranslationTaskSizeEstimator
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.service.PsiElementIdReferenceProvider
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.presentation.service.IdeaWaitingIndicatorService
+import de.keeyzar.gpthelper.gpthelper.features.changetranslation.domain.controller.ChangeTranslationController
+import de.keeyzar.gpthelper.gpthelper.features.psiutils.arb.ArbPsiUtils
 import de.keeyzar.gpthelper.gpthelper.features.filetranslation.domain.client.TranslationClient
 import de.keeyzar.gpthelper.gpthelper.features.filetranslation.domain.controller.FileTranslationProcessController
 import de.keeyzar.gpthelper.gpthelper.features.filetranslation.domain.factories.TranslationRequestFactory
@@ -24,6 +28,14 @@ import de.keeyzar.gpthelper.gpthelper.features.flutter_intl.domain.repository.Fl
 import de.keeyzar.gpthelper.gpthelper.features.flutter_intl.infrastructure.repository.FlutterFileRepository
 import de.keeyzar.gpthelper.gpthelper.features.flutter_intl.infrastructure.repository.IdeaFlutterIntlSettingsRepository
 import de.keeyzar.gpthelper.gpthelper.features.flutter_intl.infrastructure.service.ArbFilesService
+import de.keeyzar.gpthelper.gpthelper.features.missingtranslations.domain.controller.MissingTranslationController
+import de.keeyzar.gpthelper.gpthelper.features.missingtranslations.domain.entity.MissingTranslationContext
+import de.keeyzar.gpthelper.gpthelper.features.missingtranslations.domain.repository.ExistingTranslationRepository
+import de.keeyzar.gpthelper.gpthelper.features.missingtranslations.domain.service.MissingTranslationCollectionService
+import de.keeyzar.gpthelper.gpthelper.features.missingtranslations.domain.service.MissingTranslationInputService
+import de.keeyzar.gpthelper.gpthelper.features.missingtranslations.infrastructure.repository.ExistingTranslationRepositoryIdea
+import de.keeyzar.gpthelper.gpthelper.features.missingtranslations.infrastructure.service.MissingTranslationCollectionServiceIdea
+import de.keeyzar.gpthelper.gpthelper.features.missingtranslations.infrastructure.service.MissingTranslationInputServiceIdea
 import de.keeyzar.gpthelper.gpthelper.features.psiutils.*
 import de.keeyzar.gpthelper.gpthelper.features.psiutils.filter.DartStringLiteralFilter
 import de.keeyzar.gpthelper.gpthelper.features.psiutils.filter.ImportStatementFilterDartString
@@ -36,6 +48,7 @@ import de.keeyzar.gpthelper.gpthelper.features.review.domain.service.ReviewServi
 import de.keeyzar.gpthelper.gpthelper.features.review.infrastructure.mapper.ReviewSettingsMapper
 import de.keeyzar.gpthelper.gpthelper.features.review.infrastructure.repository.IdeaReviewRepository
 import de.keeyzar.gpthelper.gpthelper.features.review.infrastructure.service.IdeaOpenPageService
+import de.keeyzar.gpthelper.gpthelper.features.shared.domain.service.ThreadingService
 import de.keeyzar.gpthelper.gpthelper.features.shared.infrastructure.utils.JsonUtils
 import de.keeyzar.gpthelper.gpthelper.features.shared.infrastructure.utils.ObjectMapperProvider
 import de.keeyzar.gpthelper.gpthelper.features.shared.presentation.mapper.UserSettingsDTOMapper
@@ -112,7 +125,7 @@ class DIConfig {
             single<ExternalTranslationProcessService> { FlutterGenCommandProcessService(get(), get()) }
             single<TranslationErrorProcessHandler> { IdeaTranslationErrorProcessHandlerImpl() }
             single<FlutterPsiService> { FlutterPsiService() }
-            single<TranslationProcessController> { TranslationProcessController(get(), get(), get(), get(), get(), get(), get(), get()) }
+            single<TranslationProcessController> { TranslationProcessController(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
             single<TranslationPreprocessor> { TranslationPreprocessor(get(), get(), get()) }
             single<LastStatementProviderForFlutterArbTranslation> { LastStatementProviderForFlutterArbTranslation() }
             single<LanguageFileFinder> { LanguageFileFinder(get()) }
@@ -165,6 +178,16 @@ class DIConfig {
             single< AskUserForReviewService> { IdeaAskUserForReviewService() }
             single<ReviewConfig> {ReviewConfig()}
             single<GPTModelProvider> { GptModelProviderImpl(get())}
+            single<ArbPsiUtils> { ArbPsiUtils() }
+            single<ChangeTranslationController> { ChangeTranslationController() }
+            single<ThreadingService<MissingTranslationContext<TranslationContext>>> { ThreadingService() }
+            single<MissingTranslationController<PsiElement>> { MissingTranslationController(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+            single<MissingTranslationCollectionService<PsiElement>> { MissingTranslationCollectionServiceIdea(get()) }
+            single<ExistingTranslationRepository<PsiElement>> { ExistingTranslationRepositoryIdea(get(), get()) }
+            single<MissingTranslationInputService> { MissingTranslationInputServiceIdea() }
+            single<ArbPsiUtils> { ArbPsiUtils() }
+            single<TranslationFileRepository> { PsiTranslationFileRepository(get(), get(), get()) }
+            single<ThreadingService<TranslationContext>> { ThreadingService() }
         }
     }
 }

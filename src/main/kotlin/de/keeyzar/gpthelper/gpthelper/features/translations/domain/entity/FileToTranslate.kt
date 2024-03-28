@@ -1,7 +1,5 @@
 package de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity
 
-import java.nio.file.Path
-
 /**
  * is the representation of a file in our domain
  */

@@ -1,0 +1,18 @@
+{
+  "lol": "nice",
+  "what": "nice2",
+  "doesWork": {
+    "yes": "nice3",
+    "no": "nice4"
+  },
+
+  "lollo": "lol"
+
+  ,
+
+  "itWorks": 3,
+
+  "does_work_well": [
+    "nice", "nice2"
+  ]
+}

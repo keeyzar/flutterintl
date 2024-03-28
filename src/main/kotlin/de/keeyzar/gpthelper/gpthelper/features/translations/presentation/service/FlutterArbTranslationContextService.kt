@@ -17,8 +17,8 @@ class FlutterArbTranslationContextService(
     private val psiElementService: FlutterPsiService,
     private val arbFilesService: ArbFilesService
 ) : GatherTranslationContextService {
-    override fun gatherTranslationContext(): TranslateKeyContext {
-        val lastStatement = getLastStatement()
+    override fun gatherTranslationContext(statement: String?): TranslateKeyContext {
+        val lastStatement = statement ?: getLastStatement()
         val userSettings = try {
             settingsRepository.getSettings();
         } catch (e: Exception) {

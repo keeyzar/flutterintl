@@ -4,6 +4,7 @@ import de.keeyzar.gpthelper.gpthelper.features.translations.domain.client.Client
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.client.DDDTranslationRequestClient
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.Translation
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.UserTranslationRequest
+import de.keeyzar.gpthelper.gpthelper.features.translations.domain.exceptions.ReplacementOfTranslationFailedException
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.mapper.TranslationRequestMapper
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
@@ -45,7 +46,11 @@ class OngoingTranslationHandler(
                 if(baseLanguage == it.lang) {
                     arbFileModificationService.replaceSimpleTranslationEntry(it)
                 } else {
-                    arbFileModificationService.replaceSimpleTranslationEntry(it)
+                    try {
+                        arbFileModificationService.replaceSimpleTranslationEntry(it)
+                    } catch(e: ReplacementOfTranslationFailedException) {
+                        arbFileModificationService.addSimpleTranslationEntry(it)
+                    }
                 }
                 progressReport()
             }
@@ -57,7 +62,8 @@ class OngoingTranslationHandler(
      */
     fun translateWithPlaceholder(userTranslationRequest: UserTranslationRequest) {
         translateWithPlaceholder(userTranslationRequest) {
-            arbFileModificationService.addSimpleTranslationEntry(it)
+            arbFileModificationService.
+            addSimpleTranslationEntry(it)
         }
     }
 

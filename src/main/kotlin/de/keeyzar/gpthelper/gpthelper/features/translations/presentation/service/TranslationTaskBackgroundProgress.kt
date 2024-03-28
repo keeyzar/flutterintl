@@ -16,14 +16,21 @@ import kotlin.math.max
  */
 class TranslationTaskBackgroundProgress {
 
+    interface TranslationProgressContext {
+        fun getId(): String
+        fun isFinished(): Boolean
+        var progressText: String
+
+        fun isCancelled(): Boolean
+    }
     /**
      * will call in a blocking context the provided callback.
      * will listen on [TranslationProgressChangeNotifier.CHANGE_ACTION_TOPIC] and update the UI accordingly
      */
-    fun triggerInBlockingContext(
+    fun <T : TranslationProgressContext> triggerInBlockingContext(
         project: Project,
         callback: suspend () -> Unit,
-        translationContext: TranslationContext,
+        translationContext: T,
         finishedCallback: (() -> Unit)? = null,
     ) {
         val progressManager = ProgressManager.getInstance()
@@ -36,7 +43,7 @@ class TranslationTaskBackgroundProgress {
                     callback()
                 }
                 while (!finished) {
-                    if(translationContext.cancelled) {
+                    if(translationContext.isCancelled()) {
                         break
                     }
                     try {
@@ -54,7 +61,7 @@ class TranslationTaskBackgroundProgress {
                 val con = project.messageBus.connect();
                 con.setDefaultHandler { _, objects ->
                     if (objects[0] != null && objects[0] is TranslationProgress) {
-                        if (translationContext.id != (objects[0] as TranslationProgress).taskId) {
+                        if (translationContext.getId() != (objects[0] as TranslationProgress).taskId) {
                             //skip, different task
                             return@setDefaultHandler
                         }
@@ -62,7 +69,7 @@ class TranslationTaskBackgroundProgress {
                         progressIndicator.fraction = progress.currentTask.toDouble() / max(progress.taskAmount.toDouble(), 1.0)
                         progressIndicator.text2 = "${progress.currentTask}/${progress.taskAmount}"
                         progressIndicator.text = translationContext.progressText
-                        if (progress.currentTask == progress.taskAmount || translationContext.finished) {
+                        if (progress.currentTask == progress.taskAmount || translationContext.isFinished()) {
                             finished = true
                         }
                     } else {

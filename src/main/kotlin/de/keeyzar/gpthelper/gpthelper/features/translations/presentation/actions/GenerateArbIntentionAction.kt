@@ -82,7 +82,7 @@ class GenerateArbIntentionAction : PsiElementBaseIntentionAction(), IntentionAct
             //and the domain does not know about this kind of stuff (i.e. PsiElement)
             getInitializer().lastStatementProviderForFlutterArbTranslation.lastStatement = element
             val translationProcessController = getInitializer().translationProcessController
-            var taskId = UUID.randomUUID().toString()
+            val taskId = UUID.randomUUID().toString()
             val translationContext = TranslationContext(taskId, "Translation Init", 0, null, 0)
             getInitializer().translationTaskBackgroundProgress.triggerInBlockingContext(project, {
                 translationProcessController.startTranslationProcess(translationContext)

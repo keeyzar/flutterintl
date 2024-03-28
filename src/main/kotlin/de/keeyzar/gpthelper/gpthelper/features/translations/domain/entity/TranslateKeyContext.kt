@@ -19,6 +19,7 @@ data class TranslateKeyContext(
      * we might want to show user information based on the last input
      */
     val lastUserInput: List<UserTranslationInput>?,
-    val availableLanguages: List<Language>
+    val availableLanguages: List<Language>,
+    var changeTranslationContext: ChangeTranslationContext? = null
 ) {
 }

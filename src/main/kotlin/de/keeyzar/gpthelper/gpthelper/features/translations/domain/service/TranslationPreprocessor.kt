@@ -1,6 +1,7 @@
 package de.keeyzar.gpthelper.gpthelper.features.translations.domain.service
 
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.TranslateKeyContext
+import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.TranslationContext
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.UserTranslationInput
 
 class TranslationPreprocessor(
@@ -12,7 +13,7 @@ class TranslationPreprocessor(
      * preprocess the request.
      * @return true, if preprocessing was successful, false otherwise
      */
-    fun preprocess() : Pair<TranslateKeyContext, UserTranslationInput>? {
+    fun preprocess(translationContext: TranslationContext) : Pair<TranslateKeyContext, UserTranslationInput>? {
         //verify settings are set
         val verified = verifyTranslationSettingsService.verifySettingsAndInformUserIfInvalid()
         if (!verified) {
@@ -20,12 +21,15 @@ class TranslationPreprocessor(
             return null
         }
 
-        val translationContext = gatherTranslationContextService.gatherTranslationContext()
-        val userTranslationInput = gatherUserInputService.requestInformationFromUser(translationContext)
+        val statement = translationContext.changeTranslationContext?.value
+        val translateKeyContext = gatherTranslationContextService.gatherTranslationContext(statement)
+        translateKeyContext.changeTranslationContext = translationContext.changeTranslationContext
+
+        val userTranslationInput = gatherUserInputService.requestInformationFromUser(translateKeyContext)
         if (userTranslationInput == null) {
             println("user cancelled the process")
             return null
         }
-        return Pair(translationContext, userTranslationInput)
+        return Pair(translateKeyContext, userTranslationInput)
     }
 }

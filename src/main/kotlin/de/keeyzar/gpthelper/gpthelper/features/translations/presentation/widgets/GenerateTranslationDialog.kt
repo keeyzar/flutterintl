@@ -10,7 +10,6 @@ import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.components.panels.VerticalBox
 import com.intellij.ui.dsl.builder.*
-import com.intellij.ui.dsl.gridLayout.HorizontalAlign
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.TranslateKeyContext
 import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.pojo.TranslationDialogUserInput
 import java.awt.event.ActionEvent
@@ -31,6 +30,7 @@ class GenerateTranslationDialog(
     private lateinit var historyCombobox: Cell<ComboBox<String>>
     private val pattern = Regex("^[a-zA-Z][a-z_A-Z]*$")
     private var isValid = false
+    private var editableKey = true
 
     /**
      * used as a pointer as to what the user currently wants to translate
@@ -50,17 +50,23 @@ class GenerateTranslationDialog(
     }
 
     override fun getPreferredFocusedComponent(): JComponent {
-        return desiredValue.component;
+        return desiredValue.component
     }
 
     private fun fillModelData() {
-        model.desiredValue = translateKeyContext.statement;
+        model.desiredValue = translateKeyContext.statement
         //most of the time the user is going to translate in the same file one after another, and they will have mostly identical structure
-        model.desiredKey = translateToTranslationKey(translateKeyContext.statement);
+        val changeTranslationContext = translateKeyContext.changeTranslationContext
+        model.desiredKey = changeTranslationContext?.key ?: translateToTranslationKey(translateKeyContext.statement)
+        editableKey = changeTranslationContext?.key == null
         val directLastUserInput = translateKeyContext.lastUserInput?.lastOrNull()
         model.desiredKey = directLastUserInput?.desiredKey ?: model.desiredKey
-        model.desiredDescription = calculateDesiredDescription(translateKeyContext)
-        model.desiredDescription = directLastUserInput?.desiredDescription ?: model.desiredDescription
+        if(changeTranslationContext?.description != null) {
+            model.desiredDescription = changeTranslationContext.description
+        } else {
+            model.desiredDescription = calculateDesiredDescription(translateKeyContext)
+            model.desiredDescription = directLastUserInput?.desiredDescription ?: model.desiredDescription
+        }
 
 
         (directLastUserInput?.languagesToTranslate?.toMutableMap()
@@ -150,10 +156,11 @@ class GenerateTranslationDialog(
                     label("Translation key:")
                     desiredKey = textField()
                         .bindText(model::desiredKey)
+                        .enabled(editableKey)
                         .resizableColumn()
                         .align(Align.FILL)
-                        .validation {
-                            return@validation if (pattern.matches(it.text)) {
+                        .validationOnInput {
+                            return@validationOnInput if (pattern.matches(it.text)) {
                                 null
                             } else {
                                 ValidationInfo("You can do lowerCamelCase or snake_case")
@@ -219,7 +226,7 @@ class GenerateTranslationDialog(
 
     private fun createScrollPane(): JScrollPane {
         //create checkboxes for each language
-        val vbox = VerticalBox();
+        val vbox = VerticalBox()
 
 
         model.translationsChecked.map { entry ->

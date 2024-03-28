@@ -15,13 +15,13 @@ repositories {
 // Configure Gradle IntelliJ Plugin
 // Read more: https://plugins.jetbrains.com/docs/intellij/tools-gradle-intellij-plugin.html
 intellij {
-    version.set("2023.1")
+    version.set("2023.2")
     type.set("IC") // Target IDE Platform
 
     plugins.set(
         listOf(
-            "Dart:231.9065",
-            "org.jetbrains.plugins.terminal:231.8109.126"
+            "Dart:232.8660.129",
+            "org.jetbrains.plugins.terminal:232.8660.88"
         )
     )
 }
@@ -36,9 +36,15 @@ tasks {
         kotlinOptions.jvmTarget = "17"
     }
 
+    withType<Test> {
+        useJUnit() //when we use junit 5, we might use useJUnitPlatform() - but we don't.. I'm not entire
+//         avoid JBUIScale "Must be precomputed" error, because IDE is not started (LoadingState.APP_STARTED.isOccurred is false)
+        jvmArgs("-Djava.awt.headless=true")
+    }
+
     patchPluginXml {
         sinceBuild.set("231")
-        untilBuild.set("232.*")
+        untilBuild.set("233.*")
     }
 
     signPlugin {
@@ -51,7 +57,7 @@ tasks {
         token.set(System.getenv("PUBLISH_TOKEN"))
     }
     runPluginVerifier {
-        ideVersions.set(listOf("2023.1"))
+        ideVersions.set(listOf("2023.2"))
     }
 }
 

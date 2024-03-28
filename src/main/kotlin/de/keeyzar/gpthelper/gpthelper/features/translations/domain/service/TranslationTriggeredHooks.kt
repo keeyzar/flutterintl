@@ -21,4 +21,5 @@ interface TranslationTriggeredHooks {
      * If there is some kind of initial task to be done once, which is kinda expensive
      */
     fun translationTriggeredInit()
+    fun translationTriggeredPostTranslation()
 }

@@ -16,7 +16,7 @@ class TranslateKeyTranslationTriggeredHooks(
         translationTriggeredPostTranslation()
     }
 
-    private fun translationTriggeredPostTranslation() {
+    override fun translationTriggeredPostTranslation() {
         flutterGenCommandProcessService.postTranslationProcess()
     }
 

@@ -18,7 +18,6 @@ class IdeaTerminalConsoleService {
     }
 
     fun executeCommand(project: Project, command: String) {
-        //TODO somehow this does not trigger app localization to be executed, although the command IS executed.
         ApplicationManager.getApplication().invokeAndWait {
             val terminalView = TerminalToolWindowManager.getInstance(project)
             val window = ToolWindowManager.getInstance(project).getToolWindow(TerminalToolWindowFactory.TOOL_WINDOW_ID)

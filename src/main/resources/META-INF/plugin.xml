@@ -183,10 +183,14 @@
 
         <intentionAction>
             <language>JSON</language>
-            <className>de.keeyzar.gpthelper.gpthelper.features.flutterarb.presentation.intention.ArbIntentionAction</className>
+            <className>de.keeyzar.gpthelper.gpthelper.features.changetranslation.presentation.intention.ChangeTranslationAction</className>
             <category>ARB</category>
         </intentionAction>
-
+        <intentionAction>
+            <language>JSON</language>
+            <className>de.keeyzar.gpthelper.gpthelper.features.missingtranslations.presentation.intention.MissingTranslationAction</className>
+            <category>ARB</category>
+        </intentionAction>
     </extensions>
 
     <actions>

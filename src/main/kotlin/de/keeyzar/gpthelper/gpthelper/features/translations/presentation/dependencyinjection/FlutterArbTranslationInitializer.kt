@@ -1,8 +1,11 @@
 package de.keeyzar.gpthelper.gpthelper.features.translations.presentation.dependencyinjection
 
+import com.intellij.psi.PsiElement
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.controller.BestGuessProcessController
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.service.PsiElementIdReferenceProvider
+import de.keeyzar.gpthelper.gpthelper.features.psiutils.arb.ArbPsiUtils
 import de.keeyzar.gpthelper.gpthelper.features.filetranslation.domain.controller.FileTranslationProcessController
+import de.keeyzar.gpthelper.gpthelper.features.missingtranslations.domain.controller.MissingTranslationController
 import de.keeyzar.gpthelper.gpthelper.features.psiutils.LiteralInContextFinder
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.controller.TranslationProcessController
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.repository.CurrentProjectProvider
@@ -19,6 +22,7 @@ import org.koin.core.component.inject
 class FlutterArbTranslationInitializer : KoinComponent {
     val flutterPsiService: FlutterPsiService by inject()
     val translationProcessController: TranslationProcessController by inject()
+    val missingTranslationController: MissingTranslationController<PsiElement> by inject()
     val translationTaskBackgroundProgress: TranslationTaskBackgroundProgress by inject()
     val lastStatementProviderForFlutterArbTranslation: LastStatementProviderForFlutterArbTranslation by inject()
     val fileTranslationProcessController: FileTranslationProcessController by inject()
@@ -27,4 +31,5 @@ class FlutterArbTranslationInitializer : KoinComponent {
     val bestGuessProcessController: BestGuessProcessController by inject()
     val currentProjectProvider: CurrentProjectProvider by inject()
     val psiElementIdReferenceProvider: PsiElementIdReferenceProvider by inject()
+    val arbPsiUtils: ArbPsiUtils by inject()
 }
