@@ -19,8 +19,10 @@
     <p>
       <b>Features:</b>
       <ul>
+        <li>Convert String to Arb entry and translate into all available languages (Alt+Enter on any String)</li>
+        <li>Change translations from within e.g. app_en.arb (press Alt+Enter)</li>
+        <li>Translate missing translations (press Alt+Enter in untranslated_messages.txt)</li>
         <li>Auto Localize whole file (with key suggestion)</li>
-        <li>Convert String to Arb entry and translate into all available languages</li>
         <li>Translate whole file (also advanced keys)</li>
         <li>Monitor flutter intl settings, so that the generation adheres to the configured style</li>
       </ul>
@@ -30,10 +32,12 @@
         <b>How to use:</b>
         <ul>
             <li>Install the plugin</li>
-            <li>Configure your GPT-3 API Key in the settings (no worries, if you miss it, we'll ask you)</li>
+            <li>Configure your OpenAi API Key in the settings (no worries, if you miss it, we'll ask you)</li>
+            <li>Convert String to Arb entry: Select the string, open "Intentions" Menu (default: Alt + Enter) and fill in the data</li>
+            <li>Change translations: Open the arb file and press Alt+Enter on any key</li>
+            <li>Translate missing translations: Open untranslated_messages.txt and press Alt+Enter</li>
             <li>Auto Localize File: Press "Generate" Shortcut (default: Alt + Insert) and select "Auto Localize File"</li>
             <li>Translate whole file: Right-click on the file in the project view and select "Translate this to new Arb file"</li>
-            <li>Convert String to Arb entry: Select the string, open "Intentions" Menu (default: Alt + Enter) and fill in the data</li>
         </ul>
     </p>
 
@@ -55,6 +59,20 @@
         <![CDATA[
       <ul>
       <li>
+          <b>1.18.0</b>
+          <ul>
+            <li>
+              FASTER translations - because of queue
+            </li>
+            <li>
+              CHANGE translations from within an arb entry, i.e. if you're in e.g. app_en.arb then press alt+enter on any key
+            </li>
+            <li>
+              allow lowerCamelCase key for translations
+            </li>
+          </ul>
+      </li>
+      <li>
           <b>1.17.0</b>
           <ul>
             <li>
@@ -67,7 +85,7 @@
               allow lowerCamelCase key for translations
             </li>
           </ul>
-        </li>
+      </li>
       <li>
           <b>1.16.0</b>
           <ul>
