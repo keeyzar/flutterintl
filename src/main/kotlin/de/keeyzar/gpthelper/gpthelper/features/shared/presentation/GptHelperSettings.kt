@@ -71,11 +71,8 @@ class GptHelperSettings(val project: Project) : Configurable {
                     openAIKeyField = cell(JBPasswordField())
                         .resizableColumn()
                         .align(Align.FILL)
-                    button("Test Password") {
+                    button("Test and Save Password") {
                         testPassword(openAIKeyField.component.password)
-                    }
-                    button("Save New Password") {
-                        savePassword(openAIKeyField.component.password)
                     }
                 }.layout(RowLayout.PARENT_GRID)
                 row("Connection failed") {
@@ -85,7 +82,7 @@ class GptHelperSettings(val project: Project) : Configurable {
                         .resizableColumn()
                         .align(Align.FILL)
                 }.visibleIf(connectionErrorPredicate())
-                row("Success, don't forget to press save!") {
+                row("Success, new password has been saved!") {
                 }.visibleIf(connectionSuccessPredicate())
             }
             group("OpenAI Client Configuration") {
@@ -267,7 +264,9 @@ class GptHelperSettings(val project: Project) : Configurable {
         submitTask({}, {
             runBlocking {
                 val it: Throwable? = try {
-                    Initializer().connectionTester.testClientConnection(text.concatToString())
+                    val testClientConnection = Initializer().connectionTester.testClientConnection(text.concatToString())
+                    savePassword(text)
+                    testClientConnection
                 } catch (e: Throwable) {
                     println("eh what")
                     e.printStackTrace()
