@@ -18,7 +18,7 @@ class IdeaTerminalConsoleService {
     }
 
     fun executeCommand(project: Project, command: String) {
-        ApplicationManager.getApplication().invokeAndWait {
+        ApplicationManager.getApplication().invokeLaterOnWriteThread {
             val terminalView = TerminalToolWindowManager.getInstance(project)
             val window = ToolWindowManager.getInstance(project).getToolWindow(TerminalToolWindowFactory.TOOL_WINDOW_ID)
             val contentManager = window?.contentManager

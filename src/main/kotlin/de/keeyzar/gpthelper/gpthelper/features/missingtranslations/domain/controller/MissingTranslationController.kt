@@ -2,8 +2,8 @@ package de.keeyzar.gpthelper.gpthelper.features.missingtranslations.domain.contr
 
 import de.keeyzar.gpthelper.gpthelper.features.flutter_intl.infrastructure.service.ArbFilesService
 import de.keeyzar.gpthelper.gpthelper.features.missingtranslations.domain.entity.MissingTranslationContext
-import de.keeyzar.gpthelper.gpthelper.features.missingtranslations.domain.entity.MissingTranslationTargetTranslation
-import de.keeyzar.gpthelper.gpthelper.features.missingtranslations.domain.entity.MissingTranslationWithExistingTranslation
+import de.keeyzar.gpthelper.gpthelper.features.missingtranslations.domain.entity.MissingTranslationFilteredTargetTranslation
+import de.keeyzar.gpthelper.gpthelper.features.missingtranslations.domain.entity.MissingTranslationAndExistingTranslation
 import de.keeyzar.gpthelper.gpthelper.features.missingtranslations.domain.repository.ExistingTranslationRepository
 import de.keeyzar.gpthelper.gpthelper.features.missingtranslations.domain.service.MissingTranslationCollectionService
 import de.keeyzar.gpthelper.gpthelper.features.missingtranslations.domain.service.MissingTranslationInputService
@@ -25,26 +25,30 @@ class MissingTranslationController<T>(
     private val translationProgressBus: TranslationProgressBus,
     private val translationTriggeredHooks: TranslationTriggeredHooks,
 ) {
+    /**
+     * the user has provided all the relevant information anyway.
+     * 1. all the missing entries from untranslated messages. Search for their existing translation in the base language
+     * e.g. app_en.arb
+     * 2. ask the user, whether he wants to translate all keys, into all languages
+     * 3. the selected translations will be translated, currently one after another
+     * 4. the user is informed about the progress
+     * 5. we trigger translation finished hooks
+     */
     suspend fun startMissingTranslationProcess(missingTranslationContext: MissingTranslationContext<T>) {
-        //2. collect all translate key contexts of the keys from the base language arb file,
-        //e.g. "de" is missing key "hello" -> collect from base language en => value + description
-        //3. show user ui (left a list with missing translations, right a view of the translation and their languages
-        //4. user checks all translations and marks them as "yes, please translate
-        //5. run the translation for one missing key after another and show in progress, accordingly
-        //do not allow to change key or value or description
         val modifiedContext = missingTranslationCollectionService.collectMissingTranslations(missingTranslationContext);
         val baseLanguage = arbFilesService.getBaseLanguage(null)
-        val enriched: List<MissingTranslationWithExistingTranslation> = modifiedContext.missingTranslations.map {
+        val enriched: List<MissingTranslationAndExistingTranslation> = modifiedContext.missingTranslations.map {
             val existingTranslation = existingTranslationRepository.getExistingTranslation(
                 missingTranslationContext.reference,
                 baseLanguage,
                 it.key
             )
-            MissingTranslationWithExistingTranslation(it, existingTranslation)
+            MissingTranslationAndExistingTranslation(it, existingTranslation)
         }
         //alright, we have all the missing and existing translations, now we need to ask the user what he wants to translate
-        val enrichedAndFiltered: List<MissingTranslationTargetTranslation> = missingTranslationInputService.collectMissingTranslationInput(enriched)
-        modifiedContext.missingTranslationTargetTranslations = enrichedAndFiltered
+        val enrichedAndUserFiltered: List<MissingTranslationFilteredTargetTranslation> = missingTranslationInputService.collectMissingTranslationInput(enriched)
+        modifiedContext.missingTranslationFilteredTargetTranslations = enrichedAndUserFiltered
+
         val taskAmount = calculateTaskAmount(modifiedContext)
         modifiedContext.taskAmount = taskAmount
         //user is happy, we can now translate all keys for the languages accordingly
@@ -61,22 +65,22 @@ class MissingTranslationController<T>(
     }
 
     private fun calculateTaskAmount(missingTranslationContext: MissingTranslationContext<T>): Int {
-        return missingTranslationContext.missingTranslationTargetTranslations
+        return missingTranslationContext.missingTranslationFilteredTargetTranslations
             ?.sumOf { it.languagesToTranslateTo.size } ?: 0
 
     }
 
-    private fun createTranslationRequests(baseLanguage: Language, missingTranslationAndTarget: MissingTranslationTargetTranslation): UserTranslationRequest {
-        val missingTranslation = missingTranslationAndTarget.missingTranslationWithExistingTranslation.missingTranslation
+    private fun createTranslationRequests(baseLanguage: Language, missingTranslationAndTarget: MissingTranslationFilteredTargetTranslation): UserTranslationRequest {
+        val missingTranslation = missingTranslationAndTarget.missingTranslationAndExistingTranslation.missingTranslation
         val existingTranslation = missingTranslationAndTarget
-            .missingTranslationWithExistingTranslation
+            .missingTranslationAndExistingTranslation
             .existingTranslation
             ?: throw IllegalStateException("Existing translation should not be null")
 
         val baseTranslation = Translation(
             lang = baseLanguage,
             entry = SimpleTranslationEntry(
-                id = "TODO which id",
+                id = "why is there an id",
                 desiredKey = missingTranslation.key,
                 desiredValue = existingTranslation.value,
                 desiredDescription = existingTranslation.description ?: ""
@@ -89,9 +93,9 @@ class MissingTranslationController<T>(
     }
 
     private suspend fun translationTaskHandler(missingTranslationContext: MissingTranslationContext<T>) {
-        val alreadyTranslated: MutableList<MissingTranslationTargetTranslation> = mutableListOf()
+        val alreadyTranslated: MutableList<MissingTranslationFilteredTargetTranslation> = mutableListOf()
         val baseLang = arbFilesService.getBaseLanguage(null)
-        missingTranslationContext.missingTranslationTargetTranslations?.map { missingTranslationTargetTranslation ->
+        missingTranslationContext.missingTranslationFilteredTargetTranslations?.map { missingTranslationTargetTranslation ->
             createTranslationRequests(baseLang, missingTranslationTargetTranslation)
                 .let { req ->
                     if (Thread.interrupted() || missingTranslationContext.isCancelled()) {
@@ -108,7 +112,7 @@ class MissingTranslationController<T>(
                     }
                 }
         }
-        val allTranslations = missingTranslationContext.missingTranslationTargetTranslations
+        val allTranslations = missingTranslationContext.missingTranslationFilteredTargetTranslations
         val translationsWithIssues = allTranslations?.filter { !alreadyTranslated.contains(it) }
         missingTranslationContext.translationsWithIssues = translationsWithIssues
     }

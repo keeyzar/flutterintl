@@ -11,9 +11,10 @@ import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.Langua
 class MissingTranslationCollectionServiceIdea(
     private val arbPsiUtils: ArbPsiUtils,
 ) : MissingTranslationCollectionService<PsiElement> {
+
     override fun collectMissingTranslations(missingTranslationContext: MissingTranslationContext<PsiElement>): MissingTranslationContext<PsiElement> {
         //essentially, we're collecting de -> "greeting" and pl -> "greeting" and fr -> "greeting"
-        //afterward, we invert it to be "greeting" -> de, pl, fr
+        //then we invert it to be "greeting" -> de, pl, fr
         val allStringArraysFromRoot: List<StringArrayContent> = arbPsiUtils.getAllStringArraysFromRoot(missingTranslationContext.reference)
 
         val collectToMap: Map<String, List<String>> = allStringArraysFromRoot

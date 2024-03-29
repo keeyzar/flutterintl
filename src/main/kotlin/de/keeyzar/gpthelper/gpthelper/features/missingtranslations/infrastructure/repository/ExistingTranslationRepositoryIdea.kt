@@ -19,7 +19,7 @@ class ExistingTranslationRepositoryIdea(
         val path = translationFileRepository.getPathToFile(baseLanguage)
         val psiFile: PsiFile = getPsiFileFromPath(reference, path) ?: return null
         //alright, we can now get the corresponding entry
-        return arbPsiUtils.getArbEntryFromKey(psiFile, key)?.let {
+        return arbPsiUtils.getArbEntryFromKeyOnRootObject(psiFile, key)?.let {
             return ExistingTranslation(
                 key = key,
                 value = it.value,

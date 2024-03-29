@@ -9,82 +9,23 @@ import com.intellij.psi.util.parentOfTypes
 import com.intellij.psi.util.siblings
 
 class ArbPsiUtils {
-    /**
-     * the goal is to return the current key, we're working on. it's always the root key we search, i.e. on the first level of the
-     * json object. If we're nested, we recursively search for the key up until there is no parent. if the key starts with an @, we just remove the @
-     */
-    fun getCurrentTranslationKey(element: PsiElement): String? {
-        //the implementation is straight forward, we have a lookahead of 2 calls to the parent (elem?.parent?.parent == file) - is it an arb file? if yes, then we're at the desired key, if not, we move up one parent
-        var currentElement = element
-        while (currentElement.parent != null && currentElement.parent.parent != null) {
-            val parentParent = currentElement.parent.parent
-            if (parentParent is JsonFileImpl) {
-                return (currentElement as JsonPropertyImpl).name.removePrefix("@")
-            }
-            currentElement = currentElement.parent
-        }
-        return null
-    }
 
     /**
-     * you provide a reference to the translation file and the key you are searching for.
-     * <br/>
-     * {
-     *  "greeting": "hello world"
-     * }
-     * if you provide the key "greeting", you will get "hello world"
+     * tries to collect all properties from the root object, if they are arrays of strings, e.g.
+     *   {
+     *     "key": ["value1", "value2"]
+     *     "notKey": "value"
+     *     "key2": ["value3", "value4"]
+     *   }
+     *
+     * will return:
+     *   ["key": ["value1", "value2"], "key2": ["value3", "value4"]]
      */
-    fun getValueOfTranslationKey(element: PsiElement, key: String): String? {
-        val rootObject = getRootObject(element)
-        if (rootObject != null) {
-            val property = rootObject.children.filterIsInstance<JsonPropertyImpl>().find { it.name == key }
-            if (property != null) {
-                return property.value?.let {
-                    return JsonPsiUtil.stripQuotes(it.text)
-                }
-            }
-        }
-        return null
-    }
-
-    private fun getRootObject(element: PsiElement): JsonObjectImpl? {
-        // get the root element, (JsonObjectImpl) -> get the children (JsonPropertyImpl) -> filter the one with the key -> get the value,
-        // but first we need to check if this or the parent is already a file
-        if (element is JsonFileImpl) {
-            return element.children.filterIsInstance<JsonObjectImpl>().firstOrNull()
-        }
-
-        if (element.parent is JsonFileImpl) {
-            return element.parent.children.filterIsInstance<JsonObjectImpl>().firstOrNull()
-        }
-
-        var currentElement = element
-        while (currentElement.parent != null && currentElement.parent.parent != null) {
-            val parentParent = currentElement.parent.parent
-            if (parentParent is JsonFileImpl) {
-                return currentElement.parent as JsonObjectImpl
-            }
-            currentElement = currentElement.parent
-        }
-        return null
-    }
-
     fun getAllStringArraysFromRoot(element: PsiElement): List<StringArrayContent> {
         val rootProperties = collectRootProperties(element)
         return rootProperties.map { getStringArrayContent(it) }
     }
 
-    /**
-     * check if it is an array, if so, check if the items are strings, return all information
-     */
-    private fun getStringArrayContent(element: JsonPropertyImpl): StringArrayContent {
-        val value = element.value
-        if (value is JsonArrayImpl) {
-            val values = value.children.filterIsInstance<JsonStringLiteralImpl>().map { JsonPsiUtil.stripQuotes(it.text) }
-            return StringArrayContent(element.name, values)
-        }
-        return StringArrayContent(element.name, emptyList())
-    }
 
     /**
      * collect all json properties on root
@@ -99,7 +40,21 @@ class ArbPsiUtils {
             ?.childrenOfType<JsonPropertyImpl>() ?: emptyList()
     }
 
-    fun getArbEntryFromKey(element: PsiElement, key: String): ArbEntry? {
+    /**
+     * searches for key, value, desc on root object, e.g.
+     * {
+     *   "key": "value",
+     *   "@key": {
+     *     "description": "desc"
+     *   },
+     *   "nested": {
+     *     "nestedKey": "value"
+     *   }
+     * }
+     *
+     * will find key, value, desc but not nestedKey or its value
+     */
+    fun getArbEntryFromKeyOnRootObject(element: PsiElement, key: String): ArbEntry? {
         val rootObject = getRootObject(element)
         if (rootObject != null) {
             val property: JsonPropertyImpl? = rootObject.children.filterIsInstance<JsonPropertyImpl>().find { it.name == key }
@@ -123,8 +78,8 @@ class ArbPsiUtils {
             val isRootObjectProperty = element.parentOfTypes<JsonPropertyImpl>() == null
             if (isRootObjectProperty) {
                 return if (element.name.startsWith("@")) {
-                    val description: String? = getDescription(element);
-                    val arbEntry = findCorrespondingEntry(element)
+                    val description: String? = getDescription(element)
+                    val arbEntry = findEntryFromDescription(element)
                     arbEntry?.description = description ?: ""
                     arbEntry
                 } else {
@@ -161,7 +116,7 @@ class ArbPsiUtils {
         } else {
             return if (lastPropertyParent.name.startsWith("@")) {
                 val description = getDescription(lastPropertyParent)
-                var entry = findCorrespondingEntry(lastPropertyParent)
+                val entry = findEntryFromDescription(lastPropertyParent)
                 entry?.description = description ?: ""
                 entry
             } else {
@@ -171,6 +126,10 @@ class ArbPsiUtils {
         }
     }
 
+    /**
+     * will return the description of the property, if it is a property with a description (starts with @)
+     * on root
+     */
     private fun getDescription(element: JsonPropertyImpl): String? {
         val isCorrectElement = element.name.startsWith("@")
         if (!isCorrectElement) {
@@ -182,6 +141,9 @@ class ArbPsiUtils {
         }
     }
 
+    /**
+     * will find a description for an element. e.g. will find $@key.description for $key
+     */
     private fun findCorrespondingDescription(element: JsonPropertyImpl): String? {
         val nameWithPrefix = "@${element.name}"
         val maybeElem: PsiElement? = element.siblings(forward = true).find {
@@ -192,7 +154,12 @@ class ArbPsiUtils {
         }
     }
 
-    private fun findCorrespondingEntry(element: JsonPropertyImpl): ArbEntry? {
+    /**
+     * Will find an arb entry based on a description element, e.g. find $key and the value for $@key
+     * most probably, the $key is before $@key - when this is the case, this method is fast. If not, it might be really
+     * slow, at worst n-1 iterations (when it's immediately behind it).
+     */
+    private fun findEntryFromDescription(element: JsonPropertyImpl): ArbEntry? {
         //we have the wrong element, we want to find the property
         //in general it should be before the sibling, but it's not required - it should be fairly fast to find the correct one
         //in most cases
@@ -206,5 +173,30 @@ class ArbPsiUtils {
         } else {
             null
         }
+    }
+
+    /**
+     * the first child of a valid arb entry is the root object. The file might be empty, though
+     */
+    private fun getRootObject(element: PsiElement): JsonObjectImpl? {
+        return if(element.containingFile is JsonFileImpl) {
+            element.children.first() as JsonObjectImpl
+        } else {
+            null
+        }
+    }
+
+
+
+    /**
+     * check if it is an array, if so, check if the items are strings, return all information
+     */
+    private fun getStringArrayContent(element: JsonPropertyImpl): StringArrayContent {
+        val value = element.value
+        if (value is JsonArrayImpl) {
+            val values = value.children.filterIsInstance<JsonStringLiteralImpl>().map { JsonPsiUtil.stripQuotes(it.text) }
+            return StringArrayContent(element.name, values)
+        }
+        return StringArrayContent(element.name, emptyList())
     }
 }
