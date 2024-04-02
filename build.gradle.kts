@@ -59,6 +59,11 @@ tasks {
     runPluginVerifier {
         ideVersions.set(listOf("2023.2"))
     }
+
+    runIde {
+        //enable tracing when we execute it for debugging in the ide
+        systemProperty("idea.log.trace.categories", "de.keeyzar.gpthelper")
+    }
 }
 
 val ktor_version = "2.3.0"

@@ -393,23 +393,35 @@ class GPTTranslationRequestClient(
     override suspend fun translateValueOnly(
         clientTranslationRequest: ClientTranslationRequest,
         partialTranslationResponse: PartialTranslationResponse,
+        isCancelled: () -> Boolean,
         partialTranslationFinishedCallback: (PartialTranslationResponse) -> Unit,
     ) {
-        //I need to translate all the stuff except the english one
+        if (isCancelled()) {
+            return
+        }
+
         val baseContent = translationRequestResponseParser.toTranslationOnly(partialTranslationResponse.translation)
         val dispatcher = dispatcherConfiguration.getDispatcher()
         val parallelism = dispatcherConfiguration.getLevelOfParallelism()
         val allLanguagesExceptBaseLanguage = clientTranslationRequest.targetLanguages.filter { it != clientTranslationRequest.translation.lang }
+
         coroutineScope {
             val deferredTranslations = allLanguagesExceptBaseLanguage.chunked(parallelism).flatMap { chunk ->
                 chunk.map { targetLang ->
                     async(dispatcher) {
+                        if (isCancelled()) {
+                            return@async
+                        }
+
                         try {
                             retryCall(2) {
                                 val response = requestTranslationOnly(baseContent, targetLang.toISOLangString())
                                 val translation =
                                     translationRequestResponseParser.fromTranslationOnlyResponse(targetLang, response, partialTranslationResponse.translation)
-                                partialTranslationFinishedCallback(PartialTranslationResponse(translation))
+
+                                if (!isCancelled()) {
+                                    partialTranslationFinishedCallback(PartialTranslationResponse(translation))
+                                }
                             }
                         } catch (e: Throwable) {
                             throw TranslationRequestException(
@@ -420,7 +432,12 @@ class GPTTranslationRequestClient(
                     }
                 }
             }
-            deferredTranslations.forEach { it.await() }
+
+            deferredTranslations.forEach {
+                if (!isCancelled()) {
+                    it.await()
+                }
+            }
         }
     }
 }

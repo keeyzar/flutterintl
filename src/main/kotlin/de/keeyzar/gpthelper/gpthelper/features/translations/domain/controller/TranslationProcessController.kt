@@ -38,7 +38,7 @@ class TranslationProcessController(
 
     private suspend fun translationTaskHandler(translationContext: TranslationContext) {
         println(translationContext.translationRequest!!.baseTranslation.entry.desiredValue)
-        ongoingTranslationHandler.translateAsynchronouslyWithoutPlaceholder(translationContext.translationRequest!!) {
+        ongoingTranslationHandler.translateAsynchronouslyWithoutPlaceholder(translationContext.translationRequest!!, translationContext::isCancelled) {
             translationContext.taskAmountHandled++
             reportProgress(translationContext)
         }

@@ -26,12 +26,16 @@ class OngoingTranslationHandler(
      * will translate the given [userTranslationRequest] asynchronously, and will call the [translationListener] for each finished translation, either
      * as a dummy translation (true, Translation) or as a real translation (false, Translation)
      */
-    suspend fun translateAsynchronously(userTranslationRequest: UserTranslationRequest, progressReport: () -> Unit) {
+    suspend fun translateAsynchronously(userTranslationRequest: UserTranslationRequest,
+                                        isCancelled: () -> Boolean,
+                                        progressReport: () -> Unit) {
         arbFileModificationService.addSimpleTranslationEntry(userTranslationRequest.baseTranslation)
-        return translateAsynchronouslyWithoutPlaceholder(userTranslationRequest, progressReport)
+        return translateAsynchronouslyWithoutPlaceholder(userTranslationRequest, isCancelled, progressReport)
     }
 
-    suspend fun translateAsynchronouslyWithoutPlaceholder(userTranslationRequest: UserTranslationRequest, progressReport: () -> Unit) {
+    suspend fun translateAsynchronouslyWithoutPlaceholder(userTranslationRequest: UserTranslationRequest,
+                                                          isCancelled: () -> Boolean,
+                                                          progressReport: () -> Unit) {
         //what we actually want to do is to get the initial conversion of the request done by GPT
         //and then, when the conversion has been done, a simple translation, which does not need to be done by an expensive model, but that
         //is an optimization for later
@@ -42,7 +46,7 @@ class OngoingTranslationHandler(
 
         concurrentTranslationTasks.withPermit {
             val clientRequest = mapper.toClientRequest(userTranslationRequest);
-            return translateInBackground(clientRequest) {
+            return translateInBackground(clientRequest, isCancelled) {
                 if(baseLanguage == it.lang) {
                     arbFileModificationService.replaceSimpleTranslationEntry(it)
                 } else {
@@ -75,6 +79,7 @@ class OngoingTranslationHandler(
 
     private suspend fun translateInBackground(
         clientRequest: ClientTranslationRequest,
+        isCancelled: () -> Boolean,
         translationListener: (Translation) -> Unit
     ) {
         //first translate the base language with placeholder
@@ -82,7 +87,7 @@ class OngoingTranslationHandler(
         arbFileModificationService.replaceSimpleTranslationEntry(createdArbEntry.translation)
         //then translate the other languages
         return translationRequestClient
-            .translateValueOnly(clientRequest, createdArbEntry) { partialTranslation ->
+            .translateValueOnly(clientRequest, createdArbEntry, isCancelled) { partialTranslation ->
                 println("got translation for ${partialTranslation.getTargetLanguage()}")
                 translationListener(partialTranslation.translation)
             }

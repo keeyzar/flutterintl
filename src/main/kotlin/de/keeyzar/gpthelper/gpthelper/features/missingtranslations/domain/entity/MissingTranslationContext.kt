@@ -30,4 +30,8 @@ class MissingTranslationContext<T>(
     override fun isCancelled(): Boolean {
         return cancelled
     }
+
+    override fun setCancelled() {
+        cancelled = true
+    }
 }

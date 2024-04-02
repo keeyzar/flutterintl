@@ -4,6 +4,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.application.WriteAction
 import com.intellij.openapi.command.CommandProcessor
+import com.intellij.openapi.diagnostic.Logger
 import de.keeyzar.gpthelper.gpthelper.features.shared.domain.exception.GPTHelperBaseException
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.FileToTranslate
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.Language
@@ -21,12 +22,19 @@ class PsiTranslationFileRepository(
     private val languageFileFinder: LanguageFileFinder,
     private val userSettingsRepository: UserSettingsRepository,
 ) : TranslationFileRepository {
+
+    private var log: Logger = Logger.getInstance(PsiTranslationFileRepository::class.java)
+
     override fun getTranslationFileByLanguage(language: Language): FileToTranslate {
-        return ReadAction.compute<FileToTranslate, GPTHelperBaseException> {
+        log.trace("before reading the file for language: $language")
+        val computeAction = ReadAction.compute<FileToTranslate, GPTHelperBaseException> {
+            log.trace("inside ReadAction.compute for language: $language")
             val project = currentProjectProvider.project
             val document = languageFileFinder.findLanguageFile(language, project);
             return@compute FileToTranslate(language, document.text)
         }
+        log.trace("after reading the file for language: $language")
+        return computeAction
     }
 
     override fun createOrGetTranslationFileByLanguage(language: Language): FileToTranslate {
@@ -42,13 +50,18 @@ class PsiTranslationFileRepository(
     }
 
     override fun saveTranslationFile(fileToTranslate: FileToTranslate) {
+        log.trace("in saveTranslationFile, prior to WriteAction.runAndWait")
         WriteAction.runAndWait<GPTHelperBaseException> {
+            log.trace("in saveTranslationFile, inside WriteAction.runAndWait")
             CommandProcessor.getInstance().executeCommand(currentProjectProvider.project, {
+                log.trace("in saveTranslationFile, inside executeCommand")
                 val project = currentProjectProvider.project
                 val document = languageFileFinder.findLanguageFile(fileToTranslate.language, project);
                 document.setText(fileToTranslate.content)
             }, "translation", "translate")
+            log.trace("in saveTranslationFile, after executeCommand")
         }
+        log.trace("in saveTranslationFile, after WriteAction.runAndWait")
     }
 
     override fun getPathsToTranslationFiles(): List<Path> {

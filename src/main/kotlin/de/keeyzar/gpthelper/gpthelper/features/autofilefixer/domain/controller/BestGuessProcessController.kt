@@ -87,7 +87,7 @@ class BestGuessProcessController(
             }
             //okay, this here will take quite a while...
             requests.forEach {
-                ongoingTranslationHandler.translateAsynchronouslyWithoutPlaceholder(it) {
+                ongoingTranslationHandler.translateAsynchronouslyWithoutPlaceholder(it, { false }) {
                     reportProgress(taskCounter, taskAmount)
                 }
             }

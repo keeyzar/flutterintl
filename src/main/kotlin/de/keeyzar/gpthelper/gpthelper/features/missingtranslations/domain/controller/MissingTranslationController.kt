@@ -102,7 +102,7 @@ class MissingTranslationController<T>(
                         return
                     }
                     try {
-                        ongoingTranslationHandler.translateAsynchronously(req) {
+                        ongoingTranslationHandler.translateAsynchronously(req, missingTranslationContext::isCancelled) {
                             reportProgress(missingTranslationContext)
                             alreadyTranslated += missingTranslationTargetTranslation
                         }

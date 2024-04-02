@@ -1,5 +1,6 @@
 package de.keeyzar.gpthelper.gpthelper.features.translations.presentation.service
 
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
@@ -15,6 +16,7 @@ import kotlin.math.max
  * listen for changes in the translation progress and update the UI accordingly
  */
 class TranslationTaskBackgroundProgress {
+    var log: Logger = Logger.getInstance(TranslationTaskBackgroundProgress::class.java)
 
     interface TranslationProgressContext {
         fun getId(): String
@@ -22,6 +24,7 @@ class TranslationTaskBackgroundProgress {
         var progressText: String
 
         fun isCancelled(): Boolean
+        fun setCancelled()
     }
     /**
      * will call in a blocking context the provided callback.
@@ -43,24 +46,30 @@ class TranslationTaskBackgroundProgress {
                     callback()
                 }
                 while (!finished) {
+                    log.trace("waiting for the task to finish")
                     if(translationContext.isCancelled()) {
+                        break
+                    }
+                    if(visibleIndicator.isCanceled) {
+                        translationContext.setCancelled()
                         break
                     }
                     try {
                         Thread.sleep(1000)
                     } catch (e: InterruptedException) {
                         Thread.interrupted()
-                        println("We were interrupted")
+                        log.info("We were interrupted")
                     }
                 }
             }
 
             fun initProgressListener(progressIndicator: ProgressIndicator) {
-                progressIndicator.fraction = 0.0;
-                progressIndicator.isIndeterminate = false;
-                val con = project.messageBus.connect();
+                progressIndicator.fraction = 0.0
+                progressIndicator.isIndeterminate = false
+                val con = project.messageBus.connect()
                 con.setDefaultHandler { _, objects ->
                     if (objects[0] != null && objects[0] is TranslationProgress) {
+                        log.trace("received a message")
                         if (translationContext.getId() != (objects[0] as TranslationProgress).taskId) {
                             //skip, different task
                             return@setDefaultHandler
@@ -81,7 +90,7 @@ class TranslationTaskBackgroundProgress {
 
             override fun onFinished() {
                 super.onFinished()
-                print("finished the task!")
+                log.trace("finished the task!")
                 finishedCallback?.invoke()
             }
         }
