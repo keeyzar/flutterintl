@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "de.keeyzar.gpt-helper"
-version = "1.18"
+version = "1.18.1"
 
 repositories {
     mavenCentral()

@@ -59,6 +59,14 @@
         <![CDATA[
       <ul>
       <li>
+          <b>1.18.1</b>
+          <ul>
+            <li>
+              cancellation of task finally works
+            </li>
+          </ul>
+      </li>
+      <li>
           <b>1.18.0</b>
           <ul>
             <li>

@@ -2,9 +2,9 @@ package de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.clie
 
 import com.aallam.openai.api.http.Timeout
 import com.aallam.openai.api.logging.LogLevel
+import com.aallam.openai.api.logging.Logger
 import com.aallam.openai.api.model.ModelId
-import com.aallam.openai.client.OpenAI
-import com.aallam.openai.client.OpenAIConfig
+import com.aallam.openai.client.*
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import de.keeyzar.gpthelper.gpthelper.features.shared.infrastructure.model.UserSettings
@@ -56,9 +56,17 @@ class GPTTranslationRequestClientTest {
             OpenAI(
                 OpenAIConfig(
                     token = key,
+                    logging = LoggingConfig(LogLevel.All, Logger.Default),
                     timeout = Timeout(socket = 60.seconds),
-                    logLevel = LogLevel.All,
+                    organization = null,
                     headers = mapOf(),
+                    host = OpenAIHost.OpenAI,
+                    proxy = null,
+                    retry = RetryStrategy(
+                        base = 2.0,
+                        maxRetries = 2,
+                        maxDelay = 60.seconds,
+                    )
                 )
             )
         )
