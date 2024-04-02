@@ -57,10 +57,15 @@ class GenerateTranslationDialog(
         model.desiredValue = translateKeyContext.statement
         //most of the time the user is going to translate in the same file one after another, and they will have mostly identical structure
         val changeTranslationContext = translateKeyContext.changeTranslationContext
-        model.desiredKey = changeTranslationContext?.key ?: translateToTranslationKey(translateKeyContext.statement)
         editableKey = changeTranslationContext?.key == null
         val directLastUserInput = translateKeyContext.lastUserInput?.lastOrNull()
-        model.desiredKey = directLastUserInput?.desiredKey ?: model.desiredKey
+        if(changeTranslationContext != null) {
+            model.desiredKey = changeTranslationContext.key
+        } else {
+            model.desiredKey = translateToTranslationKey(translateKeyContext.statement)
+            model.desiredKey = directLastUserInput?.desiredKey ?: model.desiredKey
+        }
+
         if(changeTranslationContext?.description != null) {
             model.desiredDescription = changeTranslationContext.description
         } else {

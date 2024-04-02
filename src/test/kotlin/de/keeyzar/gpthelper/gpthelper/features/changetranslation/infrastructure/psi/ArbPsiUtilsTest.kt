@@ -4,11 +4,9 @@ import com.intellij.json.psi.JsonStringLiteral
 import com.intellij.json.psi.impl.JsonPropertyImpl
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
-import com.intellij.psi.PsiWhiteSpace
 import com.intellij.psi.impl.source.tree.LeafPsiElement
 import com.intellij.psi.util.descendantsOfType
 import com.intellij.psi.util.parentOfType
-import com.intellij.psi.util.siblings
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import de.keeyzar.gpthelper.gpthelper.features.psiutils.arb.ArbPsiUtils
 import de.keeyzar.gpthelper.gpthelper.features.psiutils.arb.StringArrayContent
@@ -23,50 +21,84 @@ class ArbPsiUtilsTest : BasePlatformTestCase() {
         myFixture.testDataPath = "src/test/resources"
     }
 
-    fun test_givenWrongKey_shouldStillFindCorrectKeyAndValue() {
-        fun bracketPsi(psiFile: PsiFile): PsiElement {
-            return psiFile.descendantsOfType<PsiElement>()
-                .find { it.text == "}" }!!
-        }
+    fun test_bracketPsi_shouldFindCorrectKeyAndValue() {
+        val psiFile = createPsiFile()
+        val element = psiFile.descendantsOfType<PsiElement>()
+            .find { it.text == "}" }!!
+        val currentJsonProperty = arbPsiUtils.getCurrentJsonProperty(element)
 
-        fun firstElement(psiFile: PsiFile): PsiElement {
-            return psiFile.descendantsOfType<JsonStringLiteral>().first()
-        }
+        assertThat(currentJsonProperty?.key).isEqualTo("greeting")
+        assertThat(currentJsonProperty?.value).isEqualTo("hello user")
+        assertThat(currentJsonProperty?.description).isEqualTo("greet the user")
+    }
 
-        fun lastElement(psiFile: PsiFile): PsiElement {
-            return psiFile.descendantsOfType<JsonPropertyImpl>()
-                .take(2)
-                .last()
-        }
+    fun test_firstElement_shouldFindCorrectKeyAndValue() {
+        val psiFile = createPsiFile()
+        val element = psiFile.descendantsOfType<JsonStringLiteral>().first()
+        val currentJsonProperty = arbPsiUtils.getCurrentJsonProperty(element)
 
-        fun lastElementString(psiFile: PsiFile): PsiElement {
-            return psiFile.descendantsOfType<JsonStringLiteral>()
-                .last()
-        }
+        assertThat(currentJsonProperty?.key).isEqualTo("greeting")
+        assertThat(currentJsonProperty?.value).isEqualTo("hello user")
+        assertThat(currentJsonProperty?.description).isEqualTo("greet the user")
+    }
 
-        /**
-         * check if we find hte correct element, when we're in a nested whitespace
-         */
-        fun nestedWhitespace(psiFile: PsiFile): PsiElement {
-            return psiFile.descendantsOfType<LeafPsiElement>()
-                .find { it.textMatches("\"greet the user\"") }!!
-                .parentOfType<JsonPropertyImpl>()?.prevSibling!!
-        }
+    fun test_lastElement_shouldFindCorrectKeyAndValue() {
+        val psiFile = createPsiFile()
+        val element = psiFile.descendantsOfType<JsonPropertyImpl>()
+            .take(2)
+            .last()
+        val currentJsonProperty = arbPsiUtils.getCurrentJsonProperty(element)
 
-        fun commaEndOfLine(psiFile: PsiFile): PsiElement {
-            return psiFile.descendantsOfType<LeafPsiElement>()
-                .find { it.textMatches(",") }!!
-        }
+        assertThat(currentJsonProperty?.key).isEqualTo("greeting")
+        assertThat(currentJsonProperty?.value).isEqualTo("hello user")
+        assertThat(currentJsonProperty?.description).isEqualTo("greet the user")
+    }
 
-        val listOfFunctions = listOf(::bracketPsi,
-            ::firstElement,
-            ::lastElement,
-            ::lastElementString,
-            ::nestedWhitespace,
-            ::commaEndOfLine
-        )
+    fun test_lastElementString_shouldFindCorrectKeyAndValue() {
+        val psiFile = createPsiFile()
+        val element = psiFile.descendantsOfType<JsonStringLiteral>()
+            .find { it -> it.textMatches("\"hello user\"")}
+        val currentJsonProperty = arbPsiUtils.getCurrentJsonProperty(element!!)
 
-        val psiFile = myFixture.configureByText(
+        assertThat(currentJsonProperty?.key).isEqualTo("greeting")
+        assertThat(currentJsonProperty?.value).isEqualTo("hello user")
+        assertThat(currentJsonProperty?.description).isEqualTo("greet the user")
+    }
+
+    fun test_nestedWhitespace_shouldFindCorrectKeyAndValue() {
+        val psiFile = createPsiFile()
+        val element = psiFile.descendantsOfType<LeafPsiElement>()
+            .find { it.textMatches("\"greet the user\"") }!!
+            .parentOfType<JsonPropertyImpl>()?.prevSibling!!
+        val currentJsonProperty = arbPsiUtils.getCurrentJsonProperty(element)
+
+        assertThat(currentJsonProperty?.key).isEqualTo("greeting")
+        assertThat(currentJsonProperty?.value).isEqualTo("hello user")
+        assertThat(currentJsonProperty?.description).isEqualTo("greet the user")
+    }
+    fun test_centerEntry_shouldFindCorrectKeyAndValue() {
+        val psiFile = createPsiFile()
+        val element = psiFile.descendantsOfType<JsonStringLiteral>()
+            .find { it.textMatches("\"say hello\"") }!!
+        val currentJsonProperty = arbPsiUtils.getCurrentJsonProperty(element)
+
+        assertThat(currentJsonProperty?.key).isEqualTo("say_hello")
+        assertThat(currentJsonProperty?.value).isEqualTo("nice")
+        assertThat(currentJsonProperty?.description).isEqualTo("say hello")
+    }
+
+    fun test_commaEndOfLine_shouldFindCorrectKeyAndValue() {
+        val psiFile = createPsiFile()
+        val element = commaEndOfLine(psiFile)
+        val currentJsonProperty = arbPsiUtils.getCurrentJsonProperty(element)
+
+        assertThat(currentJsonProperty?.key).isEqualTo("greeting")
+        assertThat(currentJsonProperty?.value).isEqualTo("hello user")
+        assertThat(currentJsonProperty?.description).isEqualTo("greet the user")
+    }
+
+    private fun createPsiFile(): PsiFile {
+        return myFixture.configureByText(
             "test.arb", """
             {
                 "greeting": "hello user"
@@ -74,21 +106,24 @@ class ArbPsiUtilsTest : BasePlatformTestCase() {
                     "type": "text",
                     "description": "greet the user"
                 }
+                "say_hello": "nice",
+                "@say_hello": {
+                    "type": "text",
+                    "description": "say hello"
+                }
+                "third": "another",
+                "@third": {
+                    "type": "text",
+                    "description": "else"
+                }
             }
         """.trimIndent()
         )
+    }
 
-
-        //for each function in the list, we call it with the psiFile as argument and check if the key and value are correct
-        listOfFunctions.forEach {
-            println("function name: ${it.name}")
-            val firstElement = it(psiFile)
-            val currentJsonProperty = arbPsiUtils.getCurrentJsonProperty(firstElement)
-
-            assertThat(currentJsonProperty?.key).isEqualTo("greeting")
-            assertThat(currentJsonProperty?.value).isEqualTo("hello user")
-            assertThat(currentJsonProperty?.description).isEqualTo("greet the user")
-        }
+    private fun commaEndOfLine(psiFile: PsiFile): PsiElement {
+        return psiFile.descendantsOfType<LeafPsiElement>()
+            .find { it.textMatches(",") }!!
     }
 
     fun test_givenUntranslatedMessageFileAllEntriesAreFound_SingleLanguage(){
