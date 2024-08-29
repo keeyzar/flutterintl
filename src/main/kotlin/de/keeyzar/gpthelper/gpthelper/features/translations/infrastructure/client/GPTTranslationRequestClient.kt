@@ -79,7 +79,6 @@ class GPTTranslationRequestClient(
         throw Exception("Failed after $retries retries", lastException)
     }
 
-    @OptIn(BetaOpenAI::class)
     suspend fun requestTranslation(content: String, targetLanguage: String): String {
         val tonality = userSettingsRepository.getSettings().tonality
         val initialRequest = """
@@ -127,17 +126,16 @@ class GPTTranslationRequestClient(
             )
         )
 
-        val openAI = openAIConfigProvider.getInstance();
-        val completion: ChatCompletion = openAI.chatCompletion(chatCompletionRequest);
+        val openAI = openAIConfigProvider.getInstance()
+        val completion: ChatCompletion = openAI.chatCompletion(chatCompletionRequest)
         if (completion.choices.isEmpty()) {
-            throw Exception("Could not translate content");
+            throw Exception("Could not translate content")
         }
         //this is a single response
-        return completion.choices[0].message?.content!!
+        return completion.choices[0].message.content!!
     }
 
-    @OptIn(BetaOpenAI::class)
-    suspend fun requestComplexTranslation(content: String, targetLanguage: String): String {
+    private suspend fun requestComplexTranslation(content: String, targetLanguage: String): String {
         val tonality = userSettingsRepository.getSettings().tonality
         val initialRequest = """Can you please provide a flutter arb entry based on the content?
             There are different kinds of localization possibilities, either plain simple, without a variable
@@ -237,16 +235,15 @@ class GPTTranslationRequestClient(
             )
         )
 
-        val openAI = openAIConfigProvider.getInstance();
-        val completion: ChatCompletion = openAI.chatCompletion(chatCompletionRequest);
+        val openAI = openAIConfigProvider.getInstance()
+        val completion: ChatCompletion = openAI.chatCompletion(chatCompletionRequest)
         if (completion.choices.isEmpty()) {
-            throw Exception("Could not translate content");
+            throw Exception("Could not translate content")
         }
         //this is a single response
-        return completion.choices[0].message?.content!!
+        return completion.choices[0].message.content!!
     }
 
-    @OptIn(BetaOpenAI::class)
     suspend fun requestComplexTranslationLong(content: String, targetLanguage: String): String {
         val tonality = userSettingsRepository.getSettings().tonality
         val initialRequest = """
@@ -271,7 +268,7 @@ class GPTTranslationRequestClient(
                 }
               },
 
-            in general, you either have simple text without placeholders, or you have placeholders. WHen you have placeholders, then you can decide between
+            in general, you either have simple text without placeholders, or you have placeholders. When you have placeholders, then you can decide between
             "Hello {username}"
             with the corresponding placeholder username, or you need to pluralize
             "You just got {count, plural, =0{no credits} =1{1 credit} other{{count} credits}}"
@@ -287,6 +284,8 @@ class GPTTranslationRequestClient(
             value: "Upgrade achieved"
             description: "User has received an upgrade"
             Please translate the value to ISO CODE en, tonality: formal
+            Do not change special chars, e.g. new lines (e.g. \n should stay \n)
+            Thank you for your help! :)
         """.trimIndent()
         val initialAnswer = """{
             "upgrade_popup_name": "Upgrade achieved",
@@ -327,21 +326,21 @@ class GPTTranslationRequestClient(
             )
         )
 
-        val openAI = openAIConfigProvider.getInstance();
-        val completion: ChatCompletion = openAI.chatCompletion(chatCompletionRequest);
+        val openAI = openAIConfigProvider.getInstance()
+        val completion: ChatCompletion = openAI.chatCompletion(chatCompletionRequest)
         if (completion.choices.isEmpty()) {
-            throw Exception("Could not translate content");
+            throw Exception("Could not translate content")
         }
         //this is a single response
-        return completion.choices[0].message?.content!!
+        return completion.choices[0].message.content!!
     }
 
-    suspend fun requestTranslationOnly(content: String, targetLanguage: String): String {
+    private suspend fun requestTranslationOnly(content: String, targetLanguage: String): String {
         val tonality = userSettingsRepository.getSettings().tonality
         val request = """
             Can you please translate this flutter arb entry into the language '$targetLanguage' (ISO 639-1 Code language code)? do not change keys.
             $content
-            the translated tonality should be $tonality . Remember, you're an API server responding in valid JSON only and not in Markdown!. Thank you so much!
+            the translated tonality should be $tonality . Remember, you're an API server responding in valid JSON only and not in Markdown!. Do not change special chars, e.g. new lines (e.g. \n should stay \n). Thank you so much!
         """.trimIndent()
 
         val chatCompletionRequest = ChatCompletionRequest(
@@ -359,14 +358,14 @@ class GPTTranslationRequestClient(
             )
         )
 
-        val openAI = openAIConfigProvider.getInstance();
-        val completion: ChatCompletion = openAI.chatCompletion(chatCompletionRequest);
+        val openAI = openAIConfigProvider.getInstance()
+        val completion: ChatCompletion = openAI.chatCompletion(chatCompletionRequest)
         if (completion.choices.isEmpty()) {
-            throw Exception("Could not translate content");
+            throw Exception("Could not translate content")
         }
-        val response = removeMarkdown(completion.choices[0].message?.content!!)
+        val response = removeMarkdown(completion.choices[0].message.content!!)
         //this is a single response
-        return response;
+        return response
     }
 
     /**

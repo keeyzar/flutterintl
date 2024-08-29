@@ -28,7 +28,11 @@ class TranslationRequestResponseMapper(private val objectMapper: ObjectMapper) {
     }
 
     fun fromResponse(targetLanguage: Language, gptResponse: String, baseTranslation: Translation): Translation {
-        val map: Map<*,*> = objectMapper.readValue(gptResponse, Map::class.java)
+        var modifiedResponse = gptResponse
+        if(gptResponse.contains("```json")) {
+            modifiedResponse = gptResponse.substringAfter("```json").substringBeforeLast("```")
+        }
+        val map: Map<*,*> = objectMapper.readValue(modifiedResponse, Map::class.java)
         val desiredKey = baseTranslation.entry.desiredKey
         val metadata = map.get("@${desiredKey}") as Map<*, *>
         val entry = SimpleTranslationEntry(
@@ -42,7 +46,11 @@ class TranslationRequestResponseMapper(private val objectMapper: ObjectMapper) {
     }
 
     fun fromTranslationOnlyResponse(targetLanguage: Language, gptResponse: String, baseTranslation: Translation): Translation {
-        val map: Map<*,*> = objectMapper.readValue(gptResponse, Map::class.java)
+        var modifiedResponse = gptResponse
+        if(gptResponse.contains("```json")) {
+            modifiedResponse = gptResponse.substringAfter("```json").substringBeforeLast("```")
+        }
+        val map: Map<*,*> = objectMapper.readValue(modifiedResponse, Map::class.java)
         val desiredKey = baseTranslation.entry.desiredKey
         val entry = SimpleTranslationEntry(
             id = null,
