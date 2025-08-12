@@ -1,0 +1,8 @@
+package de.keeyzar.gpthelper.gpthelper.features.missingtranslations.domain.service
+
+import de.keeyzar.gpthelper.gpthelper.features.missingtranslations.domain.entity.MissingTranslationFilteredTargetTranslation
+import de.keeyzar.gpthelper.gpthelper.features.missingtranslations.domain.entity.MissingTranslationAndExistingTranslation
+
+interface MissingTranslationInputService {
+    fun collectMissingTranslationInput(missingTranslationAndExistingTranslations: List<MissingTranslationAndExistingTranslation>): List<MissingTranslationFilteredTargetTranslation>
+}

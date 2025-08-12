@@ -9,6 +9,7 @@ plugins {
     alias(libs.plugins.changelog) // Gradle Changelog Plugin
     alias(libs.plugins.qodana) // Gradle Qodana Plugin
     alias(libs.plugins.kover) // Gradle Kover Plugin
+    kotlin("kapt") version "2.2.0" // Kotlin Annotation Processing Tool (KAPT) support (for MapStruct)
 }
 
 group = providers.gradleProperty("pluginGroup").get()
@@ -28,7 +29,8 @@ repositories {
         defaultRepositories()
     }
 }
-
+val ktor_version = "3.2.3"
+val koin_version = "3.5.0"
 // Dependencies are managed with Gradle version catalog - read more: https://docs.gradle.org/current/userguide/platforms.html#sub:version-catalog
 dependencies {
     testImplementation(libs.junit)
@@ -49,6 +51,34 @@ dependencies {
 
         testFramework(TestFrameworkType.Platform)
     }
+
+    // import Kotlin API client BOM
+    implementation("com.aallam.openai:openai-client:4.0.1") {
+        exclude(group = "org.slf4j", module = "slf4j-api")
+        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib")
+    }
+    implementation("io.ktor:ktor-client-apache5:$ktor_version") {
+        exclude(group = "org.slf4j", module = "slf4j-api")
+        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib")
+    }
+
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.+")
+    implementation("com.fasterxml.jackson.core:jackson-core:2.14.+")
+    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.14.+")
+    implementation("com.google.genai:google-genai:1.11.0")
+    implementation("io.insert-koin:koin-core:$koin_version")
+    implementation("org.slf4j:slf4j-api:2.0.7")
+
+
+    testImplementation("org.junit.jupiter:junit-jupiter:5.8.0")
+    testImplementation("org.assertj:assertj-core:3.24.2")
+    testImplementation("io.insert-koin:koin-test:$koin_version")
+    testImplementation("org.mockito:mockito-core:5.3.1")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:4.1.0")
+
+    implementation("org.mapstruct:mapstruct:1.6.3")
+    kapt("org.mapstruct:mapstruct-processor:1.6.3")
+    runtimeOnly("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2") //in context of gradle.properties with kotlin.stdlib.default.dependency
 }
 
 // Configure IntelliJ Platform Gradle Plugin - read more: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-extension.html

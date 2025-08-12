@@ -1,0 +1,66 @@
+package de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.client
+
+import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.client.BestGuessL10nClient
+import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.client.BestGuessRequest
+import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.client.BestGuessResponse
+import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.exception.BestGuessClientException
+import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.parser.BestGuessOpenAIResponseParser
+import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.configuration.OpenAIConfigProvider
+
+class GeminiBestGuessClient(
+    private val openAIConfigProvider: OpenAIConfigProvider,
+    private val bestGuessOpenAIResponseParser: BestGuessOpenAIResponseParser,
+) : BestGuessL10nClient {
+
+    private fun createRequestContent(bestGuessRequest: BestGuessRequest): String {
+        val fileName = bestGuessRequest.context.filename
+        val newLineDelimitedLiterals = bestGuessRequest.context.literals
+            .fold(StringBuilder()) { acc, literal ->
+                acc.appendLine("id: ${literal.id}, context: ${literal.context}")
+            }
+
+        return """
+            You're an API Server and your task is to provide localization key guesses for the user. Please provide best guess l18n keys for these Strings. These are used in the context of Flutter arb localization
+            
+            try to adhere to the following rules for the keys:
+            key format: context_type_description
+            keys can only be lowercase and underscore, and must begin with a letter.
+            The description should explain the intent of the text, not the actual text itself.
+            
+            key examples: 
+            - loginpage_title_greeting
+            - loginpage_label_username
+            - loginpage_button_login
+            - common_button_cancel
+            - common_button_confirm
+            
+            
+            You respond by (BUT WITHOUT WHITESPACE - as to save bandwidth):
+            [{
+            "id": <identical to the one you received>,
+            "key": "<your best guess key>",
+            "description": "...",
+            {...}
+            ]
+
+           
+            Filename: $fileName
+            $newLineDelimitedLiterals
+        """.trimIndent()
+    }
+
+    override suspend fun simpleGuess(bestGuessRequest: BestGuessRequest): BestGuessResponse {
+        val gemini = openAIConfigProvider.getInstanceGemini()
+        val modelId = "models/gemini-2.5-flash"
+        val request = createRequestContent(bestGuessRequest)
+
+        val response = gemini.models.generateContent(
+            modelId,
+            request,
+            null
+        )
+
+        val resultText = response.text() ?: throw BestGuessClientException("Gemini hat nicht geantwortet oder die Antwort war leer.")
+        return bestGuessOpenAIResponseParser.parse(resultText)
+    }
+}
