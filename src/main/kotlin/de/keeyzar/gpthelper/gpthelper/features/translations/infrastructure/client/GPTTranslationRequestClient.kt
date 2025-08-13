@@ -149,7 +149,7 @@ class GPTTranslationRequestClient(
         )
 
         val gemini = openAIConfigProvider.getInstanceGemini()
-        val model = "models/gemini-2.5-flash"
+        val model = userSettingsRepository.getSettings().gptModel
         val config = GenerateContentConfig.builder()
             .systemInstruction(
                 Content.builder().parts(
@@ -181,7 +181,7 @@ class GPTTranslationRequestClient(
         )
 
         val gemini = openAIConfigProvider.getInstanceGemini()
-        val model = "models/gemini-2.5-flash"
+        val model = userSettingsRepository.getSettings().gptModel
         val config = GenerateContentConfig.builder()
             .systemInstruction(Content.builder().parts(Part.builder().text("You are a helpful REST API Server answering in valid JSON, that creates flutter INTL ARB entries.")).build()).build()
 

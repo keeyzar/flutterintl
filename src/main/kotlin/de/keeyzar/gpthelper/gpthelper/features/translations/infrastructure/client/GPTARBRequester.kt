@@ -4,6 +4,7 @@ import com.aallam.openai.api.BetaOpenAI
 import com.google.genai.types.Content
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.client.SingleTranslationRequestClient
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.Language
+import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.UserSettingsRepository
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.configuration.OpenAIConfigProvider
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.dto.GPTArbTranslationResponse
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.parser.GPTARBResponseParser
@@ -14,6 +15,7 @@ class GPTARBRequester(
     private val templater: ARBTemplateService,
     private val openAIConfigProvider: OpenAIConfigProvider,
     private val responseParser: GPTARBResponseParser,
+    private val userSettingsRepository: UserSettingsRepository
 ) : SingleTranslationRequestClient {
     override suspend fun requestTranslation(content: String, targetLanguage: String): GPTArbTranslationResponse {
         return longDescriptionTranslation(content, targetLanguage)
@@ -47,7 +49,7 @@ class GPTARBRequester(
     }
 
     suspend fun translateWithGPTTurbo(requestTemplate: String, content: String): GPTArbTranslationResponse {
-        val modelId = "models/gemini-2.5-flash"
+        val modelId = userSettingsRepository.getSettings().gptModel
 
         val request = """
             $requestTemplate

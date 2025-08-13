@@ -5,6 +5,7 @@ import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.client.BestG
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.client.BestGuessResponse
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.exception.BestGuessClientException
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.parser.BestGuessOpenAIResponseParser
+import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.UserSettingsRepository
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.configuration.OpenAIConfigProvider
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -14,6 +15,7 @@ import kotlinx.coroutines.sync.withPermit
 class GeminiBestGuessClient(
     private val openAIConfigProvider: OpenAIConfigProvider,
     private val bestGuessOpenAIResponseParser: BestGuessOpenAIResponseParser,
+    private val userSettingsRepository: UserSettingsRepository
 ) : BestGuessL10nClient {
 
     companion object {
@@ -30,10 +32,10 @@ class GeminiBestGuessClient(
         return """
             You're an API Server and your task is to provide localization key guesses for the user. Please provide best guess l18n keys for these Strings. These are used in the context of Flutter arb localization
 
-
-            key examples:
-
-
+            try to adhere to the following rules for the keys:
+            key format: context_type_description
+            keys can only be lowercase and underscore, and must begin with a letter.
+            The description should explain the intent of the text, not the actual text itself.
 
             key examples: 
             - loginpage_title_greeting
@@ -67,7 +69,7 @@ class GeminiBestGuessClient(
 
     private suspend fun singleRequestGuess(bestGuessRequest: BestGuessRequest): BestGuessResponse {
         val gemini = openAIConfigProvider.getInstanceGemini()
-        val modelId = "models/gemini-2.5-flash"
+        val modelId = userSettingsRepository.getSettings().gptModel
         val request = createRequestContent(bestGuessRequest)
 
         val response = gemini.models.generateContent(
