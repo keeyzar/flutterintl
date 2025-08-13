@@ -42,12 +42,20 @@ class AutoLocalizeDirectory : DumbAwareAction() {
                         return@triggerInBlockingContext
                     }
 
-                    initializer.contextProvider.putAutoLocalizeContext(uuid, AutoLocalizeContext(project, dartFiles.first()))
-                    initializer.waitingIndicatorService.startWaiting(uuid, "Scanning Directory", "Finding all localizable strings...")
+                    initializer.contextProvider.putAutoLocalizeContext(
+                        uuid,
+                        AutoLocalizeContext(project, dartFiles.first())
+                    )
+                    initializer.waitingIndicatorService.startWaiting(
+                        uuid,
+                        "Scanning Directory",
+                        "Finding all localizable strings..."
+                    )
 
                     val stringLiteralHelper = initializer.dartStringLiteralHelper
-                    val allLiteralsWithSelection = dartFiles.flatMap { stringLiteralHelper.findStringPsiElements(it).entries }
-                        .associate { it.key to it.value }
+                    val allLiteralsWithSelection =
+                        dartFiles.flatMap { stringLiteralHelper.findStringPsiElements(it).entries }
+                            .associate { it.key to it.value }
 
                     initializer.waitingIndicatorService.stopWaiting()
 
@@ -69,19 +77,29 @@ class AutoLocalizeDirectory : DumbAwareAction() {
                     }
 
                     // We use the first file for context, but the logic could be more sophisticated
-                    initializer.contextProvider.putAutoLocalizeContext(uuid, AutoLocalizeContext(project, finalLiterals.first().containingFile))
+                    initializer.contextProvider.putAutoLocalizeContext(
+                        uuid,
+                        AutoLocalizeContext(project, finalLiterals.first().containingFile)
+                    )
 
-                    val fileBestGuessContext = initializer.gatherBestGuessContext.fromPsiElements(uuid, finalLiterals) ?: return@triggerInBlockingContext
+                    val fileBestGuessContext = initializer.gatherBestGuessContext.fromPsiElements(uuid, finalLiterals)
+                        ?: return@triggerInBlockingContext
 
-                    initializer.waitingIndicatorService.startWaiting(uuid, "Requesting AI Suggestions", "Getting translation key guesses for directory. This might take a while, please be patient")
-                    val simpleGuess = initializer.bestGuessL10nClient.simpleGuess(BestGuessRequest(fileBestGuessContext))
+                    initializer.waitingIndicatorService.startWaiting(
+                        uuid,
+                        "Requesting AI Suggestions",
+                        "Getting translation key guesses for directory. This might take a while, please be patient"
+                    )
+                    val simpleGuess =
+                        initializer.bestGuessL10nClient.simpleGuess(BestGuessRequest(fileBestGuessContext))
                     initializer.waitingIndicatorService.stopWaiting()
 
                     if (simpleGuess.responseEntries.isEmpty()) {
                         return@triggerInBlockingContext
                     }
 
-                    val multiKeyTranslationContext = initializer.guessAdaptionService.adaptBestGuess(uuid, simpleGuess) ?: return@triggerInBlockingContext
+                    val multiKeyTranslationContext = initializer.guessAdaptionService.adaptBestGuess(uuid, simpleGuess)
+                        ?: return@triggerInBlockingContext
 
                     initializer.multiKeyTranslationProcessController.startTranslationProcess(multiKeyTranslationContext)
                 } finally {
@@ -97,10 +115,12 @@ class AutoLocalizeDirectory : DumbAwareAction() {
     }
 
     private fun findDartFiles(project: Project, directory: VirtualFile): List<PsiFile> {
-        val directoryScope = GlobalSearchScopes.directoryScope(project, directory, true)
-        val psiManager = PsiManager.getInstance(project)
-        return FileTypeIndex.getFiles(DartFileType.INSTANCE, directoryScope).mapNotNull {
-            psiManager.findFile(it)
+        return ApplicationManager.getApplication().runReadAction<List<PsiFile>> {
+            val directoryScope = GlobalSearchScopes.directoryScope(project, directory, true)
+            val psiManager = PsiManager.getInstance(project)
+            FileTypeIndex.getFiles(DartFileType.INSTANCE, directoryScope).mapNotNull {
+                psiManager.findFile(it)
+            }
         }
     }
 }

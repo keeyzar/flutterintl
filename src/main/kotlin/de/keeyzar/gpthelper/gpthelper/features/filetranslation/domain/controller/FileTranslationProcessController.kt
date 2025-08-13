@@ -1,16 +1,18 @@
 package de.keeyzar.gpthelper.gpthelper.features.filetranslation.domain.controller
 
-import de.keeyzar.gpthelper.gpthelper.features.filetranslation.domain.client.TranslationClient
 import de.keeyzar.gpthelper.gpthelper.features.filetranslation.domain.factories.TranslationRequestFactory
 import de.keeyzar.gpthelper.gpthelper.features.filetranslation.domain.service.FinishedFileTranslationHandler
 import de.keeyzar.gpthelper.gpthelper.features.filetranslation.domain.service.GatherFileTranslationContext
 import de.keeyzar.gpthelper.gpthelper.features.filetranslation.domain.service.PartialFileResponseHandler
+import de.keeyzar.gpthelper.gpthelper.features.translations.domain.client.DDDTranslationRequestClient
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.TranslationContext
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.TranslationProgress
-import de.keeyzar.gpthelper.gpthelper.features.translations.domain.service.*
+import de.keeyzar.gpthelper.gpthelper.features.translations.domain.service.TranslationErrorProcessHandler
+import de.keeyzar.gpthelper.gpthelper.features.translations.domain.service.TranslationProgressBus
+import de.keeyzar.gpthelper.gpthelper.features.translations.domain.service.VerifyTranslationSettingsService
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
-import java.util.UUID
+import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -19,7 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger
 class FileTranslationProcessController(
     private val settingsService: VerifyTranslationSettingsService,
     private val gatherFileTranslationContext: GatherFileTranslationContext,
-    private val translationClient: TranslationClient,
+    private val translationClient: DDDTranslationRequestClient,
     private val partialFileResponseHandler: PartialFileResponseHandler,
     private val translationRequestFactory: TranslationRequestFactory,
     private val finishedFileTranslationHandler: FinishedFileTranslationHandler,

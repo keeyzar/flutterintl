@@ -13,13 +13,11 @@ import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.serv
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.presentation.service.IdeaWaitingIndicatorService
 import de.keeyzar.gpthelper.gpthelper.features.changetranslation.domain.controller.ChangeTranslationController
 import de.keeyzar.gpthelper.gpthelper.features.psiutils.arb.ArbPsiUtils
-import de.keeyzar.gpthelper.gpthelper.features.filetranslation.domain.client.TranslationClient
 import de.keeyzar.gpthelper.gpthelper.features.filetranslation.domain.controller.FileTranslationProcessController
 import de.keeyzar.gpthelper.gpthelper.features.filetranslation.domain.factories.TranslationRequestFactory
 import de.keeyzar.gpthelper.gpthelper.features.filetranslation.domain.service.FinishedFileTranslationHandler
 import de.keeyzar.gpthelper.gpthelper.features.filetranslation.domain.service.GatherFileTranslationContext
 import de.keeyzar.gpthelper.gpthelper.features.filetranslation.domain.service.PartialFileResponseHandler
-import de.keeyzar.gpthelper.gpthelper.features.filetranslation.infrastructure.client.GPTTranslationClient
 import de.keeyzar.gpthelper.gpthelper.features.filetranslation.infrastructure.factories.TranslationRequestFactoryImpl
 import de.keeyzar.gpthelper.gpthelper.features.filetranslation.infrastructure.service.*
 import de.keeyzar.gpthelper.gpthelper.features.filetranslation.presentation.service.IdeaTargetLanguageProvider
@@ -112,7 +110,7 @@ class DIConfig {
             single<ContentModificationService> { ArbContentModificationService(get()) }
             single<TranslationRequestMapper> { Mappers.getMapper(TranslationRequestMapper::class.java) }
             single<DispatcherConfiguration> {DispatcherConfiguration(get())}
-            single<DDDTranslationRequestClient> { GPTTranslationRequestClient(get(), get(), get(), get()) }
+            single<DDDTranslationRequestClient> { GPTTranslationRequestClient(get(), get(), get(), get(), get(), get()) }
             single<ArbFileModificationService> { ArbFileModificationService(get(), get(), get()) }
             single<VerifyTranslationSettingsService> { ArbVerifyTranslationSettingsService(get(), get(), get(), get(), get()) }
             single<TranslationClientSettingsValidator> { TranslationClientSettingsValidator(get()) }
@@ -144,7 +142,6 @@ class DIConfig {
             single<ContextProvider> { ContextProvider() }
             single<GatherFileTranslationContext> { IdeaGatherFileTranslationContext(get(), get(), get()) }
             single<TargetLanguageProvider> { TargetLanguageProvider(get()) }
-            single<TranslationClient> { GPTTranslationClient(get(), get()) }
             single<PartialFileResponseHandler> { ArbFlutterPartialFileTranslationResponseHandler(get(), get()) }
             single<TranslationRequestFactory> { TranslationRequestFactoryImpl(get()) }
             single<FileTranslationProcessController> { FileTranslationProcessController(get(), get(), get(), get(), get(), get(), get(), get()) }

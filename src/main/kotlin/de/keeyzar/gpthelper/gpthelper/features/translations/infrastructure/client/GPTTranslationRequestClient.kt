@@ -5,17 +5,23 @@ import com.google.genai.errors.ClientException
 import com.google.genai.types.Content
 import com.google.genai.types.GenerateContentConfig
 import com.google.genai.types.Part
+import de.keeyzar.gpthelper.gpthelper.features.filetranslation.domain.client.FileTranslationRequest
+import de.keeyzar.gpthelper.gpthelper.features.filetranslation.domain.client.PartialFileTranslationResponse
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.client.ClientTranslationRequest
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.client.DDDTranslationRequestClient
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.client.PartialTranslationResponse
+import de.keeyzar.gpthelper.gpthelper.features.translations.domain.client.SingleTranslationRequestClient
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.Translation
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.exceptions.TranslationRequestException
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.UserSettingsRepository
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.configuration.OpenAIConfigProvider
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.mapper.TranslationRequestResponseMapper
+import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.service.JsonFileChunker
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlin.random.Random
 
 
@@ -24,6 +30,8 @@ class GPTTranslationRequestClient(
     private val translationRequestResponseParser: TranslationRequestResponseMapper,
     private val dispatcherConfiguration: DispatcherConfiguration,
     private val userSettingsRepository: UserSettingsRepository,
+    private val jsonFileChunker: JsonFileChunker,
+    private val singleTranslationRequestClient: SingleTranslationRequestClient,
 ) : DDDTranslationRequestClient {
 
 
@@ -202,9 +210,18 @@ class GPTTranslationRequestClient(
     override suspend fun createComplexArbEntry(clientTranslationRequest: ClientTranslationRequest): PartialTranslationResponse {
         val baseContent = translationRequestResponseParser.toGPTContentAdvanced(clientTranslationRequest.translation)
         val targetLang = clientTranslationRequest.translation.lang
-        val requestComplexTranslation = requestComplexTranslationLong(baseContent, targetLang.toISOLangString())
-        val response: Translation = translationRequestResponseParser.fromResponse(targetLang, requestComplexTranslation, clientTranslationRequest.translation)
-        return PartialTranslationResponse(response)
+        try {
+            val requestComplexTranslation = requestComplexTranslationLong(baseContent, targetLang.toISOLangString())
+            val response: Translation =
+                translationRequestResponseParser.fromResponse(targetLang, requestComplexTranslation, clientTranslationRequest.translation)
+            return PartialTranslationResponse(response)
+        } catch (e: Exception) {
+            throw TranslationRequestException(
+                "Failed to create complex arb entry for ${clientTranslationRequest.translation.entry.desiredKey}",
+                e,
+                clientTranslationRequest.translation
+            )
+        }
     }
 
     override suspend fun translateValueOnly(
@@ -282,4 +299,25 @@ class GPTTranslationRequestClient(
         }
         return block() // last attempt
     }
+
+    override suspend fun translate(
+        fileTranslationRequest: FileTranslationRequest,
+        partialTranslationFinishedCallback: (PartialFileTranslationResponse, taskSize: Int) -> Unit
+    ) {
+        val chunkedStrings = jsonFileChunker.chunkJsonBasedOnTotalStringSize(fileTranslationRequest.content, 500);
+        // request translation for each chunk in parallel
+        //not sure, whether this will block the caller
+        val requestSemaphore = Semaphore(9)
+        coroutineScope {
+            return@coroutineScope chunkedStrings.map {
+                async {
+                    requestSemaphore.withPermit {
+                        val response = singleTranslationRequestClient.requestTranslation(it, fileTranslationRequest.baseLanguage, fileTranslationRequest.targetLanguage)
+                        partialTranslationFinishedCallback(PartialFileTranslationResponse(response.content), chunkedStrings.size+1)
+                    }
+                }
+            }
+        }
+    }
+
 }

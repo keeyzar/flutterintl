@@ -32,26 +32,27 @@ class OngoingTranslationHandler(
         isCancelled: () -> Boolean,
         progressReport: () -> Unit
     ) {
-        return translateAsynchronouslyWithoutPlaceholder(userTranslationRequest, false, isCancelled, progressReport)
+        translateAsynchronouslyWithoutPlaceholder(userTranslationRequest, false, isCancelled, progressReport)
     }
 
+    /**
+     * @return null if successful, or the request if it failed
+     */
     suspend fun translateAsynchronouslyWithoutPlaceholder(
         userTranslationRequest: UserTranslationRequest,
         shouldFixArb: Boolean,
         isCancelled: () -> Boolean,
         progressReport: () -> Unit
-    ) {
+    ): UserTranslationRequest? {
         //what we actually want to do is to get the initial conversion of the request done by GPT
         //and then, when the conversion has been done, a simple translation, which does not need to be done by an expensive model, but that
         //is an optimization for later
 
         val baseLanguage = userTranslationRequest.baseTranslation.lang
 
-
-
         concurrentTranslationTasks.withPermit {
             val clientRequest = mapper.toClientRequest(userTranslationRequest);
-            return translateInBackground(clientRequest, shouldFixArb, isCancelled) {
+            val success = translateInBackground(clientRequest, shouldFixArb, isCancelled) {
                 if (baseLanguage == it.lang) {
                     arbFileModificationService.replaceSimpleTranslationEntry(it)
                 } else {
@@ -63,6 +64,7 @@ class OngoingTranslationHandler(
                 }
                 progressReport()
             }
+            return if (success) null else userTranslationRequest
         }
     }
 
@@ -85,20 +87,26 @@ class OngoingTranslationHandler(
         shouldFixArb: Boolean,
         isCancelled: () -> Boolean,
         translationListener: (Translation) -> Unit
-    ) {
+    ): Boolean {
         //first translate the base language with placeholder, we create a complex arb entry, based on the information we have here
         //this is not required, when we translate only, though!
         if (shouldFixArb) {
-            val createdArbEntry = translationRequestClient.createComplexArbEntry(clientRequest)
-            arbFileModificationService.replaceSimpleTranslationEntry(createdArbEntry.translation)
-            return translationRequestClient
-                .translateValueOnly(clientRequest, createdArbEntry, isCancelled) { partialTranslation ->
-                    println("got translation for ${partialTranslation.getTargetLanguage()}")
-                    translationListener(partialTranslation.translation)
-                }
-
+            try {
+                val createdArbEntry = translationRequestClient.createComplexArbEntry(clientRequest)
+                arbFileModificationService.replaceSimpleTranslationEntry(createdArbEntry.translation)
+                translationRequestClient
+                    .translateValueOnly(clientRequest, createdArbEntry, isCancelled) { partialTranslation ->
+                        println("got translation for ${partialTranslation.getTargetLanguage()}")
+                        translationListener(partialTranslation.translation)
+                    }
+                return true
+            } catch (e: Throwable) {
+                //TODO proper logging
+                e.printStackTrace()
+                return false
+            }
         } else {
-            return translationRequestClient
+            translationRequestClient
                 .translateValueOnly(
                     clientRequest,
                     PartialTranslationResponse(clientRequest.translation),
@@ -107,7 +115,7 @@ class OngoingTranslationHandler(
                     println("got translation for ${partialTranslation.getTargetLanguage()}")
                     translationListener(partialTranslation.translation)
                 }
-
+            return true
         }
         //then translate the other languages
     }
