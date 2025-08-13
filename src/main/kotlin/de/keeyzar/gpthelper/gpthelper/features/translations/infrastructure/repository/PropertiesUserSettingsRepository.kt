@@ -40,7 +40,11 @@ class PropertiesUserSettingsRepository(
      * if there is no settings, we provide default user settings
      */
     override fun getSettings(): UserSettings {
-        return userSettingsMapper.toEntity(userSettingsPersistentStateComponent.state)
+        val settings = userSettingsMapper.toEntity(userSettingsPersistentStateComponent.state)
+        if (settings.flutterImportStatement.isBlank()) {
+            return settings.copy(flutterImportStatement = "package:flutter_gen/gen_l10n/app_localizations.dart")
+        }
+        return settings
     }
 
     /**

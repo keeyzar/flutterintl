@@ -2,10 +2,16 @@ package de.keeyzar.gpthelper.gpthelper.features.autofilefixer.presentation.actio
 
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
-import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.DumbAwareAction
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiFile
+import com.intellij.psi.PsiManager
+import com.intellij.psi.search.FileTypeIndex
+import com.intellij.psi.search.GlobalSearchScopes
+import com.jetbrains.lang.dart.DartFileType
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.client.BestGuessRequest
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.model.AutoLocalizeContext
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.presentation.widgets.CollectedStringsDialog
@@ -13,23 +19,36 @@ import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.Transl
 import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.dependencyinjection.FlutterArbTranslationInitializer
 import java.util.*
 
+class AutoLocalizeDirectory : DumbAwareAction() {
 
-class AutoLocalizeFile : DumbAwareAction() {
+    override fun update(e: AnActionEvent) {
+        val virtualFile = e.getData(CommonDataKeys.VIRTUAL_FILE)
+//        e.presentation.isEnabledAndVisible = virtualFile != null && virtualFile.isDirectory
+    }
+
     override fun actionPerformed(event: AnActionEvent) {
         val initializer = FlutterArbTranslationInitializer()
         val uuid = UUID.randomUUID()
-        val translationContext = TranslationContext(uuid.toString(), "Auto Localizing File", 0, null, 0)
+        val translationContext = TranslationContext(uuid.toString(), "Auto Localizing Directory", 0, null, 0)
         val project = event.project!!
-        val psiFile = event.getData(CommonDataKeys.PSI_FILE) ?: return
-
-        initializer.contextProvider.putAutoLocalizeContext(uuid, AutoLocalizeContext(project, psiFile))
+        val directory = event.getData(CommonDataKeys.VIRTUAL_FILE) ?: return
 
         initializer.translationTaskBackgroundProgress.triggerInBlockingContext(project,
             {
                 try {
-                    initializer.waitingIndicatorService.startWaiting(uuid, "Scanning File", "Finding all localizable strings...")
+                    val dartFiles = findDartFiles(project, directory)
+                    if (dartFiles.isEmpty()) {
+                        initializer.waitingIndicatorService.stopWaiting()
+                        return@triggerInBlockingContext
+                    }
+
+                    initializer.contextProvider.putAutoLocalizeContext(uuid, AutoLocalizeContext(project, dartFiles.first()))
+                    initializer.waitingIndicatorService.startWaiting(uuid, "Scanning Directory", "Finding all localizable strings...")
+
                     val stringLiteralHelper = initializer.dartStringLiteralHelper
-                    val allLiteralsWithSelection = stringLiteralHelper.findStringPsiElements(psiFile)
+                    val allLiteralsWithSelection = dartFiles.flatMap { stringLiteralHelper.findStringPsiElements(it).entries }
+                        .associate { it.key to it.value }
+
                     initializer.waitingIndicatorService.stopWaiting()
 
                     if (allLiteralsWithSelection.isEmpty()) {
@@ -54,7 +73,7 @@ class AutoLocalizeFile : DumbAwareAction() {
 
                     val fileBestGuessContext = initializer.gatherBestGuessContext.fromPsiElements(uuid, finalLiterals) ?: return@triggerInBlockingContext
 
-                    initializer.waitingIndicatorService.startWaiting(uuid, "Requesting AI Suggestions", "Getting translation key guesses for file. This might take a while, please be patient")
+                    initializer.waitingIndicatorService.startWaiting(uuid, "Requesting AI Suggestions", "Getting translation key guesses for directory. This might take a while, please be patient")
                     val simpleGuess = initializer.bestGuessL10nClient.simpleGuess(BestGuessRequest(fileBestGuessContext))
                     initializer.waitingIndicatorService.stopWaiting()
 
@@ -75,5 +94,13 @@ class AutoLocalizeFile : DumbAwareAction() {
                 initializer.contextProvider.removeAutoLocalizeContext(uuid)
             }
         )
+    }
+
+    private fun findDartFiles(project: Project, directory: VirtualFile): List<PsiFile> {
+        val directoryScope = GlobalSearchScopes.directoryScope(project, directory, true)
+        val psiManager = PsiManager.getInstance(project)
+        return FileTypeIndex.getFiles(DartFileType.INSTANCE, directoryScope).mapNotNull {
+            psiManager.findFile(it)
+        }
     }
 }

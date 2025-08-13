@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.intellij.psi.PsiElement
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.client.BestGuessL10nClient
-import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.controller.BestGuessProcessController
+import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.controller.MultiKeyTranslationProcessController
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.service.*
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.client.GeminiBestGuessClient
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.parser.BestGuessOpenAIResponseParser
@@ -161,13 +161,13 @@ class DIConfig {
             single { ImportStatementFilterDartString() } bind DartStringLiteralFilter::class
             single<LiteralInContextFinder> { LiteralInContextFinder() }
             single<PsiElementIdGenerator> { PsiElementIdGenerator() }
-            single<GatherBestGuessContext> { IdeaGatherBestGuessContext(get(), get(), get(), get()) }
+            single<GatherBestGuessContext> { IdeaGatherBestGuessContext(get(), get(), get()) }
             single<BestGuessOpenAIResponseParser> { BestGuessOpenAIResponseParser(get()) }
             single<BestGuessL10nClient> { GeminiBestGuessClient(get(), get()) }
             single<PsiElementIdReferenceProvider> { PsiElementIdReferenceProvider() }
             single<GuessAdaptionService> { IdeaBestGuessAdaptionService(get(), get()) }
             single<ArbFilesService> { ArbFilesService(get(), get(), get(), get()) }
-            single<BestGuessProcessController> { BestGuessProcessController(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+            single<MultiKeyTranslationProcessController> { MultiKeyTranslationProcessController(get(), get(), get(), get(), get()) }
             single<MultiKeyTranslationTaskSizeEstimator> { OpenAIMultiKeyTranslationTaskSizeEstimator() }
             single<WaitingIndicatorService> { IdeaWaitingIndicatorService(get()) }
             single<DartConstModifierFinder> { DartConstModifierFinder() }

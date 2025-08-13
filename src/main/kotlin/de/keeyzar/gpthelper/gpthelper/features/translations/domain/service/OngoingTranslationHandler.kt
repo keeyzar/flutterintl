@@ -17,7 +17,7 @@ class OngoingTranslationHandler(
 ) {
 
     companion object {
-        val concurrentTranslationTasks = Semaphore(1)
+        private val concurrentTranslationTasks = Semaphore(1)
     }
 
     /**

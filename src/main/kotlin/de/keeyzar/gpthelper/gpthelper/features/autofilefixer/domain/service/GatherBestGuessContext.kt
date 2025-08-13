@@ -1,15 +1,16 @@
 package de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.service
 
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiFile
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.entity.FileBestGuessContext
-import java.util.UUID
+import java.util.*
 
-/**
- * should get the relevant data from the user
- */
-fun interface GatherBestGuessContext {
+interface GatherBestGuessContext {
     /**
-     * i.e. ask user or something like that for the information
-     * @return null, if the information process was canceled, e.g. by the user
+     * Gathers the context from multiple files, usually without user interaction for string selection.
+     * @return null, if no relevant literals are found.
      */
-    fun getFileBestGuessContext(processUUID: UUID): FileBestGuessContext?
+    fun fromMultipleFiles(processUUID: UUID, files: List<PsiFile>): FileBestGuessContext?
+
+    fun fromPsiElements(processUUID: UUID, elements: List<PsiElement>): FileBestGuessContext?
 }

@@ -13,6 +13,7 @@ import com.intellij.ui.components.JBPasswordField
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.dsl.builder.*
 import com.intellij.ui.layout.ComponentPredicate
+import de.keeyzar.gpthelper.gpthelper.DIConfig.Companion.appModule
 import de.keeyzar.gpthelper.gpthelper.features.flutter_intl.domain.repository.FlutterIntlSettingsRepository
 import de.keeyzar.gpthelper.gpthelper.features.shared.presentation.mapper.UserSettingsDTOMapper
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.client.GPTModelProvider
@@ -20,15 +21,14 @@ import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.Us
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.repository.CurrentProjectProvider
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.repository.UserSettingsPersistentStateComponent
 import kotlinx.coroutines.runBlocking
+import org.koin.core.context.GlobalContext
+import org.koin.core.context.startKoin
 import java.nio.file.Path
 import java.util.*
 import javax.swing.DefaultComboBoxModel
 import javax.swing.JCheckBox
 import javax.swing.JComponent
 
-/**
- * TODO I think I made some mistakes here.
- */
 class GptHelperSettings(val project: Project) : Configurable {
     private var panel: DialogPanel? = null
     private lateinit var openAIKeyField: Cell<JBPasswordField>
@@ -45,7 +45,6 @@ class GptHelperSettings(val project: Project) : Configurable {
     private lateinit var userSettingsRepository: UserSettingsRepository
     private lateinit var flutterIntlSettingsRepository: FlutterIntlSettingsRepository
     private lateinit var currentProjectProvider: CurrentProjectProvider
-    private lateinit var settingsMapper: UserSettingsDTOMapper
     private lateinit var gptModelProvider: GPTModelProvider
     private var corruptSettings = false
     private var errorListener: ((Boolean) -> Unit)? = null
@@ -56,11 +55,12 @@ class GptHelperSettings(val project: Project) : Configurable {
 
     override fun getDisplayName(): String = "GPTHelper Settings"
     override fun createComponent(): JComponent {
+        //ensure koin is not started twice
+        startKoin()
         val initializer = Initializer()
         userSettingsRepository = initializer.userSettingsRepository
         flutterIntlSettingsRepository = initializer.flutterIntlSettingsRepository
         currentProjectProvider = initializer.currentProjectProvider
-        settingsMapper = initializer.userSettingsDTOMapper
         gptModelProvider = initializer.gptModelProvider
 
 
@@ -157,6 +157,13 @@ class GptHelperSettings(val project: Project) : Configurable {
                         )
                 }.layout(RowLayout.PARENT_GRID)
                 row {
+                    label("Flutter import statement:")
+                    textField()
+                        .align(Align.FILL)
+                        .bindText(UserSettingsPersistentStateComponent.getInstance().state::flutterImportStatement)
+                        .comment("The import statement for the generated localization class.")
+                }.layout(RowLayout.PARENT_GRID)
+                row {
                     label("Output localization file:")
                     outputLocalizationFile = textField()
                         .align(Align.FILL)
@@ -202,6 +209,20 @@ class GptHelperSettings(val project: Project) : Configurable {
         }
         panel!!.apply() //no changes yet
         return panel!!
+    }
+
+    /**
+     * might be necessary, as these settings is started headless while being built
+     */
+    private fun startKoin() {
+        if (GlobalContext.getOrNull() == null) {
+            startKoin {
+                modules(appModule)
+            }
+            val initializer = Initializer()
+            initializer.translationPercentageBus.init(project)
+            initializer.currentProjectProvider.project = project
+        }
     }
 
     private fun initialValueForModel(): List<String> {

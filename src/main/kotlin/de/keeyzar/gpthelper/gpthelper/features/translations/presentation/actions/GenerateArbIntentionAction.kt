@@ -7,6 +7,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.*
 import com.intellij.util.IncorrectOperationException
 import com.jetbrains.lang.dart.psi.DartFile
+import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.entity.MultiKeyTranslationContext
+import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.Language
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.TranslationContext
 import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.dependencyinjection.FlutterArbTranslationInitializer
 import org.jetbrains.annotations.NonNls
@@ -76,16 +78,35 @@ class GenerateArbIntentionAction : PsiElementBaseIntentionAction(), IntentionAct
     @Throws(IncorrectOperationException::class)
     override fun invoke(project: Project, editor: Editor?, element: PsiElement) {
         if (isDartString(element)) {
-            //one issue we have here is, that we might invoke it a second time, while the old translation is running,
-            //therefore I need to make sure, that I have some kind of "identifier" for the last translation process?
-            //or can I somehow pass it to the translation context, but the issue is, this is infrastructure / presentation layer
-            //and the domain does not know about this kind of stuff (i.e. PsiElement)
-            getInitializer().lastStatementProviderForFlutterArbTranslation.lastStatement = element
-            val translationProcessController = getInitializer().translationProcessController
+            val initializer = getInitializer()
+            initializer.lastStatementProviderForFlutterArbTranslation.lastStatement = element
             val taskId = UUID.randomUUID().toString()
             val translationContext = TranslationContext(taskId, "Translation Init", 0, null, 0)
-            getInitializer().translationTaskBackgroundProgress.triggerInBlockingContext(project, {
-                translationProcessController.startTranslationProcess(translationContext)
+
+            initializer.translationTaskBackgroundProgress.triggerInBlockingContext(project, {
+                try {
+                    val preprocess = initializer.translationPreprocessor.preprocess(translationContext) ?: return@triggerInBlockingContext
+                    val (processedContext, userTranslationInput) = preprocess
+
+                    val translationRequest = initializer.userTranslationInputParser.toUserTranslationRequest(processedContext.baseLanguage, userTranslationInput)
+
+                    if (!userTranslationInput.translateNow) {
+                        // Nur Dummy-Eintrag erzeugen, keine Übersetzung
+                        initializer.ongoingTranslationHandler.onlyGenerateBaseEntry(translationRequest)
+                        initializer.translationTriggeredHooks.translationTriggered(translationRequest.baseTranslation)
+                        return@triggerInBlockingContext
+                    }
+
+                    val multiKeyContext = MultiKeyTranslationContext(
+                        baseLanguage = processedContext.baseLanguage,
+                        targetLanguages = userTranslationInput.languagesToTranslate.map { Language.fromISOLangString(it.key) },
+                        translationEntries = listOf(translationRequest.baseTranslation.entry)
+                    )
+
+                    initializer.multiKeyTranslationProcessController.startTranslationProcess(multiKeyContext)
+                } finally {
+                    translationContext.finished = true
+                }
             }, translationContext = translationContext)
         }
     }

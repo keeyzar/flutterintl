@@ -229,9 +229,17 @@
             <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
         </action>
         <action id="de.keeyzar.gpthelper.gpthelper.features.autofilefixer.presentation.actions.AutoLocalizeFile"
-                class="de.keeyzar.gpthelper.gpthelper.features.autofilefixer.presentation.actions.AutoLocalizeFile" text="Auto Localize File"
-                description="Extract all strings and localize in one go">
-            <add-to-group group-id="GenerateGroup" anchor="first"/>
+                class="de.keeyzar.gpthelper.gpthelper.features.autofilefixer.presentation.actions.AutoLocalizeFile"
+                text="Auto Localize File"
+                description="Automatically localizes the current file.">
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+        </action>
+        <action id="de.keeyzar.gpthelper.gpthelper.features.autofilefixer.presentation.actions.AutoLocalizeDirectory"
+                class="de.keeyzar.gpthelper.gpthelper.features.autofilefixer.presentation.actions.AutoLocalizeDirectory"
+                text="Auto Localize Directory"
+                description="Automatically localizes all dart files in the selected directory.">
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
         </action>
     </actions>
 </idea-plugin>

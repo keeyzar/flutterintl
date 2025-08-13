@@ -34,13 +34,22 @@ class ImportFixer(
         }
     }
     private fun createStatement(element: PsiElement, userSettings: UserSettings): DartImportStatement {
-        val statement = "import 'package:flutter_gen/gen_l10n/${userSettings.outputLocalizationFile}';"
+        val flutterImportStatement = getFlutterImportStatement(userSettings)
+        val statement = "import '$flutterImportStatement${userSettings.outputLocalizationFile}';"
         val dummyFile = DartElementGenerator.createDummyFile(element.project, statement)
         return PsiTreeUtil.getChildOfType(dummyFile, DartImportStatement::class.java)!!;
     }
 
+    private fun getFlutterImportStatement(userSettings: UserSettings): String {
+        val flutterImportStatement = userSettings.flutterImportStatement.let {
+            //append / if not present
+            if (it.endsWith("/")) it else "$it/"
+        }
+        return flutterImportStatement
+    }
+
     private fun isImportMissing(parent: DartFile?, userSettings: UserSettings): Boolean {
         val imports = PsiTreeUtil.getChildrenOfTypeAsList(parent, DartImportStatement::class.java);
-        return imports.none { it.text.contains("package:flutter_gen/gen_l10n/${userSettings.outputLocalizationFile}") }
+        return imports.none { it.text.contains("${getFlutterImportStatement(userSettings)}${userSettings.outputLocalizationFile}") }
     }
 }

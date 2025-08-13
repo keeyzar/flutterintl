@@ -55,6 +55,7 @@ class UserSettingsPersistentStateComponent : PersistentStateComponent<UserSettin
          * here you can find the file, where the outputClass is located in
          */
         var outputLocalizationFile: String by object: RWProperty<UserSettingsModel, String>("") {}
+        var flutterImportStatement: String by object: RWProperty<UserSettingsModel, String>("package:/flutter_gen/gen_l10n/") {}
         var parallelism: Int by object: RWProperty<UserSettingsModel, Int>(3) {}
         var tonality: String by object: RWProperty<UserSettingsModel, String>("informal") {}
         var gptModel: String? by object: RWProperty<UserSettingsModel, String?>("gpt-3.5-turbo-0613") {}

@@ -6,14 +6,22 @@ import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.client.BestG
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.exception.BestGuessClientException
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.parser.BestGuessOpenAIResponseParser
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.configuration.OpenAIConfigProvider
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 
 class GeminiBestGuessClient(
     private val openAIConfigProvider: OpenAIConfigProvider,
     private val bestGuessOpenAIResponseParser: BestGuessOpenAIResponseParser,
 ) : BestGuessL10nClient {
 
+    companion object {
+        private const val PARALLELISM_THRESHOLD = 20
+        private val parallelGuessSemaphore = Semaphore(3)
+    }
+
     private fun createRequestContent(bestGuessRequest: BestGuessRequest): String {
-        val fileName = bestGuessRequest.context.filename
         val newLineDelimitedLiterals = bestGuessRequest.context.literals
             .fold(StringBuilder()) { acc, literal ->
                 acc.appendLine("id: ${literal.id}, context: ${literal.context}")
@@ -21,12 +29,12 @@ class GeminiBestGuessClient(
 
         return """
             You're an API Server and your task is to provide localization key guesses for the user. Please provide best guess l18n keys for these Strings. These are used in the context of Flutter arb localization
-            
-            try to adhere to the following rules for the keys:
-            key format: context_type_description
-            keys can only be lowercase and underscore, and must begin with a letter.
-            The description should explain the intent of the text, not the actual text itself.
-            
+
+
+            key examples:
+
+
+
             key examples: 
             - loginpage_title_greeting
             - loginpage_label_username
@@ -42,14 +50,22 @@ class GeminiBestGuessClient(
             "description": "...",
             {...}
             ]
-
            
-            Filename: $fileName
+            These are the literals you should process:
             $newLineDelimitedLiterals
         """.trimIndent()
     }
 
     override suspend fun simpleGuess(bestGuessRequest: BestGuessRequest): BestGuessResponse {
+        val literals = bestGuessRequest.context.literals
+        if (literals.size <= PARALLELISM_THRESHOLD) {
+            return singleRequestGuess(bestGuessRequest)
+        }
+
+        return parallelGuess(bestGuessRequest)
+    }
+
+    private suspend fun singleRequestGuess(bestGuessRequest: BestGuessRequest): BestGuessResponse {
         val gemini = openAIConfigProvider.getInstanceGemini()
         val modelId = "models/gemini-2.5-flash"
         val request = createRequestContent(bestGuessRequest)
@@ -62,5 +78,29 @@ class GeminiBestGuessClient(
 
         val resultText = response.text() ?: throw BestGuessClientException("Gemini hat nicht geantwortet oder die Antwort war leer.")
         return bestGuessOpenAIResponseParser.parse(resultText)
+    }
+
+    private suspend fun parallelGuess(bestGuessRequest: BestGuessRequest): BestGuessResponse = coroutineScope {
+        val literals = bestGuessRequest.context.literals
+        val chunkSize = (literals.size / 3).coerceAtLeast(1)
+        val chunks = literals.chunked(chunkSize)
+
+        val deferredResponses = chunks.map { chunk ->
+            async {
+                parallelGuessSemaphore.withPermit {
+                    val chunkRequest = bestGuessRequest.copy(
+                        context = bestGuessRequest.context.copy(
+                            literals = chunk
+                        )
+                    )
+                    singleRequestGuess(chunkRequest)
+                }
+            }
+        }
+
+        val responses = deferredResponses.map { it.await() }
+
+        val allGuesses = responses.flatMap { it.responseEntries }
+        return@coroutineScope BestGuessResponse(allGuesses)
     }
 }

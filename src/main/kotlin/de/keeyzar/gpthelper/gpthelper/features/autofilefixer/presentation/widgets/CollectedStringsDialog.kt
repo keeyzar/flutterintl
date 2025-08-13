@@ -11,7 +11,9 @@ import com.intellij.ui.CheckedTreeNode
 import com.intellij.ui.JBSplitter
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextArea
-import com.intellij.ui.dsl.builder.*
+import com.intellij.ui.dsl.builder.Align
+import com.intellij.ui.dsl.builder.panel
+import com.intellij.ui.dsl.builder.rows
 import com.intellij.util.ui.tree.TreeUtil
 import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.dependencyinjection.FlutterArbTranslationInitializer
 import java.awt.BorderLayout
@@ -20,12 +22,11 @@ import javax.swing.*
 import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.TreePath
 
-class FoundStringsSelectionDialog(
+class CollectedStringsDialog(
     private val project: Project,
-    allTextStrings: Set<PsiElement>,
+    private val stringLiteralsWithSelection: Map<PsiElement, Boolean>
 ) : DialogWrapper(project) {
 
-    // --- UI Components ---
     private lateinit var contextTextArea: JBTextArea
     private lateinit var tree: CheckboxTree
     private val rootNode = CheckedTreeNode(project.name)
@@ -33,15 +34,10 @@ class FoundStringsSelectionDialog(
     init {
         title = "Select Strings to Localize"
         setOKButtonText("Localize Selected")
-        buildTree(allTextStrings)
-        // This call builds the UI via createCenterPanel()
-        init()
+        buildTree(stringLiteralsWithSelection)
+        super.init()
     }
 
-    /**
-     * Creates the main dialog content, a splitter with the selection list on the left
-     * and the context view on the right.
-     */
     override fun createCenterPanel(): JComponent {
         val leftPanel = createTreePanel()
         val rightPanel = createContextPanel()
@@ -49,8 +45,8 @@ class FoundStringsSelectionDialog(
         tree.addTreeSelectionListener {
             val selectedNode = tree.lastSelectedPathComponent as? CheckedTreeNode
             val userObject = selectedNode?.userObject
-            if (userObject is PsiElement && userObject.isValid) {
-                updateContextArea(userObject)
+            if (userObject is PsiElement && userObject.isValid) { // Check if it's a literal
+                updateContextView(userObject)
             } else {
                 contextTextArea.text = ""
             }
@@ -61,20 +57,13 @@ class FoundStringsSelectionDialog(
         // Select the first file node by default
         selectFirstFileNode()
 
-        return JBSplitter(false, 0.5f).apply {
+        return JBSplitter(false, 0.4f).apply {
             firstComponent = leftPanel
             secondComponent = rightPanel
             preferredSize = Dimension(850, 600)
         }
     }
 
-    //================================================================================
-    // Panel Creation
-    //================================================================================
-
-    /**
-     * Creates the left-side panel containing the tree view and control buttons.
-     */
     private fun createTreePanel(): JComponent {
         tree = CheckboxTree(MyTreeCellRenderer(), rootNode)
         tree.model = DefaultTreeModel(rootNode)
@@ -98,9 +87,6 @@ class FoundStringsSelectionDialog(
         }
     }
 
-    /**
-     * Creates the right-side panel for showing the string's context using the UI DSL.
-     */
     private fun createContextPanel(): DialogPanel {
         return panel {
             group("Context") {
@@ -111,7 +97,7 @@ class FoundStringsSelectionDialog(
                         .also { contextTextArea = it.component }
                         .applyToComponent {
                             isEditable = false
-                            isFocusable = false // Important for good keyboard navigation
+                            isFocusable = false
                             lineWrap = true
                             wrapStyleWord = true
                         }
@@ -120,41 +106,41 @@ class FoundStringsSelectionDialog(
         }
     }
 
-    //================================================================================
-    // UI Logic & Data Handling
-    //================================================================================
-
-    private fun buildTree(stringLiterals: Set<PsiElement>) {
-        val fileToLiteralsMap = stringLiterals.groupBy { it.containingFile }
+    private fun buildTree(stringLiteralsWithSelection: Map<PsiElement, Boolean>) {
+        val fileToLiteralsMap = stringLiteralsWithSelection.keys.groupBy { it.containingFile }
         val nodeMap = mutableMapOf<String, CheckedTreeNode>()
 
         for ((psiFile, literals) in fileToLiteralsMap) {
             if (psiFile == null) continue
 
+            // Get relative path from project base
             val relativePath = psiFile.virtualFile.path.substringAfter(project.basePath!! + "/")
             val pathComponents = relativePath.split('/')
 
             var currentParentNode = rootNode
             var currentPath = ""
 
+            // Create directory nodes
             for (i in 0 until pathComponents.size - 1) {
                 val part = pathComponents[i]
                 currentPath += "/$part"
                 var childNode = nodeMap[currentPath]
                 if (childNode == null) {
-                    childNode = CheckedTreeNode(part)
+                    childNode = CheckedTreeNode(part) // User object is the directory name string
                     nodeMap[currentPath] = childNode
                     currentParentNode.add(childNode)
                 }
                 currentParentNode = childNode
             }
 
-            val fileNode = CheckedTreeNode(psiFile)
+            // Create file node
+            val fileNode = CheckedTreeNode(psiFile) // User object is the PsiFile
             currentParentNode.add(fileNode)
 
+            // Create literal nodes
             for (literal in literals) {
-                val literalNode = CheckedTreeNode(literal)
-                literalNode.isChecked = true // Select all by default
+                val literalNode = CheckedTreeNode(literal) // User object is the PsiElement
+                literalNode.isChecked = stringLiteralsWithSelection[literal] ?: true // Select based on map, default to true
                 fileNode.add(literalNode)
             }
         }
@@ -171,25 +157,12 @@ class FoundStringsSelectionDialog(
         }
     }
 
-    /**
-     * Updates the context text area based on the currently focused element.
-     */
-    private fun updateContextArea(element: PsiElement) {
+    private fun updateContextView(element: PsiElement) {
         val contextFinder = FlutterArbTranslationInitializer().literalInContextFinder
         contextTextArea.text = contextFinder.findContext(element).text
     }
 
-    /**
-     * Sets initial focus on the tree.
-     */
-    override fun getPreferredFocusedComponent(): JComponent {
-        return tree
-    }
-
-    /**
-     * Gathers the final list of selected strings by traversing the tree.
-     */
-    fun getSelectedElements(): List<PsiElement> {
+    fun getSelectedLiterals(): List<PsiElement> {
         val selectedLiterals = mutableListOf<PsiElement>()
         collectSelectedLiterals(rootNode, selectedLiterals)
         return selectedLiterals
@@ -207,11 +180,15 @@ class FoundStringsSelectionDialog(
         }
     }
 
+    override fun getPreferredFocusedComponent(): JComponent? {
+        return tree
+    }
+
     /**
      * Overrides the OK action to validate that at least one string is selected.
      */
     override fun doOKAction() {
-        if (getSelectedElements().isNotEmpty()) {
+        if (getSelectedLiterals().isNotEmpty()) {
             super.doOKAction()
         } else {
             Messages.showErrorDialog(

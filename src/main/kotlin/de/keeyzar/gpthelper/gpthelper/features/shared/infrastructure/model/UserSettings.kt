@@ -21,6 +21,10 @@ data class UserSettings(
     val intlConfigFile: String?,
     val watchIntlConfigFile: Boolean = true,
     /**
+     * The import statement for the generated localization class
+     */
+    val flutterImportStatement: String,
+    /**
      * here you can find the file, where the outputClass is located in
      */
     val outputLocalizationFile: String,

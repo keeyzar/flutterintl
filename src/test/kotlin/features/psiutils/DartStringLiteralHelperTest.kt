@@ -170,4 +170,22 @@ class DartStringLiteralHelperTest {
             assertThat(elements).hasSize(1)
         }
     }
+
+    @Test
+    fun `findStringPsiElements should mark print statements as not selected`() {
+        val psiFile = fixture.configureByFile("psiutils/dart/example6.dart")
+
+        ReadAction.run<Throwable> {
+            val elementsWithSelection = sut.findStringPsiElements(psiFile)
+            assertThat(elementsWithSelection).hasSize(2)
+
+            val omgElement = elementsWithSelection.keys.find { it.text == "\"Omg\"" }
+            assertThat(omgElement).isNotNull
+            assertThat(elementsWithSelection[omgElement]).isFalse()
+
+            val complexStringElement = elementsWithSelection.keys.find { it.text.startsWith("'Hello '") }
+            assertThat(complexStringElement).isNotNull
+            assertThat(elementsWithSelection[complexStringElement]).isTrue()
+        }
+    }
 }

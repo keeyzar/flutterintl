@@ -253,7 +253,7 @@ class BestGuessAdaptionDialog(
             override fun textChanged(e: DocumentEvent) {
                 val text = elementPlaceholderTextArea.text
                 try {
-                    val placeholderMap: Map<String, *> = objectMapper.readValue(text)
+                    val placeholderMap: Map<String, Any?> = objectMapper.readValue(text)
                     currentBestGuessWithPsiReferenceModel?.adaptedBestGuess?.placeholder = placeholderMap
                     elementPlaceholderTextArea.border = null // Reset border on success
                 } catch (ex: Exception) {
