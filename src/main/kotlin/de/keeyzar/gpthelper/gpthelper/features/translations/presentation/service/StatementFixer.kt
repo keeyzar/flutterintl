@@ -34,7 +34,7 @@ class StatementFixer(
         val userSettings = userSettingsRepository.getSettings()
         WriteCommandAction.runWriteCommandAction(project) {
             CommandProcessor.getInstance().executeCommand(project, {
-                val newStatement = createStatement(desiredKey, userSettings)
+                val newStatement = createStatement(element, desiredKey, userSettings)
                 checkForConstExpressionsInHierarchy(element)
                 replaceStatementWithNewStatement(element, newStatement)
             }, "translation", "translate")
@@ -56,7 +56,7 @@ class StatementFixer(
         val userSettings = userSettingsRepository.getSettings()
         WriteCommandAction.runWriteCommandAction(project) {
             CommandProcessor.getInstance().executeCommand(project, {
-                var newStatement = createStatement(desiredKey, userSettings)
+                var newStatement = createStatement(element, desiredKey, userSettings)
                 val argumentList = appendVariablesToStatement(element)
                 if(argumentList != "") {
                     newStatement = newStatement.removeSuffix(",") + argumentList + ","
@@ -108,14 +108,15 @@ class StatementFixer(
         }
     }
 
-    private fun createStatement(desiredKey: String, userSettings: UserSettings): String {
+    private fun createStatement(element: PsiElement, desiredKey: String, userSettings: UserSettings): String {
         val nullableGetter = when (userSettings.nullableGetter) {
             true -> "!"
             false -> ""
         }
         val outputClass = userSettings.outputClass
+        val contextName = flutterPsiService.findBuildContextName(element) ?: "context"
 
-        return "$outputClass.of(context)$nullableGetter.$desiredKey,"
+        return "$outputClass.of($contextName)$nullableGetter.$desiredKey,"
     }
 
 
