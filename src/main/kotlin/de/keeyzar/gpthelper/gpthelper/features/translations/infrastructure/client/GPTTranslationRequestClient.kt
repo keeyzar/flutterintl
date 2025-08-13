@@ -14,7 +14,7 @@ import de.keeyzar.gpthelper.gpthelper.features.translations.domain.client.Single
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.Translation
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.exceptions.TranslationRequestException
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.UserSettingsRepository
-import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.configuration.OpenAIConfigProvider
+import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.configuration.LLMConfigProvider
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.mapper.TranslationRequestResponseMapper
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.service.JsonFileChunker
 import kotlinx.coroutines.async
@@ -26,7 +26,7 @@ import kotlin.random.Random
 
 
 class GPTTranslationRequestClient(
-    private val openAIConfigProvider: OpenAIConfigProvider,
+    private val LLMConfigProvider: LLMConfigProvider,
     private val translationRequestResponseParser: TranslationRequestResponseMapper,
     private val dispatcherConfiguration: DispatcherConfiguration,
     private val userSettingsRepository: UserSettingsRepository,
@@ -148,7 +148,7 @@ class GPTTranslationRequestClient(
             Content.builder().role("user").parts(Part.builder().text(realRequest).build()).build()
         )
 
-        val gemini = openAIConfigProvider.getInstanceGemini()
+        val gemini = LLMConfigProvider.getInstanceGemini()
         val model = userSettingsRepository.getSettings().gptModel
         val config = GenerateContentConfig.builder()
             .systemInstruction(
@@ -180,7 +180,7 @@ class GPTTranslationRequestClient(
             Content.builder().role("user").parts(Part.builder().text(request).build()).build()
         )
 
-        val gemini = openAIConfigProvider.getInstanceGemini()
+        val gemini = LLMConfigProvider.getInstanceGemini()
         val model = userSettingsRepository.getSettings().gptModel
         val config = GenerateContentConfig.builder()
             .systemInstruction(Content.builder().parts(Part.builder().text("You are a helpful REST API Server answering in valid JSON, that creates flutter INTL ARB entries.")).build()).build()

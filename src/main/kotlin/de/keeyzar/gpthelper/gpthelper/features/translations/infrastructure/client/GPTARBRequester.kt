@@ -1,11 +1,9 @@
 package de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.client
 
-import com.aallam.openai.api.BetaOpenAI
-import com.google.genai.types.Content
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.client.SingleTranslationRequestClient
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.Language
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.UserSettingsRepository
-import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.configuration.OpenAIConfigProvider
+import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.configuration.LLMConfigProvider
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.dto.GPTArbTranslationResponse
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.parser.GPTARBResponseParser
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.service.ARBTemplateService
@@ -13,7 +11,7 @@ import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.servi
 
 class GPTARBRequester(
     private val templater: ARBTemplateService,
-    private val openAIConfigProvider: OpenAIConfigProvider,
+    private val LLMConfigProvider: LLMConfigProvider,
     private val responseParser: GPTARBResponseParser,
     private val userSettingsRepository: UserSettingsRepository
 ) : SingleTranslationRequestClient {
@@ -56,7 +54,7 @@ class GPTARBRequester(
             $content
         """.trimIndent()
 
-        val gemini = openAIConfigProvider.getInstanceGemini()
+        val gemini = LLMConfigProvider.getInstanceGemini()
         val response = gemini.models.generateContent(
             modelId,
             request,

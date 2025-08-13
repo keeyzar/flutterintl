@@ -3,10 +3,10 @@ package de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.clie
 import com.google.genai.types.ListModelsConfig
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.client.ClientConnectionTester
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.exceptions.TranslationClientConnectionException
-import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.configuration.OpenAIConfigProvider
+import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.configuration.LLMConfigProvider
 
 class OpenAIClientConnectionTester(
-    private val configProvider: OpenAIConfigProvider
+    private val configProvider: LLMConfigProvider
 ) : ClientConnectionTester {
     /**
      * there might be other issues. We should allow the user to see the issue, therefore return the throwable

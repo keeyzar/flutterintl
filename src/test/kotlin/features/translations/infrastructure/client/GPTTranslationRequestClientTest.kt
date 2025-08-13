@@ -1,38 +1,24 @@
 package de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.client
 
-import com.aallam.openai.api.http.Timeout
-import com.aallam.openai.api.logging.LogLevel
-import com.aallam.openai.api.logging.Logger
-import com.aallam.openai.api.model.ModelId
-import com.aallam.openai.client.*
-import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.genai.Client
 import de.keeyzar.gpthelper.gpthelper.features.shared.infrastructure.model.UserSettings
-import de.keeyzar.gpthelper.gpthelper.features.translations.domain.client.ClientTranslationRequest
-import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.Language
-import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.SimpleTranslationEntry
-import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.Translation
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.UserSettingsRepository
-import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.configuration.OpenAIConfigProvider
+import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.configuration.LLMConfigProvider
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.mapper.TranslationRequestResponseMapper
 import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
-import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Test
-import org.junit.jupiter.api.Disabled
 import org.mockito.Mock
 import org.mockito.MockitoAnnotations
 import org.mockito.kotlin.given
 import java.util.concurrent.Executors
-import kotlin.time.Duration.Companion.seconds
 
 class GPTTranslationRequestClientTest {
     @Mock
-    private lateinit var openAIConfigProvider: OpenAIConfigProvider
+    private lateinit var LLMConfigProvider: LLMConfigProvider
     private lateinit var sut: GPTTranslationRequestClient
     private lateinit var parser: TranslationRequestResponseMapper
 
@@ -68,13 +54,13 @@ class GPTTranslationRequestClientTest {
             )
         )
         val key = System.getenv("gemini_api_key")
-        given(openAIConfigProvider.getInstanceGemini()).willReturn(
+        given(LLMConfigProvider.getInstanceGemini()).willReturn(
             Client.builder()
                 .apiKey(key)
                 .build()
         )
         parser = TranslationRequestResponseMapper(objectMapper)
-        sut = GPTTranslationRequestClient(openAIConfigProvider, parser, dispatcherConfiguration, userSettingsRepository)
+        sut = GPTTranslationRequestClient(LLMConfigProvider, parser, dispatcherConfiguration, userSettingsRepository)
     }
 
     @Test

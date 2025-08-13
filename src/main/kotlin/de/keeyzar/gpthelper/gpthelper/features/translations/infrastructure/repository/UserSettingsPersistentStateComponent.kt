@@ -58,7 +58,7 @@ class UserSettingsPersistentStateComponent : PersistentStateComponent<UserSettin
         var flutterImportStatement: String by object: RWProperty<UserSettingsModel, String>("package:/flutter_gen/gen_l10n/") {}
         var parallelism: Int by object: RWProperty<UserSettingsModel, Int>(3) {}
         var tonality: String by object: RWProperty<UserSettingsModel, String>("informal") {}
-        var gptModel: String? by object: RWProperty<UserSettingsModel, String?>("gpt-3.5-turbo-0613") {}
+        var gptModel: String? by object: RWProperty<UserSettingsModel, String?>("models/gemini-2.5-flash") {}
         var translateAdvancedArbKeys: Boolean by object: RWProperty<UserSettingsModel, Boolean>(true) {}
         var maxTranslationHistory: Int by object: RWProperty<UserSettingsModel, Int>(200) {}
         open class RWProperty<R, T>(initValue: T) : ReadWriteProperty<R, T> {

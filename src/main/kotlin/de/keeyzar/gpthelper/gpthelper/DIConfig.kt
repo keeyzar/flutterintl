@@ -61,7 +61,7 @@ import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.Us
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.UserTranslationInputRepository
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.service.*
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.client.*
-import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.configuration.OpenAIConfigProvider
+import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.configuration.LLMConfigProvider
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.mapper.TranslationRequestResponseMapper
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.mapper.UserSettingsMapper
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.parser.ARBFileContentParser
@@ -85,8 +85,8 @@ class DIConfig {
             single<GPTARBResponseParser> { GPTARBResponseParser(get()) }
             single<ObjectMapper> { ObjectMapperProvider().provideObjectMapper(null) }
             single<ARBFileContentParser> { ARBFileContentParser(get(), get()) }
-            single<SingleTranslationRequestClient> { GPTARBRequester(get(), get(), get()) }
-            single<OpenAIConfigProvider> { OpenAIConfigProvider(get()) }
+            single<SingleTranslationRequestClient> { GPTARBRequester(get(), get(), get(), get()) }
+            single<LLMConfigProvider> { LLMConfigProvider(get()) }
             single<ImmediateTranslationService> { ImmediateTranslationService(get(), get()) }
             single<UserSettingsRepository> { PropertiesUserSettingsRepository(get(), get(), get()) }
             single<JsonUtils> { JsonUtils(get()) }
@@ -160,7 +160,7 @@ class DIConfig {
             single<PsiElementIdGenerator> { PsiElementIdGenerator() }
             single<GatherBestGuessContext> { IdeaGatherBestGuessContext(get(), get(), get()) }
             single<BestGuessOpenAIResponseParser> { BestGuessOpenAIResponseParser(get()) }
-            single<BestGuessL10nClient> { GeminiBestGuessClient(get(), get()) }
+            single<BestGuessL10nClient> { GeminiBestGuessClient(get(), get(), get()) }
             single<PsiElementIdReferenceProvider> { PsiElementIdReferenceProvider() }
             single<GuessAdaptionService> { IdeaBestGuessAdaptionService(get(), get()) }
             single<ArbFilesService> { ArbFilesService(get(), get(), get(), get()) }
