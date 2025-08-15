@@ -3,6 +3,7 @@ package de.keeyzar.gpthelper.gpthelper
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.intellij.psi.PsiElement
+import de.keeyzar.gpthelper.gpthelper.common.error.GeneralErrorHandler
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.client.BestGuessL10nClient
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.controller.MultiKeyTranslationProcessController
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.service.*
@@ -10,6 +11,7 @@ import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.clie
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.parser.BestGuessOpenAIResponseParser
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.service.OpenAIMultiKeyTranslationTaskSizeEstimator
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.service.PsiElementIdReferenceProvider
+import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.presentation.actions.AutoLocalizeOrchestrator
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.presentation.service.IdeaWaitingIndicatorService
 import de.keeyzar.gpthelper.gpthelper.features.changetranslation.domain.controller.ChangeTranslationController
 import de.keeyzar.gpthelper.gpthelper.features.psiutils.arb.ArbPsiUtils
@@ -88,7 +90,7 @@ class DIConfig {
             single<SingleTranslationRequestClient> { GPTARBRequester(get(), get(), get(), get()) }
             single<LLMConfigProvider> { LLMConfigProvider(get()) }
             single<ImmediateTranslationService> { ImmediateTranslationService(get(), get()) }
-            single<UserSettingsRepository> { PropertiesUserSettingsRepository(get(), get(), get()) }
+            single<UserSettingsRepository> { PropertiesUserSettingsRepository(get(), get()) }
             single<JsonUtils> { JsonUtils(get()) }
             single<JsonChunkMerger> { JsonChunkMerger(get()) }
             single<JsonFileChunker> { JsonFileChunker(get()) }
@@ -115,8 +117,6 @@ class DIConfig {
             single<VerifyTranslationSettingsService> { ArbVerifyTranslationSettingsService(get(), get(), get(), get(), get()) }
             single<TranslationClientSettingsValidator> { TranslationClientSettingsValidator(get()) }
             single<UserTranslationInputRepository> { PropertiesUserTranslationInputRepository(get(), get()) }
-            single<GatherTranslationContextService> { FlutterArbTranslationContextService(get(), get(), get(), get(), get(), get()) }
-            single<GatherUserInputService> { FlutterArbUserInputService(get()) }
             single<UserTranslationInputParser> { UserTranslationInputParser(get()) }
             single<ArbFilenameParser> { ArbFilenameParser() }
             single<CurrentFileModificationService> { FlutterArbCurrentFileModificationService(get(), get(), get(), get(), get()) }
@@ -130,7 +130,7 @@ class DIConfig {
             single<TranslationRequestResponseMapper> { TranslationRequestResponseMapper(get()) }
             single<ImportFixer> { ImportFixer(get()) }
             single<StatementFixer> { StatementFixer(get(), get(), get()) }
-            single<TranslationTaskBackgroundProgress> { TranslationTaskBackgroundProgress() }
+            single<TranslationTaskBackgroundProgress> { TranslationTaskBackgroundProgress(get()) }
             single<UserSettingsMapper> { Mappers.getMapper(UserSettingsMapper::class.java) }
             single<FlutterFileRepository> { FlutterFileRepository() }
             single<FormatTranslationFileContentService> { ArbFormatTranslationFileContentService(get()) }
@@ -149,8 +149,8 @@ class DIConfig {
             single<ArbFileContentModificationService> { ArbFileContentModificationService(get()) }
             single<FinishedFileTranslationHandler> { FlutterArbTranslateFileFinished(get(), get(), get()) }
             single<UserSettingsMapper> { Mappers.getMapper(UserSettingsMapper::class.java) }
-            single<UserSettingsPersistentStateComponent> { UserSettingsPersistentStateComponent.getInstance() }
             single<TranslationCredentialsServiceRepository> { IdeaTranslationCredentialsServiceRepository() }
+            single<AutoLocalizeOrchestrator> { AutoLocalizeOrchestrator(get()) }
             single<UserSettingsDTOMapper> { Mappers.getMapper(UserSettingsDTOMapper::class.java) }
             single<ClientConnectionTester> { OpenAIClientConnectionTester(get()) }
             single<DartAdditiveExpressionExtractor> { DartAdditiveExpressionExtractor() }
@@ -185,6 +185,8 @@ class DIConfig {
             single<ArbPsiUtils> { ArbPsiUtils() }
             single<TranslationFileRepository> { PsiTranslationFileRepository(get(), get(), get()) }
             single<ThreadingService<TranslationContext>> { ThreadingService() }
+            single<GeneralErrorHandler> { GeneralErrorHandler() }
+
         }
     }
 }

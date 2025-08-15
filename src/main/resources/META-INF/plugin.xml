@@ -1,245 +1,257 @@
 <!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
-<idea-plugin>
-    <!-- Unique identifier of the plugin. It should be FQN. It cannot be changed between the plugin versions. -->
-    <id>de.keeyzar.gpt-helper.gpt-helper</id>
+            <idea-plugin>
+                <!-- Unique identifier of the plugin. It should be FQN. It cannot be changed between the plugin versions. -->
+                <id>de.keeyzar.gpt-helper.gpt-helper</id>
 
-    <!-- Public plugin name should be written in Title Case.
-         Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-name -->
-    <name>GPT Flutter Intl</name>
+                <!-- Public plugin name should be written in Title Case.
+                     Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-name -->
+                <name>GPT Flutter Intl</name>
 
-    <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
-    <vendor email="info@kevin-kekule.de" url="https://kevin-kekule.de">Keeyzar</vendor>
+                <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
+                <vendor email="info@kevin-kekule.de" url="https://kevin-kekule.de">Keeyzar</vendor>
 
-    <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
-         Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
-         Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
-    <description><![CDATA[
-    Provides automated, advanced OpenAI GPT-3 based translations for Flutter.
+                <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
+                     Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
+                     Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
+                <description><![CDATA[
+                Provides automated, advanced Google AI Model (probably gemini) based translations for Flutter.
 
-    <p>
-      <b>Features:</b>
-      <ul>
-        <li>Convert String to Arb entry and translate into all available languages (Alt+Enter on any String)</li>
-        <li>Change translations from within e.g. app_en.arb (press Alt+Enter)</li>
-        <li>Translate missing translations (press Alt+Enter in untranslated_messages.txt)</li>
-        <li>Auto Localize whole file (with key suggestion)</li>
-        <li>Translate whole file (also advanced keys)</li>
-        <li>Monitor flutter intl settings, so that the generation adheres to the configured style</li>
-      </ul>
-    </p>
+                <p>
+                  <b>Features:</b>
+                  <ul>
+                    <li>In general the plugin creates arb entries out of strings, even if it's complex ones, that have formatting, need pluralization etc.</li>
+                    <li>Convert String to Arb entry (with key suggestion) and translate into all available languages (Alt+Enter on any String)</li>
+                    <li>Change translations from within e.g. app_en.arb (press Alt+Enter)</li>
+                    <li>Translate missing translations (press Alt+Enter in untranslated_messages.txt)</li>
+                    <li>Auto Localize whole file or directory (with key suggestion)</li>
+                    <li>Monitor flutter intl settings, so that the generation adheres to the configured style</li>
+                  </ul>
+                </p>
 
-    <p>
-        <b>How to use:</b>
-        <ul>
-            <li>Install the plugin</li>
-            <li>Configure your OpenAi API Key in the settings (no worries, if you miss it, we'll ask you)</li>
-            <li>Convert String to Arb entry: Select the string, open "Intentions" Menu (default: Alt + Enter) and fill in the data</li>
-            <li>Change translations: Open the arb file and press Alt+Enter on any key</li>
-            <li>Translate missing translations: Open untranslated_messages.txt and press Alt+Enter</li>
-            <li>Auto Localize File: Press "Generate" Shortcut (default: Alt + Insert) and select "Auto Localize File"</li>
-            <li>Translate whole file: Right-click on the file in the project view and select "Translate this to new Arb file"</li>
-        </ul>
-    </p>
+                <p>
+                    <b>How to use:</b>
+                    <ul>
+                        <li>Install the plugin</li>
+                        <li>Configure your Gemini API Key in the settings (no worries, if you miss it, we'll ask you)</li>
+                        <li>Convert String to Arb entry: Select the string, open "Intentions" Menu (default: Alt + Enter) and fill in the data</li>
+                        <li>Change translations: Open the arb file and press Alt+Enter on any key</li>
+                        <li>Translate missing translations: Open untranslated_messages.txt and press Alt+Enter</li>
+                        <li>Auto Localize File: Press "Generate" Shortcut (default: Alt + Insert) and select "Auto Localize File"</li>
+                        <li>Translate whole file: Right-click on the file in the project view and select "Translate this to new Arb file"</li>
+                    </ul>
+                </p>
 
-    <p>
-        <b>OpenAI API Costs:</b>
-        <br/>
-        The translations are fairly small. While developing the Plugin I never crossed the 50 cent mark (as of 2023/05).
-    </p>
+                <p>
+                    <b>API costs:</b>
+                    <br/>
+                    The translations are fairly small. We try to provide only necessary information to the AI.
+                </p>
 
-    <p>
-        <b>Rate this plugin:</b>
-        <br/>
-        Please, do me a favor and rate this plugin. It took a lot of time. :)
-        <a href="https://plugins.jetbrains.com/plugin/21732-gpt-flutter-intl/reviews">Write GPT Flutter Intl Review</a>
-    </p>
-  ]]></description>
+                <p>
+                    <b>Rate this plugin:</b>
+                    <br/>
+                    Please, do me a favor and rate this plugin. It took a lot of time. :)
+                    <a href="https://plugins.jetbrains.com/plugin/21732-gpt-flutter-intl/reviews">Write GPT Flutter Intl Review</a>
+                </p>
+              ]]></description>
 
-    <change-notes>
-        <![CDATA[
-      <ul>
-      <li>
-          <b>1.18.2</b>
-          <ul>
-            <li>
-              cancellation of task finally works
-            </li>
-            <li>
-              change translation now uses correct key
-            </li>
-          </ul>
-      </li>
-      <li>
-          <b>1.18.0</b>
-          <ul>
-            <li>
-              FASTER translations - because of queue
-            </li>
-            <li>
-              CHANGE translations from within an arb entry, i.e. if you're in e.g. app_en.arb then press alt+enter on any key
-            </li>
-            <li>
-              allow lowerCamelCase key for translations
-            </li>
-          </ul>
-      </li>
-      <li>
-          <b>1.17.0</b>
-          <ul>
-            <li>
-              With new Open AI API compatible again :)
-            </li>
-            <li>
-              Can use gpt-4 turbo - fixed instructions for it to work
-            </li>
-            <li>
-              allow lowerCamelCase key for translations
-            </li>
-          </ul>
-      </li>
-      <li>
-          <b>1.16.0</b>
-          <ul>
-            <li>
-              Plugin works again, after fixing class loader issues.. :)
-            </li>
-            <li>
-              Use gpt 3.5 with nice speed for complex translations.
-            </li>
-            <li>
-              allow selecting gpt model in settings
-            </li>
-            <li>
-              allow usage of the old translation prompting without complex keys
-            </li>
-            <li>
-              allow configuration of translation history length
-            </li>
-          </ul>
-        </li>
-        <li>
-          <b>1.11.0</b>
-          <ul>
-            <li>
-              allow creation of complex arb entries, i.e. with placeholder, with plural, with numbers! YAY!
-            </li>
-            <li>
-              translation history in translation input dialog, so that one can easily look up old key structure
-            </li>
-            <li>
-              allow selecting gpt model in settings
-            </li>
-            <li>
-              allow usage of the old translation prompting without complex keys
-            </li>
-            <li>
-              allow configuration of translation history length
-            </li>
-          </ul>
-        </li>
-        <li>
-          <b>1.10.0</b>
-          <ul>
-            <li>
-              configure parallel translations - because openAI blocks new account parallelism
-            </li>
-            <li>
-              fix errors in context of formatting after removing const modifier
-            </li>
-            <li>
-              allow undoing all localizations with two UNDO commands - wow was that annoying...
-            </li>
-          </ul>
-        </li>
-        <li>
-          <b>1.9.0</b>
-          <ul>
-            <li>
-              parallel translations
-            </li>
-            <li>
-              fix nullable getter generated code
-            </li>
-            <li>
-              use old translation data
-            </li>
-          </ul>
-        </li>
-        <li>
-          <b>1.8.0</b> Ask user to rate plugin, if he uses it for a while
-        </li>
-        <li>
-          <b>1.7.0</b> Remove const modifier if it exists in parent
-        </li>
-        <li>
-          <b>1.6.0</b> Allow for auto localization of file
-        </li>
-        <li>
-          <b>1.5.0</b> Use project level persistence
-        </li>
-        <li><b>1.4</b> Added Logo</li>
-        <li><b>1.0</b> initial release</li>
-      </ul>
-    ]]>
-    </change-notes>
+                <change-notes>
+                    <![CDATA[
+                  <ul>
+                  <li>
+                      <b>2.0.0</b>
+                      <ul>
+                        <li>
+                          Use Gemini instead of openAI
+                        </li>
+                        <li>
+                          Allow complex arb entries - and create arb entry key suggestions based on AI and context (e.g. filename)
+                        </li>
+                        <li>
+                          internationalize whole files and directories in a single go
+                        </li>
+                        <li>
+                          Better error handling, better UI, better everything :)
+                        </li>
+                      </ul>
+                  </li>
+                  <li>
+                      <b>1.18.2</b>
+                      <ul>
+                        <li>
+                          cancellation of task finally works
+                        </li>
+                        <li>
+                          change translation now uses correct key
+                        </li>
+                      </ul>
+                  </li>
+                  <li>
+                      <b>1.18.0</b>
+                      <ul>
+                        <li>
+                          FASTER translations - because of queue
+                        </li>
+                        <li>
+                          CHANGE translations from within an arb entry, i.e. if you're in e.g. app_en.arb then press alt+enter on any key
+                        </li>
+                        <li>
+                          allow lowerCamelCase key for translations
+                        </li>
+                      </ul>
+                  </li>
+                  <li>
+                      <b>1.17.0</b>
+                      <ul>
+                        <li>
+                          With new Open AI API compatible again :)
+                        </li>
+                        <li>
+                          Can use gpt-4 turbo - fixed instructions for it to work
+                        </li>
+                        <li>
+                          allow lowerCamelCase key for translations
+                        </li>
+                      </ul>
+                  </li>
+                  <li>
+                      <b>1.16.0</b>
+                      <ul>
+                        <li>
+                          Plugin works again, after fixing class loader issues.. :)
+                        </li>
+                        <li>
+                          Use gpt 3.5 with nice speed for complex translations.
+                        </li>
+                        <li>
+                          allow selecting gpt model in settings
+                        </li>
+                        <li>
+                          allow usage of the old translation prompting without complex keys
+                        </li>
+                        <li>
+                          allow configuration of translation history length
+                        </li>
+                      </ul>
+                    </li>
+                    <li>
+                      <b>1.11.0</b>
+                      <ul>
+                        <li>
+                          allow creation of complex arb entries, i.e. with placeholder, with plural, with numbers! YAY!
+                        </li>
+                        <li>
+                          translation history in translation input dialog, so that one can easily look up old key structure
+                        </li>
+                        <li>
+                          allow selecting gpt model in settings
+                        </li>
+                        <li>
+                          allow usage of the old translation prompting without complex keys
+                        </li>
+                        <li>
+                          allow configuration of translation history length
+                        </li>
+                      </ul>
+                    </li>
+                    <li>
+                      <b>1.10.0</b>
+                      <ul>
+                        <li>
+                          configure parallel translations - because openAI blocks new account parallelism
+                        </li>
+                        <li>
+                          fix errors in context of formatting after removing const modifier
+                        </li>
+                        <li>
+                          allow undoing all localizations with two UNDO commands - wow was that annoying...
+                        </li>
+                      </ul>
+                    </li>
+                    <li>
+                      <b>1.9.0</b>
+                      <ul>
+                        <li>
+                          parallel translations
+                        </li>
+                        <li>
+                          fix nullable getter generated code
+                        </li>
+                        <li>
+                          use old translation data
+                        </li>
+                      </ul>
+                    </li>
+                    <li>
+                      <b>1.8.0</b> Ask user to rate plugin, if he uses it for a while
+                    </li>
+                    <li>
+                      <b>1.7.0</b> Remove const modifier if it exists in parent
+                    </li>
+                    <li>
+                      <b>1.6.0</b> Allow for auto localization of file
+                    </li>
+                    <li>
+                      <b>1.5.0</b> Use project level persistence
+                    </li>
+                    <li><b>1.4</b> Added Logo</li>
+                    <li><b>1.0</b> initial release</li>
+                  </ul>
+                ]]>
+                </change-notes>
 
-    <!-- Product and plugin compatibility requirements.
-         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
-    <depends>com.intellij.modules.platform</depends>
-    <depends>Dart</depends>
-    <depends>org.jetbrains.plugins.terminal</depends>
+                <!-- Product and plugin compatibility requirements.
+                     Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
+                <depends>com.intellij.modules.platform</depends>
+                <depends>Dart</depends>
+                <depends>org.jetbrains.plugins.terminal</depends>
 
-    <!-- Extension points defined by the plugin.
-         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
-    <extensions defaultExtensionNs="com.intellij">
-        <intentionAction>
-            <language>Dart</language>
-            <className>de.keeyzar.gpthelper.gpthelper.features.translations.presentation.actions.GenerateArbIntentionAction</className>
-            <category>SDK intentions</category>
-        </intentionAction>
-        <postStartupActivity implementation="de.keeyzar.gpthelper.gpthelper.ApplicationGptHelper"/>
-        <projectConfigurable
-                groupId="de.keeyzar.gpthelper"
-                displayName="GPT Flutter Intl Settings"
-                id="de.keeyzar.gpthelper.settings"
-                parentId="tools"
-                instance="de.keeyzar.gpthelper.gpthelper.features.shared.presentation.GptHelperSettings"
-        />
-        <fileType name="ARB File" language="JSON" extensions="arb" fileNames="untranslated_messages.txt"
-                  implementationClass="de.keeyzar.gpthelper.gpthelper.features.flutterarb.presentation.handler.ArbFileType"
-                  fieldName="INSTANCE"
-        />
+                <!-- Extension points defined by the plugin.
+                     Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
+                <extensions defaultExtensionNs="com.intellij">
+                    <intentionAction>
+                        <language>Dart</language>
+                        <className>de.keeyzar.gpthelper.gpthelper.features.translations.presentation.actions.GenerateArbIntentionAction</className>
+                        <category>SDK intentions</category>
+                    </intentionAction>
+                    <postStartupActivity implementation="de.keeyzar.gpthelper.gpthelper.ApplicationGptHelper"/>
+                    <projectConfigurable
+                            groupId="de.keeyzar.gpthelper"
+                            displayName="GPT Flutter Intl Settings"
+                            id="de.keeyzar.gpthelper.settings"
+                            parentId="tools"
+                            instance="de.keeyzar.gpthelper.gpthelper.features.shared.presentation.GptHelperSettings"
+                    />
+                    <fileType name="ARB File" language="JSON" extensions="arb" fileNames="untranslated_messages.txt"
+                              implementationClass="de.keeyzar.gpthelper.gpthelper.features.flutterarb.presentation.handler.ArbFileType"
+                              fieldName="INSTANCE"
+                    />
 
-        <intentionAction>
-            <language>JSON</language>
-            <className>de.keeyzar.gpthelper.gpthelper.features.changetranslation.presentation.intention.ChangeTranslationAction</className>
-            <category>ARB</category>
-        </intentionAction>
-        <intentionAction>
-            <language>JSON</language>
-            <className>de.keeyzar.gpthelper.gpthelper.features.missingtranslations.presentation.intention.MissingTranslationAction</className>
-            <category>ARB</category>
-        </intentionAction>
-    </extensions>
+                    <intentionAction>
+                        <language>JSON</language>
+                        <className>de.keeyzar.gpthelper.gpthelper.features.changetranslation.presentation.intention.ChangeTranslationAction</className>
+                        <category>ARB</category>
+                    </intentionAction>
+                    <intentionAction>
+                        <language>JSON</language>
+                        <className>de.keeyzar.gpthelper.gpthelper.features.missingtranslations.presentation.intention.MissingTranslationAction</className>
+                        <category>ARB</category>
+                    </intentionAction>
+                </extensions>
 
-    <actions>
-        <action id="de.keeyzar.gpthelper.gpthelper.features.filetranslation.presentation.actions.TranslateWholeFileAction"
-                class="de.keeyzar.gpthelper.gpthelper.features.filetranslation.presentation.actions.TranslateWholeFileAction"
-                text="Translate this to new Arb file" description="Will translate all the keys in the background and put them into a new file">
-            <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
-        </action>
-        <action id="de.keeyzar.gpthelper.gpthelper.features.autofilefixer.presentation.actions.AutoLocalizeFile"
-                class="de.keeyzar.gpthelper.gpthelper.features.autofilefixer.presentation.actions.AutoLocalizeFile"
-                text="Auto Localize File"
-                description="Automatically localizes the current file.">
-            <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
-            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
-        </action>
-        <action id="de.keeyzar.gpthelper.gpthelper.features.autofilefixer.presentation.actions.AutoLocalizeDirectory"
-                class="de.keeyzar.gpthelper.gpthelper.features.autofilefixer.presentation.actions.AutoLocalizeDirectory"
-                text="Auto Localize Directory"
-                description="Automatically localizes all dart files in the selected directory.">
-            <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
-        </action>
-    </actions>
-</idea-plugin>
+                <actions>
+                    <action id="de.keeyzar.gpthelper.gpthelper.features.filetranslation.presentation.actions.TranslateWholeFileAction"
+                            class="de.keeyzar.gpthelper.gpthelper.features.filetranslation.presentation.actions.TranslateWholeFileAction"
+                            text="Translate This To New Arb File" description="Will translate all the keys in the background and put them into a new file">
+                        <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
+                    </action>
+
+                    <action id="de.keeyzar.gpthelper.gpthelper.features.autofilefixer.presentation.actions.AutoLocalizeDirectory"
+                            class="de.keeyzar.gpthelper.gpthelper.features.autofilefixer.presentation.actions.AutoLocalizeDirectory"
+                            text="Auto Localize Directory / File"
+                            description="Automatically localizes all dart files in the selected directory or file.">
+                        <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
+                        <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+                    </action>
+                </actions>
+            </idea-plugin>

@@ -180,7 +180,7 @@ class CollectedStringsDialog(
         }
     }
 
-    override fun getPreferredFocusedComponent(): JComponent? {
+    override fun getPreferredFocusedComponent(): JComponent {
         return tree
     }
 

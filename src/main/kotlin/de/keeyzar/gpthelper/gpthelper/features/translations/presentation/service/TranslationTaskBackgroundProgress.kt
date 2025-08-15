@@ -1,21 +1,25 @@
 package de.keeyzar.gpthelper.gpthelper.features.translations.presentation.service
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.progress.impl.BackgroundableProcessIndicator
 import com.intellij.openapi.project.Project
-import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.TranslationContext
+import com.intellij.openapi.ui.Messages
+import de.keeyzar.gpthelper.gpthelper.common.error.GeneralErrorHandler
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.TranslationProgress
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.service.TranslationProgressChangeNotifier
 import kotlinx.coroutines.runBlocking
+import java.io.PrintWriter
+import java.io.StringWriter
 import kotlin.math.max
 
 /**
  * listen for changes in the translation progress and update the UI accordingly
  */
-class TranslationTaskBackgroundProgress {
+class TranslationTaskBackgroundProgress(val generalErrorHandler: GeneralErrorHandler) {
     var log: Logger = Logger.getInstance(TranslationTaskBackgroundProgress::class.java)
 
     interface TranslationProgressContext {
@@ -43,24 +47,31 @@ class TranslationTaskBackgroundProgress {
             override fun run(visibleIndicator: ProgressIndicator) {
                 initProgressListener(visibleIndicator)
                 runBlocking {
-                    callback()
-                }
-                while (!finished) {
-                    log.trace("waiting for the task to finish")
-                    if(translationContext.isCancelled()) {
-                        break
-                    }
-                    if(visibleIndicator.isCanceled) {
-                        translationContext.setCancelled()
-                        break
-                    }
                     try {
-                        Thread.sleep(1000)
-                    } catch (e: InterruptedException) {
-                        Thread.interrupted()
-                        log.info("We were interrupted")
+                        callback()
+                    } catch (throwable: Throwable) {
+                        generalErrorHandler.handleError(project, throwable)
+                        log.error("Error during background task", throwable)
+                        finished = true // Stop the task
+                    }
+                    while (!finished) {
+                        log.trace("waiting for the task to finish")
+                        if(translationContext.isCancelled()) {
+                            break
+                        }
+                        if(visibleIndicator.isCanceled) {
+                            translationContext.setCancelled()
+                            break
+                        }
+                        try {
+                            Thread.sleep(1000)
+                        } catch (e: InterruptedException) {
+                            Thread.interrupted()
+                            log.info("We were interrupted")
+                        }
                     }
                 }
+
             }
 
             fun initProgressListener(progressIndicator: ProgressIndicator) {

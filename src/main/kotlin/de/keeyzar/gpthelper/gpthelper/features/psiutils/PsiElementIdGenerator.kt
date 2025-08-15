@@ -1,5 +1,6 @@
 package de.keeyzar.gpthelper.gpthelper.features.psiutils
 
+import com.intellij.openapi.application.runReadAction
 import com.intellij.psi.PsiElement
 
 class PsiElementIdGenerator {
@@ -8,6 +9,8 @@ class PsiElementIdGenerator {
      * TODO: this id generation here is not really secure
      */
     fun createIdFromPsiElement(psiElement: PsiElement): String {
-        return psiElement.text.hashCode().toString()
+        return runReadAction {
+            psiElement.text.hashCode().toString()
+        }
     }
 }

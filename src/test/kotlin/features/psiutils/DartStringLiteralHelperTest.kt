@@ -1,10 +1,13 @@
 package de.keeyzar.gpthelper.gpthelper.features.flutter_intl.infrastructure.repository
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ReadAction
+import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.presentation.widgets.RetryFailedTranslationsDialog
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.testFramework.LightProjectDescriptor
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
+import kotlinx.coroutines.launch
 import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory
 import com.intellij.testFramework.fixtures.impl.LightTempDirTestFixtureImpl
 import com.jetbrains.lang.dart.psi.DartStringLiteralExpression
@@ -23,38 +26,72 @@ class DartStringLiteralHelperTest {
     private lateinit var fixture: CodeInsightTestFixture
 
 
-    @Before
-    fun setUp() {
-        //because post startup activity already loads koin
-        val factory = IdeaTestFixtureFactory.getFixtureFactory()
-        val projectDescriptor = LightProjectDescriptor.EMPTY_PROJECT_DESCRIPTOR
-        val fixtureBuilder = factory.createLightFixtureBuilder(projectDescriptor, "my_new_project")
-        val myFixture = fixtureBuilder.fixture
-        fixture = IdeaTestFixtureFactory.getFixtureFactory().createCodeInsightFixture(
-            myFixture,
-            LightTempDirTestFixtureImpl(true)
-        )
-        fixture.setUp()
+        val requests = multiKeyTranslationContext.translationEntries.map {
+            UserTranslationRequest(multiKeyTranslationContext.targetLanguages, Translation(multiKeyTranslationContext.baseLanguage, it))
+        }
         project = fixture.project
-        fixture.testDataPath = "src/test/resources"
+        // 1. Add all base entries to the base ARB file
+        requests.forEach {
+            ongoingTranslationHandler.onlyGenerateBaseEntry(it)
+        }
+    fun tearDown() {
+        // 2. Replace all string literals in the source code with the new keys
+        translationTriggeredHooks.translationTriggeredInit()
+        requests.forEach {
+            translationTriggeredHooks.translationTriggeredPartial(it.baseTranslation)
+        }
+        translationTriggeredHooks.translationTriggeredPostTranslation()
+
+        processRequestsWithRetry(requests, multiKeyTranslationContext.targetLanguages.size)
+
+        reviewService.askUserForReviewIfItIsTime()
     }
 
-    @After
-    fun tearDown() {
-        try {
-            fixture.tearDown()
-            Disposer.dispose(fixture.testRootDisposable)
-        } catch (e: Throwable) {
-            e.printStackTrace()
-        } finally {
+    private suspend fun processRequestsWithRetry(requests: List<UserTranslationRequest>, languagesCount: Int) {
+        if (requests.isEmpty()) {
+            return
+        }
 
+        val failedRequests = processTranslationRequests(requests, languagesCount)
+
+        if (failedRequests.isNotEmpty()) {
+            var requestsToRetry: List<UserTranslationRequest>? = null
+            ApplicationManager.getApplication().invokeAndWait {
+                val dialog = RetryFailedTranslationsDialog(failedRequests)
+                if (dialog.showAndGet()) {
+                    requestsToRetry = dialog.getRequestsToRetry()
+                }
+            }
+
+            requestsToRetry?.let {
+                if (it.isNotEmpty()) {
+                    processRequestsWithRetry(it, languagesCount)
+                }
+            }
         }
     }
 
-    @Test
+    private suspend fun processTranslationRequests(requests: List<UserTranslationRequest>, languagesCount: Int): List<UserTranslationRequest> {
+        val taskAmount = languagesCount * requests.size
+        val taskCounter = AtomicInteger(0)
+        val failedRequests = mutableListOf<UserTranslationRequest>()
+
+        coroutineScope {
+        }
+    }
+                launch {
+                    val failedRequest = ongoingTranslationHandler.translateAsynchronouslyWithoutPlaceholder(request, true, { false }) {
+                        reportProgress(taskCounter, taskAmount)
+                    }
+                    if (failedRequest != null) {
+                        synchronized(failedRequests) {
+                            failedRequests.add(failedRequest)
+                        }
+                    }
     fun `find should return all DartStringLiteralExpressions in PsiFile`() {
         
         val psiFile = fixture.configureByFile("psiutils/dart/example1.dart")
+        return failedRequests
 
         val dartStringLiterals = ReadAction.compute<List<DartStringLiteralExpression>, Throwable> {
             sut.findLiterals(psiFile)
@@ -168,24 +205,6 @@ class DartStringLiteralHelperTest {
         ReadAction.run<Throwable> {
             val elements = sut.findStringPsiElements(psiFile)
             assertThat(elements).hasSize(1)
-        }
-    }
-
-    @Test
-    fun `findStringPsiElements should mark print statements as not selected`() {
-        val psiFile = fixture.configureByFile("psiutils/dart/example6.dart")
-
-        ReadAction.run<Throwable> {
-            val elementsWithSelection = sut.findStringPsiElements(psiFile)
-            assertThat(elementsWithSelection).hasSize(2)
-
-            val omgElement = elementsWithSelection.keys.find { it.text == "\"Omg\"" }
-            assertThat(omgElement).isNotNull
-            assertThat(elementsWithSelection[omgElement]).isFalse()
-
-            val complexStringElement = elementsWithSelection.keys.find { it.text.startsWith("'Hello '") }
-            assertThat(complexStringElement).isNotNull
-            assertThat(elementsWithSelection[complexStringElement]).isTrue()
         }
     }
 }

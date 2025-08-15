@@ -6,8 +6,7 @@ import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.mappe
 
 class PropertiesUserSettingsRepository(
     private val currentProjectProvider: CurrentProjectProvider,
-    private val userSettingsMapper: UserSettingsMapper,
-    private val userSettingsPersistentStateComponent: UserSettingsPersistentStateComponent,
+    private val userSettingsMapper: UserSettingsMapper
 ) : UserSettingsRepository {
 
     override fun overrideSettings(callback: (oldUserSettings: UserSettings) -> UserSettings) {
@@ -22,7 +21,7 @@ class PropertiesUserSettingsRepository(
     private fun persistSettings(userSettings: UserSettings) {
         val sanitized = sanitize(userSettings);
         val model = userSettingsMapper.toModel(sanitized)
-        userSettingsPersistentStateComponent.setNewState(model)
+        UserSettingsPersistentStateComponent.getInstance(currentProjectProvider.project).setNewState(model)
     }
 
     private fun sanitize(userSettings: UserSettings): UserSettings {
@@ -40,7 +39,8 @@ class PropertiesUserSettingsRepository(
      * if there is no settings, we provide default user settings
      */
     override fun getSettings(): UserSettings {
-        val settings = userSettingsMapper.toEntity(userSettingsPersistentStateComponent.state)
+        val state = UserSettingsPersistentStateComponent.getInstance(currentProjectProvider.project).state
+        val settings = userSettingsMapper.toEntity(state)
         if (settings.flutterImportStatement.isBlank()) {
             return settings.copy(flutterImportStatement = "package:flutter_gen/gen_l10n/app_localizations.dart")
         }
@@ -51,6 +51,6 @@ class PropertiesUserSettingsRepository(
      * wipe the user settings
      */
     override fun wipeUserSettings() {
-        userSettingsPersistentStateComponent.setNewState(UserSettingsPersistentStateComponent.UserSettingsModel())
+        UserSettingsPersistentStateComponent.getInstance(currentProjectProvider.project).setNewState(UserSettingsPersistentStateComponent.UserSettingsModel())
     }
 }

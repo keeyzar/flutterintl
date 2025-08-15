@@ -1,19 +1,19 @@
 package de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.repository
 
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.*
+import com.intellij.openapi.project.Project
 import com.intellij.util.xmlb.XmlSerializerUtil
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
 
-@State(name = "FlutterIntlSettings", storages =[Storage(value="plugin_gpt_intl_settings.xml")])
-@Service
+@State(name = "de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.repository.UserSettingsPersistentStateComponent", storages = [Storage("gptHelperSettings.xml")])
+@Service(Service.Level.PROJECT)
 class UserSettingsPersistentStateComponent : PersistentStateComponent<UserSettingsPersistentStateComponent.UserSettingsModel> {
 
     companion object {
-        fun getInstance(): UserSettingsPersistentStateComponent {
-            return ApplicationManager.getApplication().getService(UserSettingsPersistentStateComponent::class.java);
+        fun getInstance(project: Project): UserSettingsPersistentStateComponent {
+            return project.getService(UserSettingsPersistentStateComponent::class.java);
         }
     }
 

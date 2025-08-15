@@ -30,7 +30,7 @@ class IdeaFlutterIntlSettingsRepository(
             null
         }
         val absolutePath = userSettings?.intlConfigFile ?: DEFAULT_FLUTTER_INTL_CONFIG_FILE
-        val project = currentProjectProvider.project;
+        val project = currentProjectProvider.project
         return load(project, Path.of(absolutePath))
     }
 

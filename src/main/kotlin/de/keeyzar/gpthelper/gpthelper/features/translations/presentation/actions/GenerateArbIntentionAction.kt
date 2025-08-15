@@ -7,13 +7,9 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.*
 import com.intellij.util.IncorrectOperationException
 import com.jetbrains.lang.dart.psi.DartFile
-import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.entity.MultiKeyTranslationContext
-import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.Language
-import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.TranslationContext
 import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.dependencyinjection.FlutterArbTranslationInitializer
 import org.jetbrains.annotations.NonNls
 import org.jetbrains.annotations.NotNull
-import java.util.UUID
 
 
 @NonNls
@@ -26,7 +22,7 @@ class GenerateArbIntentionAction : PsiElementBaseIntentionAction(), IntentionAct
      */
     @NotNull
     override fun getText(): String {
-        return "Generate translations"
+        return "Auto localize (string)"
     }
 
     /**
@@ -77,38 +73,10 @@ class GenerateArbIntentionAction : PsiElementBaseIntentionAction(), IntentionAct
 
     @Throws(IncorrectOperationException::class)
     override fun invoke(project: Project, editor: Editor?, element: PsiElement) {
-        if (isDartString(element)) {
-            val initializer = getInitializer()
-            initializer.lastStatementProviderForFlutterArbTranslation.lastStatement = element
-            val taskId = UUID.randomUUID().toString()
-            val translationContext = TranslationContext(taskId, "Translation Init", 0, null, 0)
+        val initializer = getInitializer()
+        val directory = element.containingFile.virtualFile ?: return
 
-            initializer.translationTaskBackgroundProgress.triggerInBlockingContext(project, {
-                try {
-                    val preprocess = initializer.translationPreprocessor.preprocess(translationContext) ?: return@triggerInBlockingContext
-                    val (processedContext, userTranslationInput) = preprocess
-
-                    val translationRequest = initializer.userTranslationInputParser.toUserTranslationRequest(processedContext.baseLanguage, userTranslationInput)
-
-                    if (!userTranslationInput.translateNow) {
-                        // Nur Dummy-Eintrag erzeugen, keine Übersetzung
-                        initializer.ongoingTranslationHandler.onlyGenerateBaseEntry(translationRequest)
-                        initializer.translationTriggeredHooks.translationTriggered(translationRequest.baseTranslation)
-                        return@triggerInBlockingContext
-                    }
-
-                    val multiKeyContext = MultiKeyTranslationContext(
-                        baseLanguage = processedContext.baseLanguage,
-                        targetLanguages = userTranslationInput.languagesToTranslate.map { Language.fromISOLangString(it.key) },
-                        translationEntries = listOf(translationRequest.baseTranslation.entry)
-                    )
-
-                    initializer.multiKeyTranslationProcessController.startTranslationProcess(multiKeyContext)
-                } finally {
-                    translationContext.finished = true
-                }
-            }, translationContext = translationContext)
-        }
+        initializer.orchestrator.orchestrate(project, directory, "Auto Localizing String")
     }
 
     override fun startInWriteAction(): Boolean {
@@ -119,3 +87,4 @@ class GenerateArbIntentionAction : PsiElementBaseIntentionAction(), IntentionAct
         return super.checkFile(file) && file is DartFile
     }
 }
+

@@ -15,7 +15,6 @@ import com.intellij.ui.dsl.builder.*
 import com.intellij.ui.layout.ComponentPredicate
 import de.keeyzar.gpthelper.gpthelper.DIConfig.Companion.appModule
 import de.keeyzar.gpthelper.gpthelper.features.flutter_intl.domain.repository.FlutterIntlSettingsRepository
-import de.keeyzar.gpthelper.gpthelper.features.shared.presentation.mapper.UserSettingsDTOMapper
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.client.GPTModelProvider
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.UserSettingsRepository
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.repository.CurrentProjectProvider
@@ -67,7 +66,7 @@ class GptHelperSettings(val project: Project) : Configurable {
         panel = panel {
             group("General") {
                 row {
-                    label("OpenAI API Password:")
+                    label("Gemini API Password:")
                     openAIKeyField = cell(JBPasswordField())
                         .resizableColumn()
                         .align(Align.FILL)
@@ -85,32 +84,32 @@ class GptHelperSettings(val project: Project) : Configurable {
                 row("Success, new password has been saved!") {
                 }.visibleIf(connectionSuccessPredicate())
             }
-            group("OpenAI Client Configuration") {
+            group("Gemini Client Configuration") {
                 row {
                     label("Translation parallelism")
                     translationParallelism = cell(JBTextField())
-                        .bindIntText(UserSettingsPersistentStateComponent.getInstance().state::parallelism)
+                        .bindIntText(UserSettingsPersistentStateComponent.getInstance(project).state::parallelism)
                         .resizableColumn()
                         .align(Align.FILL)
-                        .comment("Each file is translated in parallel. A new openAI Account can only make 3 parallel requests. If your Account is older than a week, I suggest increasing to 10 (or how many translation files you have)")
+                        .comment("Each file is translated in parallel. You need to check the usage limits of the model. Three works e.g. with gemini-2.5-flash")
                 }.layout(RowLayout.PARENT_GRID)
                 row {
                     label("Tonality of translation")
                     translationTonality = cell(JBTextField())
-                        .bindText(UserSettingsPersistentStateComponent.getInstance().state::tonality)
+                        .bindText(UserSettingsPersistentStateComponent.getInstance(project).state::tonality)
                         .resizableColumn()
                         .align(Align.FILL)
                         .comment("Provide english instructions on the tonality of the text, i.e. in german there is a difference between a formal you(Sie) " +
                                 "and informal you(du). Choose something like 'formal' or 'informal and funny' etc.")
                 }.layout(RowLayout.PARENT_GRID)
                 row {
-                    label("GPT Model to use")
+                    label("AI Model to use")
                     gptModel = comboBox(initialValueForModel())
-                        .bindItem(UserSettingsPersistentStateComponent.getInstance().state::gptModel)
+                        .bindItem(UserSettingsPersistentStateComponent.getInstance(project).state::gptModel)
                         .resizableColumn()
                         .align(Align.FILL)
-                        .comment("Choose the GPT Model to use. Pricing differs for the Models, though all should be fairly cheap anyways.")
-                    button("Refresh GPT Models") {
+                        .comment("Choose the AI Model to use. Pricing differs for the Models, though all should be fairly cheap anyways.")
+                    button("Refresh AI Models") {
                         val previousSelected = gptModel.component.selectedItem
                         gptModel.component.model = DefaultComboBoxModel(Vector(getValuesFromGPT()))
                         gptModel.component.selectedItem = previousSelected
@@ -122,7 +121,7 @@ class GptHelperSettings(val project: Project) : Configurable {
                 row {
                     label("Intl config file")
                     intlConfigFile = textFieldWithBrowseButton()
-                        .bindText(UserSettingsPersistentStateComponent.getInstance().state::intlConfigFile)
+                        .bindText(UserSettingsPersistentStateComponent.getInstance(project).state::intlConfigFile)
                         .resizableColumn()
                         .align(Align.FILL)
                     button("Refresh Settings Based On Intl Config File") {
@@ -131,7 +130,7 @@ class GptHelperSettings(val project: Project) : Configurable {
                 }
                 row {
                     watchIntlConfigFile = checkBox("Watch intl config file")
-                        .bindSelected(UserSettingsPersistentStateComponent.getInstance().state::watchIntlConfigFile)
+                        .bindSelected(UserSettingsPersistentStateComponent.getInstance(project).state::watchIntlConfigFile)
                         .comment("If enabled, the settings will be refreshed automatically if the intl config file changes. (I.e. on each invoke of the plugin.")
                 }
                 separator()
@@ -140,14 +139,14 @@ class GptHelperSettings(val project: Project) : Configurable {
                     arbDirectory = textFieldWithBrowseButton()
                         .align(Align.FILL)
                         .resizableColumn()
-                        .bindText(UserSettingsPersistentStateComponent.getInstance().state::arbDir)
+                        .bindText(UserSettingsPersistentStateComponent.getInstance(project).state::arbDir)
                         .comment("The directory where the arb files are located")
                 }.layout(RowLayout.PARENT_GRID)
                 row {
                     label("Template arb file:")
                     templateArbFile = textFieldWithBrowseButton()
                         .align(Align.FILL)
-                        .bindText(UserSettingsPersistentStateComponent.getInstance().state::templateArbFile)
+                        .bindText(UserSettingsPersistentStateComponent.getInstance(project).state::templateArbFile)
                         .comment(
                             """
                             |The template arb file, i.e. which is the main arb file, most of the time it's app_en.arb.
@@ -160,26 +159,26 @@ class GptHelperSettings(val project: Project) : Configurable {
                     label("Flutter import statement:")
                     textField()
                         .align(Align.FILL)
-                        .bindText(UserSettingsPersistentStateComponent.getInstance().state::flutterImportStatement)
+                        .bindText(UserSettingsPersistentStateComponent.getInstance(project).state::flutterImportStatement)
                         .comment("The import statement for the generated localization class.")
                 }.layout(RowLayout.PARENT_GRID)
                 row {
                     label("Output localization file:")
                     outputLocalizationFile = textField()
                         .align(Align.FILL)
-                        .bindText(UserSettingsPersistentStateComponent.getInstance().state::outputLocalizationFile)
+                        .bindText(UserSettingsPersistentStateComponent.getInstance(project).state::outputLocalizationFile)
                         .comment("The output localization file, i.e. the file used to import the generated localization class.")
                 }.layout(RowLayout.PARENT_GRID)
                 row {
                     label("Output class:")
                     outputClass = textField()
                         .align(Align.FILL)
-                        .bindText(UserSettingsPersistentStateComponent.getInstance().state::outputClass)
+                        .bindText(UserSettingsPersistentStateComponent.getInstance(project).state::outputClass)
                         .comment("The output class, i.e. the class which will be generated, most of the time it's AppLocalizations, but also S, which is concise.")
                 }.layout(RowLayout.PARENT_GRID)
                 row {
                     nullableGetter = checkBox("Nullable getter")
-                        .bindSelected(UserSettingsPersistentStateComponent.getInstance().state::nullableGetter)
+                        .bindSelected(UserSettingsPersistentStateComponent.getInstance(project).state::nullableGetter)
                         .comment("If enabled, the generated getter will be nullable, i.e. S.of(context)?.helloWorld instead of S.of(context).helloWorld")
                 }
             }
@@ -188,7 +187,7 @@ class GptHelperSettings(val project: Project) : Configurable {
                     label("Max translation history size")
                     textField()
                         .align(Align.FILL)
-                        .bindIntText(UserSettingsPersistentStateComponent.getInstance().state::maxTranslationHistory)
+                        .bindIntText(UserSettingsPersistentStateComponent.getInstance(project).state::maxTranslationHistory)
                         .comment("We store the latest translations in a history, so that you may look up translation key structure while translating. You can specify the maximum size here")
                 }.layout(RowLayout.PARENT_GRID)
             }
@@ -226,12 +225,12 @@ class GptHelperSettings(val project: Project) : Configurable {
     }
 
     private fun initialValueForModel(): List<String> {
-        return mutableListOf(UserSettingsPersistentStateComponent.getInstance().state::gptModel.get()!!)
+        return mutableListOf(UserSettingsPersistentStateComponent.getInstance(project).state::gptModel.get()!!)
     }
     private fun getValuesFromGPT(): List<String> {
         return gptModelProvider.getAllModels()
             .sortedWith(
-                compareBy<String> { !it.startsWith("gpt") }
+                compareBy<String> { !it.startsWith("models/gemini") }
                 .thenBy { it }
             )
     }
@@ -305,7 +304,7 @@ class GptHelperSettings(val project: Project) : Configurable {
                         myModel.connectionTestErrorStackTrace = "Message:" + it.message + "\n\nStackTrace:\n" + it.stackTraceToString()
                         myModel.connectionTestError = true
                         connectionErrorListener?.invoke(true)
-                        //i guess must be called from EDT?
+                        // I guess must be called from EDT?
                         connectionSuccess = false
                         connectionSuccessListener?.invoke(false)
                     }

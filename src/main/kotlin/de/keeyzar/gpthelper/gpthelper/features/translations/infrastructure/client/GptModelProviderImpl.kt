@@ -11,7 +11,6 @@ class GptModelProviderImpl (
     override fun getAllModels(): List<String> {
         return runBlocking {
             LLMConfigProvider.getInstanceGemini().models.list(ListModelsConfig.builder().pageSize(20).build()).page()
-                //TODO is there a possibility to filter by type? :) because we do not want to list e.g. whisper
                 .map { e -> e.name().orElse("no name") }
                 .toList();
         }
