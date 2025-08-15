@@ -73,6 +73,9 @@
                         <li>
                           Better error handling, better UI, better everything :)
                         </li>
+                        <li>
+                          Ignore unknown properties in intl settings file instead of failing
+                        </li>
                       </ul>
                   </li>
                   <li>

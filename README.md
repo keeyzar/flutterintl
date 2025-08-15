@@ -5,9 +5,9 @@
 
 This plugin provides convenient features for generating translations in your Flutter project using the l18n (localization) package. It integrates with IntelliJ IDEA and offers the following features:
 
-== Install
 
-1. https://plugins.jetbrains.com/plugin/21732-gpt-flutter-intl[Flutter l18n GPT here]
+
+<!-- Plugin description -->
 
 == Features
 
@@ -63,3 +63,8 @@ If you encounter any issues or have suggestions for improvement, feel free to re
 **Important**: Keep in mind that the use of the Gemini API for translation may be subject to terms and conditions, including limitations on the number of requests or usage restrictions. Ensure you comply with OpenAI's guidelines and any applicable usage restrictions when using this plugin.
 
 We hope you find this plugin helpful for your Flutter localization needs!
+<!-- Plugin description end -->
+
+## Installation
+
+1. https://plugins.jetbrains.com/plugin/21732-gpt-flutter-intl[Flutter l18n GPT here]
