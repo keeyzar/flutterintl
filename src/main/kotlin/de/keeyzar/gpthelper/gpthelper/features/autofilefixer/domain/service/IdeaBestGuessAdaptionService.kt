@@ -31,7 +31,7 @@ class IdeaBestGuessAdaptionService(
             val dialog = BestGuessAdaptionDialog(bestGuessWithPsiReferenceEntries, arbFilesService.findAvailableLanguages())
             multiKeyTranslationContext = if (dialog.showAndGet()) {
                 val userInput = dialog.getUserInput()
-                parseToMultiKeyTranslationContext(userInput)
+                parseToMultiKeyTranslationContext(processUUID, userInput)
             } else {
                 null
             }
@@ -39,14 +39,15 @@ class IdeaBestGuessAdaptionService(
         return multiKeyTranslationContext
     }
 
-    private fun parseToMultiKeyTranslationContext(userAdaptedGuesses: BestGuessAdaptionDialog.UserAdaptedGuesses): MultiKeyTranslationContext {
+    private fun parseToMultiKeyTranslationContext(processUUID: UUID, userAdaptedGuesses: BestGuessAdaptionDialog.UserAdaptedGuesses): MultiKeyTranslationContext {
         val baseLanguage = arbFilesService.getBaseLanguage(null)
         return MultiKeyTranslationContext(
             userAdaptedGuesses.adaptedGuesses.map {
                 SimpleTranslationEntry(it.id, it.key, it.desiredValue, it.description, it.placeholder)
             }.toList(),
             baseLanguage,
-            userAdaptedGuesses.selectedLanguages
+            userAdaptedGuesses.selectedLanguages,
+            uuid = processUUID.toString()
         )
     }
 }

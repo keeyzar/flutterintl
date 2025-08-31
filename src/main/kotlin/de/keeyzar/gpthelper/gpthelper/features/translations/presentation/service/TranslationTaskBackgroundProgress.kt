@@ -88,7 +88,7 @@ class TranslationTaskBackgroundProgress(val generalErrorHandler: GeneralErrorHan
                         val progress = objects[0] as TranslationProgress;
                         progressIndicator.fraction = progress.currentTask.toDouble() / max(progress.taskAmount.toDouble(), 1.0)
                         progressIndicator.text2 = "${progress.currentTask}/${progress.taskAmount}"
-                        progressIndicator.text = translationContext.progressText
+                        progressIndicator.text = "${translationContext.progressText}: ${progress.currentTask}/${progress.taskAmount}"
                         if (progress.currentTask == progress.taskAmount || translationContext.isFinished()) {
                             finished = true
                         }

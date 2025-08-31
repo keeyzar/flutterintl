@@ -42,17 +42,19 @@ class MultiKeyTranslationProcessController(
         }
         translationTriggeredHooks.translationTriggeredPostTranslation()
 
-        processRequestsWithRetry(requests, multiKeyTranslationContext.targetLanguages.size)
+        val taskAmount = multiKeyTranslationContext.targetLanguages.size * requests.size
+        multiKeyTranslationContext.taskAmount = taskAmount
+        processRequestsWithRetry(requests, multiKeyTranslationContext)
 
         reviewService.askUserForReviewIfItIsTime()
     }
 
-    private suspend fun processRequestsWithRetry(requests: List<UserTranslationRequest>, languagesCount: Int) {
+    private suspend fun processRequestsWithRetry(requests: List<UserTranslationRequest>, multiKeyTranslationContext: MultiKeyTranslationContext) {
         if (requests.isEmpty()) {
             return
         }
 
-        val failedRequests = processTranslationRequests(requests, languagesCount)
+        val failedRequests = processTranslationRequests(requests, multiKeyTranslationContext)
 
         if (failedRequests.isNotEmpty()) {
             var requestsToRetry: List<UserTranslationRequest>? = null
@@ -65,14 +67,13 @@ class MultiKeyTranslationProcessController(
 
             requestsToRetry?.let {
                 if (it.isNotEmpty()) {
-                    processRequestsWithRetry(it, languagesCount)
+                    processRequestsWithRetry(it, multiKeyTranslationContext)
                 }
             }
         }
     }
 
-    private suspend fun processTranslationRequests(requests: List<UserTranslationRequest>, languagesCount: Int): List<UserTranslationRequest> {
-        val taskAmount = languagesCount * requests.size
+    private suspend fun processTranslationRequests(requests: List<UserTranslationRequest>, multiKeyTranslationContext: MultiKeyTranslationContext): List<UserTranslationRequest> {
         val taskCounter = AtomicInteger(0)
         val failedRequests = mutableListOf<UserTranslationRequest>()
 
@@ -81,7 +82,7 @@ class MultiKeyTranslationProcessController(
             requests.forEach { request ->
                 launch {
                     val failedRequest = ongoingTranslationHandler.translateAsynchronouslyWithoutPlaceholder(request, true, { false }) {
-                        reportProgress(taskCounter, taskAmount)
+                        reportProgress(taskCounter, multiKeyTranslationContext)
                     }
                     if (failedRequest != null) {
                         synchronized(failedRequests) {
@@ -91,11 +92,26 @@ class MultiKeyTranslationProcessController(
                 }
             }
         }
+        // Ensure that the progress is reported as finished after all requests are processed
+        // The finished flag is now set within the reportProgress function when all tasks are handled
+        // if (taskCounter.get() == multiKeyTranslationContext.taskAmount) {
+        //     multiKeyTranslationContext.finished = true
+        //     translationTriggeredHooks.translationTriggeredPostTranslation()
+        // }
         return failedRequests
     }
 
-    private fun reportProgress(realTaskCounter: AtomicInteger, taskAmount: Int) {
-        val translationProgress = TranslationProgress(realTaskCounter.incrementAndGet(), taskAmount, "dummy");
+    private fun reportProgress(realTaskCounter: AtomicInteger, multiKeyTranslationContext: MultiKeyTranslationContext) {
+        val taskAmount = multiKeyTranslationContext.taskAmount
+        val taskAmountHandled = realTaskCounter.incrementAndGet()
+        multiKeyTranslationContext.finishedTasks = taskAmountHandled
+        multiKeyTranslationContext.progressText = "Auto Localize: $taskAmountHandled/$taskAmount"
+        val translationProgress = TranslationProgress(taskAmount, taskAmountHandled, multiKeyTranslationContext.uuid);
+
+        if (taskAmountHandled == taskAmount) {
+            multiKeyTranslationContext.finished = true
+            translationTriggeredHooks.translationTriggeredPostTranslation()
+        }
         translationProgressBus.pushPercentage(translationProgress)
     }
 }

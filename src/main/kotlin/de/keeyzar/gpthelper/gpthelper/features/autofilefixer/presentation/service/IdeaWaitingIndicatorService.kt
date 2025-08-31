@@ -42,4 +42,10 @@ class IdeaWaitingIndicatorService(
             progressIndicator = null
         }, ModalityState.any()) //any, because the modal is blocking the EDT
     }
+
+    override fun updateProgress(uuid: UUID, progressText: String) {
+        ApplicationManager.getApplication().invokeLater({
+            progressIndicator?.text = progressText
+        }, ModalityState.any())
+    }
 }

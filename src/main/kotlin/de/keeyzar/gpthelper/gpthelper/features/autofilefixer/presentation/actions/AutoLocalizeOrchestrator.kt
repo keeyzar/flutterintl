@@ -12,11 +12,13 @@ import com.intellij.psi.search.GlobalSearchScopes
 import com.jetbrains.lang.dart.DartFileType
 import de.keeyzar.gpthelper.gpthelper.common.error.GeneralErrorHandler
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.client.BestGuessRequest
+import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.client.GeminiBestGuessClient
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.model.AutoLocalizeContext
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.presentation.widgets.CollectedStringsDialog
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.TranslationContext
 import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.dependencyinjection.FlutterArbTranslationInitializer
 import java.util.*
+import java.util.concurrent.atomic.AtomicInteger
 
 class AutoLocalizeOrchestrator(
     private val generalErrorHandler: GeneralErrorHandler
@@ -71,8 +73,16 @@ class AutoLocalizeOrchestrator(
                         "Requesting AI Suggestions",
                         "Getting translation key guesses. This might take a while, please be patient"
                     )
+                    val guessCounter = AtomicInteger(0)
+                    val totalGuesses = (fileBestGuessContext.literals.size / GeminiBestGuessClient.PARALLELISM_THRESHOLD).coerceAtLeast(1)
                     val simpleGuess =
-                        initializer.bestGuessL10nClient.simpleGuess(BestGuessRequest(fileBestGuessContext))
+                        initializer.bestGuessL10nClient.simpleGuess(BestGuessRequest(fileBestGuessContext)) {
+                            val currentGuess = guessCounter.incrementAndGet()
+                            initializer.waitingIndicatorService.updateProgress(
+                                uuid,
+                                "Creating best guesses: $currentGuess/$totalGuesses"
+                            )
+                        }
                     initializer.waitingIndicatorService.stopWaiting()
 
                     if (simpleGuess.responseEntries.isEmpty()) {
@@ -82,7 +92,12 @@ class AutoLocalizeOrchestrator(
                     val multiKeyTranslationContext = initializer.guessAdaptionService.adaptBestGuess(uuid, simpleGuess)
                         ?: return@triggerInBlockingContext
 
-                    initializer.multiKeyTranslationProcessController.startTranslationProcess(multiKeyTranslationContext)
+                    val multiKeyTranslationContextWithUuid = multiKeyTranslationContext.copy(uuid = uuid.toString())
+
+                    translationContext.taskAmount = multiKeyTranslationContextWithUuid.targetLanguages.size * simpleGuess.responseEntries.size
+                    translationContext.progressText = "Auto Localize"
+
+                    initializer.multiKeyTranslationProcessController.startTranslationProcess(multiKeyTranslationContextWithUuid)
                 } catch (throwable: Throwable) {
                     generalErrorHandler.handleError(project, throwable)
                 } finally {

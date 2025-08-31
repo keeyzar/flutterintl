@@ -19,7 +19,7 @@ class GeminiBestGuessClient(
 ) : BestGuessL10nClient {
 
     companion object {
-        private const val PARALLELISM_THRESHOLD = 20
+        const val PARALLELISM_THRESHOLD = 20
         private val parallelGuessSemaphore = Semaphore(3)
     }
 
@@ -58,16 +58,16 @@ class GeminiBestGuessClient(
         """.trimIndent()
     }
 
-    override suspend fun simpleGuess(bestGuessRequest: BestGuessRequest): BestGuessResponse {
+    override suspend fun simpleGuess(bestGuessRequest: BestGuessRequest, progressReport: (() -> Unit)?): BestGuessResponse {
         val literals = bestGuessRequest.context.literals
         if (literals.size <= PARALLELISM_THRESHOLD) {
-            return singleRequestGuess(bestGuessRequest)
+            return singleRequestGuess(bestGuessRequest, progressReport)
         }
 
-        return parallelGuess(bestGuessRequest)
+        return parallelGuess(bestGuessRequest, progressReport)
     }
 
-    private suspend fun singleRequestGuess(bestGuessRequest: BestGuessRequest): BestGuessResponse {
+    private suspend fun singleRequestGuess(bestGuessRequest: BestGuessRequest, progressReport: (() -> Unit)?): BestGuessResponse {
         val gemini = LLMConfigProvider.getInstanceGemini()
         val modelId = userSettingsRepository.getSettings().gptModel
         val request = createRequestContent(bestGuessRequest)
@@ -79,12 +79,13 @@ class GeminiBestGuessClient(
         )
 
         val resultText = response.text() ?: throw BestGuessClientException("Gemini hat nicht geantwortet oder die Antwort war leer.")
+        progressReport?.invoke()
         return bestGuessOpenAIResponseParser.parse(resultText)
     }
 
-    private suspend fun parallelGuess(bestGuessRequest: BestGuessRequest): BestGuessResponse = coroutineScope {
+    private suspend fun parallelGuess(bestGuessRequest: BestGuessRequest, progressReport: (() -> Unit)?): BestGuessResponse = coroutineScope {
         val literals = bestGuessRequest.context.literals
-        val chunkSize = (literals.size / 3).coerceAtLeast(1)
+        val chunkSize = PARALLELISM_THRESHOLD
         val chunks = literals.chunked(chunkSize)
 
         val deferredResponses = chunks.map { chunk ->
@@ -95,7 +96,9 @@ class GeminiBestGuessClient(
                             literals = chunk
                         )
                     )
-                    singleRequestGuess(chunkRequest)
+                    val response = singleRequestGuess(chunkRequest, progressReport)
+                    progressReport?.invoke()
+                    response
                 }
             }
         }

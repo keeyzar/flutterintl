@@ -17,5 +17,4 @@ data class FlutterIntlSettings(
     var nullableGetter: Boolean = true,
     @JsonProperty("untranslated-messages-file")
     var untranslatedMessagesFile: String = "untranslated_messages.txt",
-) {
-}
+)

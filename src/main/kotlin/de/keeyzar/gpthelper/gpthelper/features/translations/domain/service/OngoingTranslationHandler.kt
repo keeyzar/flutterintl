@@ -24,7 +24,7 @@ class OngoingTranslationHandler(
      * first, all the translations are translated with dummy placeholder, so that the user can proceed
      * but afterward we will replace the files under the hood.
      * There will be at most a single translation task running at a time, so that the files are not modified concurrently
-     * will translate the given [userTranslationRequest] asynchronously, and will call the [translationListener] for each finished translation, either
+     * will translate the given [userTranslationRequest] asynchronously, and will call the listener for each finished translation, either
      * as a dummy translation (true, Translation) or as a real translation (false, Translation)
      */
     suspend fun translateAsynchronously(
@@ -52,7 +52,7 @@ class OngoingTranslationHandler(
 
         concurrentTranslationTasks.withPermit {
             val clientRequest = mapper.toClientRequest(userTranslationRequest);
-            val success = translateInBackground(clientRequest, shouldFixArb, isCancelled) {
+            val success = translateInBackground(clientRequest, shouldFixArb, isCancelled, progressReport) {
                 if (baseLanguage == it.lang) {
                     arbFileModificationService.replaceSimpleTranslationEntry(it)
                 } else {
@@ -86,6 +86,7 @@ class OngoingTranslationHandler(
         clientRequest: ClientTranslationRequest,
         shouldFixArb: Boolean,
         isCancelled: () -> Boolean,
+        progressReport: () -> Unit, // Add progressReport here
         translationListener: (Translation) -> Unit
     ): Boolean {
         //first translate the base language with placeholder, we create a complex arb entry, based on the information we have here
@@ -94,6 +95,7 @@ class OngoingTranslationHandler(
             try {
                 val createdArbEntry = translationRequestClient.createComplexArbEntry(clientRequest)
                 arbFileModificationService.replaceSimpleTranslationEntry(createdArbEntry.translation)
+                progressReport() // Report progress after creating the complex ARB entry
                 translationRequestClient
                     .translateValueOnly(clientRequest, createdArbEntry, isCancelled) { partialTranslation ->
                         println("got translation for ${partialTranslation.getTargetLanguage()}")

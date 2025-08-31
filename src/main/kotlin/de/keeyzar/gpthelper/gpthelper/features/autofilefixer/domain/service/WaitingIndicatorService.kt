@@ -5,4 +5,5 @@ import java.util.*
 interface WaitingIndicatorService {
     fun startWaiting(uuid: UUID, title: String, description: String)
     fun stopWaiting()
+    fun updateProgress(uuid: UUID, progressText: String)
 }
