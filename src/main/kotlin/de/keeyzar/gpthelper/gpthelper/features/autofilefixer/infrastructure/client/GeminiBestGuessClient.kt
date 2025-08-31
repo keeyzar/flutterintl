@@ -8,6 +8,7 @@ import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.pars
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.UserSettingsRepository
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.configuration.LLMConfigProvider
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
@@ -103,7 +104,7 @@ class GeminiBestGuessClient(
             }
         }
 
-        val responses = deferredResponses.map { it.await() }
+        val responses = deferredResponses.awaitAll()
 
         val allGuesses = responses.flatMap { it.responseEntries }
         return@coroutineScope BestGuessResponse(allGuesses)

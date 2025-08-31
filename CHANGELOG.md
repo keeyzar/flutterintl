@@ -4,9 +4,18 @@
 
 ## [Unreleased]
 
+## [2.0.2] - 2024-31-08
+
+### Fixed
+
+- Translation progress was not reported. It is fixed now
+- When many best guesses are done, we now show a progress bar
+
 ## [2.0.1] - 2024-05-24
 
-### Fixed minor plugin description issues
+### Fixed
+
+- minor plugin description issues
 
 ## [2.0.0] - 2024-05-24
 
