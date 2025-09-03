@@ -162,7 +162,7 @@ class DIConfig {
             single<BestGuessOpenAIResponseParser> { BestGuessOpenAIResponseParser(get()) }
             single<BestGuessL10nClient> { GeminiBestGuessClient(get(), get(), get()) }
             single<PsiElementIdReferenceProvider> { PsiElementIdReferenceProvider() }
-            single<GuessAdaptionService> { IdeaBestGuessAdaptionService(get(), get()) }
+            single<GuessAdaptionService> { IdeaBestGuessAdaptionService(get(), get(), get()) }
             single<ArbFilesService> { ArbFilesService(get(), get(), get(), get()) }
             single<MultiKeyTranslationProcessController> { MultiKeyTranslationProcessController(get(), get(), get(), get(), get()) }
             single<MultiKeyTranslationTaskSizeEstimator> { OpenAIMultiKeyTranslationTaskSizeEstimator() }

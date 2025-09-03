@@ -9,6 +9,7 @@ import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.presentation.widget
 import de.keeyzar.gpthelper.gpthelper.features.flutter_intl.infrastructure.service.ArbFilesService
 import de.keeyzar.gpthelper.gpthelper.features.shared.domain.exception.ProgrammerException
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.SimpleTranslationEntry
+import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.service.FlutterPsiService
 import java.util.*
 
 /**
@@ -17,7 +18,9 @@ import java.util.*
 class IdeaBestGuessAdaptionService(
     private val psiElementIdReferenceProvider: PsiElementIdReferenceProvider,
     private val arbFilesService: ArbFilesService,
+    private val flutterPsiService: FlutterPsiService,
 ) : GuessAdaptionService {
+
     override fun adaptBestGuess(processUUID: UUID, bestGuessResponse: BestGuessResponse): MultiKeyTranslationContext? {
 
         val bestGuessWithPsiReferenceEntries = bestGuessResponse.responseEntries.map {
@@ -28,7 +31,7 @@ class IdeaBestGuessAdaptionService(
 
         var multiKeyTranslationContext: MultiKeyTranslationContext? = null
         ApplicationManager.getApplication().invokeAndWait {
-            val dialog = BestGuessAdaptionDialog(bestGuessWithPsiReferenceEntries, arbFilesService.findAvailableLanguages())
+            val dialog = BestGuessAdaptionDialog(bestGuessWithPsiReferenceEntries, arbFilesService.findAvailableLanguages(), flutterPsiService)
             multiKeyTranslationContext = if (dialog.showAndGet()) {
                 val userInput = dialog.getUserInput()
                 parseToMultiKeyTranslationContext(processUUID, userInput)

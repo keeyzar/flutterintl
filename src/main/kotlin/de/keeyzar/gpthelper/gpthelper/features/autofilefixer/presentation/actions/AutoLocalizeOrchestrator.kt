@@ -17,6 +17,7 @@ import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.mode
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.presentation.widgets.CollectedStringsDialog
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.TranslationContext
 import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.dependencyinjection.FlutterArbTranslationInitializer
+import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.service.FlutterPsiService
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 

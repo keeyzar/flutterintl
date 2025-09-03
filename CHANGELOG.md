@@ -4,7 +4,14 @@
 
 ## [Unreleased]
 
-## [2.0.2] - 2024-31-08
+## [2.0.3] - 2025-09-03
+
+### Added
+
+- fix single quote issue in arb files
+- highlight text in translation dialog context field
+
+## [2.0.2] - 2025-31-08
 
 ### Fixed
 
@@ -141,7 +148,9 @@
 
 - initial release
 
-[Unreleased]: https://github.com/keeyzar/gpt-helper/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/keeyzar/gpt-helper/compare/v2.0.2...HEAD
+[2.0.2]: https://github.com/keeyzar/gpt-helper/compare/v2.0.1...v2.0.2
+[2.0.1]: https://github.com/keeyzar/gpt-helper/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/keeyzar/gpt-helper/compare/v1.18.2...v2.0.0
 [1.18.2]: https://github.com/keeyzar/gpt-helper/compare/v1.18.0...v1.18.2
 [1.18.0]: https://github.com/keeyzar/gpt-helper/compare/v1.17.0...v1.18.0

@@ -5,16 +5,18 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.DocumentAdapter
+import com.intellij.ui.JBColor
 import com.intellij.ui.JBSplitter
 import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextArea
-import com.intellij.ui.components.JBTextField
 import com.intellij.ui.dsl.builder.*
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.presentation.dto.BestGuessWithPsiReference
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.Language
 import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.dependencyinjection.FlutterArbTranslationInitializer
+import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.service.FlutterPsiService
 import java.awt.BorderLayout
+import java.awt.Color
 import java.awt.Dimension
 import java.awt.event.FocusAdapter
 import java.awt.event.FocusEvent
@@ -26,6 +28,8 @@ import javax.swing.JPanel
 import javax.swing.JScrollPane
 import javax.swing.border.LineBorder
 import javax.swing.event.DocumentEvent
+import javax.swing.text.DefaultHighlighter
+import javax.swing.text.Highlighter
 
 /**
  * A dialog for users to verify and adapt l10n entry guesses.
@@ -34,12 +38,13 @@ import javax.swing.event.DocumentEvent
 class BestGuessAdaptionDialog(
     bestGuessResponse: List<BestGuessWithPsiReference>,
     availableLanguages: List<Language>,
+    private val flutterPsiService: FlutterPsiService, // Added as constructor parameter
 ) : DialogWrapper(true) {
     // --- UI Components ---
     private lateinit var contextTextArea: JBTextArea
-    private lateinit var elementDesiredKeyTextArea: JBTextField
-    private lateinit var elementDesiredValueTextArea: JBTextField
-    private lateinit var elementDesiredDescriptionTextArea: JBTextField
+    private lateinit var elementDesiredKeyTextArea: JBTextArea
+    private lateinit var elementDesiredValueTextArea: JBTextArea
+    private lateinit var elementDesiredDescriptionTextArea: JBTextArea
     private lateinit var elementPlaceholderTextArea: JBTextArea
     private lateinit var placeholderRow: Row
     private var psiCheckboxes: List<JBCheckBox> = emptyList()
@@ -60,7 +65,7 @@ class BestGuessAdaptionDialog(
             BestGuessWithPsiReferenceModel(
                 checked = true,
                 literalReference = it,
-                adaptedBestGuess = AdaptedBestGuess(it.bestGuess.id, it.bestGuess.key, it.psiElement.text.removeSurrounding("\""), it.bestGuess.description, it.bestGuess.placeholder)
+                adaptedBestGuess = AdaptedBestGuess(it.bestGuess.id, it.bestGuess.key, flutterPsiService.getStringFromDartLiteral(it.psiElement), it.bestGuess.description, it.bestGuess.placeholder)
             )
         }
 
@@ -172,7 +177,7 @@ class BestGuessAdaptionDialog(
      * containing the context view and the editing form.
      */
     private fun createDetailsPanel(): JComponent {
-        return JBSplitter(true, 0.5f).apply { // Vertical splitter
+        return JBSplitter(true, 0.7f).apply { // Vertical splitter
             firstComponent = createContextPanel()
             secondComponent = createTranslationPanel()
         }
@@ -187,6 +192,7 @@ class BestGuessAdaptionDialog(
                 row {
                     textArea()
                         .align(Align.FILL)
+                        .rows(20) // Added to make the text area take more vertical space
                         .also { contextTextArea = it.component }
                         .applyToComponent {
                             isEditable = false
@@ -206,18 +212,21 @@ class BestGuessAdaptionDialog(
         val detailsPanel = panel {
             group("Localization Details") {
                 row("Desired Key:") {
-                    textField()
-                        .align(AlignX.FILL)
+                    textArea()
+                        .align(Align.FILL)
+                        .rows(3)
                         .also { elementDesiredKeyTextArea = it.component }
                 }
                 row("Desired Value:") {
-                    textField()
-                        .align(AlignX.FILL)
+                    textArea()
+                        .align(Align.FILL)
+                        .rows(3)
                         .also { elementDesiredValueTextArea = it.component }
                 }
                 row("Description:") {
-                    textField()
-                        .align(AlignX.FILL)
+                    textArea()
+                        .align(Align.FILL)
+                        .rows(3)
                         .also { elementDesiredDescriptionTextArea = it.component }
                 }
                 placeholderRow = row("Placeholder (JSON):") {
@@ -256,7 +265,7 @@ class BestGuessAdaptionDialog(
                     val placeholderMap: Map<String, Any?> = objectMapper.readValue(text)
                     currentBestGuessWithPsiReferenceModel?.adaptedBestGuess?.placeholder = placeholderMap
                     elementPlaceholderTextArea.border = null // Reset border on success
-                } catch (ex: Exception) {
+                } catch (_: Exception) {
                     // Invalid JSON, set red border
                     elementPlaceholderTextArea.border = LineBorder(com.intellij.ui.JBColor.RED)
                 }
@@ -279,7 +288,25 @@ class BestGuessAdaptionDialog(
 
         // 1. Update the context text area
         val contextFinder = FlutterArbTranslationInitializer().literalInContextFinder
-        contextTextArea.text = contextFinder.findContext(model.literalReference.psiElement).text
+        val fullContextText = contextFinder.findContext(model.literalReference.psiElement).text
+        contextTextArea.text = fullContextText
+
+        // Clear previous highlights
+        contextTextArea.highlighter.removeAllHighlights()
+
+        val stringToHighlight = model.literalReference.psiElement.text
+        val startIndex = fullContextText.indexOf(stringToHighlight)
+
+        if (startIndex != -1) {
+            val endIndex = startIndex + stringToHighlight.length
+            try {
+                val highlightPainter: Highlighter.HighlightPainter = DefaultHighlighter.DefaultHighlightPainter(JBColor.yellow.darker().darker())
+                contextTextArea.highlighter.addHighlight(startIndex, endIndex, highlightPainter)
+            } catch (e: Exception) {
+                // Log or handle the exception if highlighting fails
+                println("Error highlighting text: ${e.message}")
+            }
+        }
 
         // 2. Update the editable text fields
         // We set the text directly instead of using bindText, because the underlying data *object*

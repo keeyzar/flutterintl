@@ -8,6 +8,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.ui.CheckboxTree
 import com.intellij.ui.CheckedTreeNode
+import com.intellij.ui.JBColor
 import com.intellij.ui.JBSplitter
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextArea
@@ -19,6 +20,8 @@ import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.depende
 import java.awt.BorderLayout
 import java.awt.Dimension
 import javax.swing.*
+import javax.swing.text.DefaultHighlighter
+import javax.swing.text.Highlighter
 import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.TreePath
 
@@ -159,7 +162,25 @@ class CollectedStringsDialog(
 
     private fun updateContextView(element: PsiElement) {
         val contextFinder = FlutterArbTranslationInitializer().literalInContextFinder
-        contextTextArea.text = contextFinder.findContext(element).text
+        val fullContextText = contextFinder.findContext(element).text
+        contextTextArea.text = fullContextText
+
+        // Clear previous highlights
+        contextTextArea.highlighter.removeAllHighlights()
+
+        val stringToHighlight = element.text
+        val startIndex = fullContextText.indexOf(stringToHighlight)
+
+        if (startIndex != -1) {
+            val endIndex = startIndex + stringToHighlight.length
+            try {
+                val highlightPainter: Highlighter.HighlightPainter = DefaultHighlighter.DefaultHighlightPainter(JBColor.yellow.darker().darker())
+                contextTextArea.highlighter.addHighlight(startIndex, endIndex, highlightPainter)
+            } catch (e: Exception) {
+                // Log or handle the exception if highlighting fails
+                println("Error highlighting text: ${e.message}")
+            }
+        }
     }
 
     fun getSelectedLiterals(): List<PsiElement> {
