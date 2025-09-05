@@ -9,7 +9,7 @@ plugins {
     alias(libs.plugins.changelog) // Gradle Changelog Plugin
     alias(libs.plugins.qodana) // Gradle Qodana Plugin
     alias(libs.plugins.kover) // Gradle Kover Plugin
-    kotlin("kapt") version "2.2.0" // Kotlin Annotation Processing Tool (KAPT) support (for MapStruct)
+    kotlin("kapt") version "2.2.10" // Kotlin Annotation Processing Tool (KAPT) support (for MapStruct)
 }
 
 group = providers.gradleProperty("pluginGroup").get()
