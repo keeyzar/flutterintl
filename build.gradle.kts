@@ -63,7 +63,7 @@ dependencies {
     }
 
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.+")
-    implementation("com.fasterxml.jackson.core:jackson-core:2.14.+")
+    implementation("com.fasterxml.jackson.core:jackson-core:2.20.+")
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.14.+")
     implementation("com.google.genai:google-genai:1.11.0")
     implementation("io.insert-koin:koin-core:$koin_version")
