@@ -4,6 +4,20 @@
 
 ## [Unreleased]
 
+## [2.0.5] - 2025-09-04
+
+### Added
+
+- fix parallelism config not applied
+
+## [2.0.4] - 2025-09-03
+
+### Added
+
+- fix single quote issue in arb files
+- highlight text in translation dialog context field
+
+
 ## [2.0.3] - 2025-09-03
 
 ### Added

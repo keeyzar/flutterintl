@@ -41,12 +41,11 @@ class DispatcherConfiguration(
     }
 
     private fun checkIfParallelismChanged() {
-        userSettingsRepository.getSettings().parallelism.let {
-            print("parallelism: $it")
-            if (it == levelOfParallelism) {
-                print("parallelism changed from last time, creating new dispatcher")
-                dirty = true;
-            }
+        val newParallelism = userSettingsRepository.getSettings().parallelism
+        if (newParallelism != levelOfParallelism) {
+            println("parallelism changed from $levelOfParallelism to $newParallelism, creating new dispatcher")
+            levelOfParallelism = newParallelism
+            dirty = true
         }
     }
 }
