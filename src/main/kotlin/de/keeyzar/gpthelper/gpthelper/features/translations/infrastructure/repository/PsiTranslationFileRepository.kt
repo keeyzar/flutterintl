@@ -6,6 +6,8 @@ import com.intellij.openapi.application.WriteAction
 import com.intellij.openapi.command.CommandProcessor
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.psi.PsiDocumentManager
+import com.intellij.psi.codeStyle.CodeStyleManager
 import de.keeyzar.gpthelper.gpthelper.features.shared.domain.exception.GPTHelperBaseException
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.FileToTranslate
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.Language
@@ -31,7 +33,7 @@ class PsiTranslationFileRepository(
         val computeAction = ReadAction.compute<FileToTranslate, GPTHelperBaseException> {
             log.trace("inside ReadAction.compute for language: $language")
             val project = currentProjectProvider.project
-            val document = languageFileFinder.findLanguageFile(language, project);
+            val document = languageFileFinder.findLanguageFile(language, project)
             return@compute FileToTranslate(language, document.text)
         }
         log.trace("after reading the file for language: $language")
@@ -43,7 +45,7 @@ class PsiTranslationFileRepository(
         ApplicationManager.getApplication().invokeAndWait {
             fileToTranslate = WriteAction.compute<FileToTranslate, GPTHelperBaseException> {
                 val project = currentProjectProvider.project
-                val file = languageFileFinder.createOrGetLanguageFile(language, project);
+                val file = languageFileFinder.createOrGetLanguageFile(language, project)
                 return@compute FileToTranslate(language, file.text)
             }
         }
@@ -57,11 +59,16 @@ class PsiTranslationFileRepository(
             CommandProcessor.getInstance().executeCommand(currentProjectProvider.project, {
                 log.trace("in saveTranslationFile, inside executeCommand")
                 val project = currentProjectProvider.project
-                val document = languageFileFinder.findLanguageFile(fileToTranslate.language, project);
+                val document = languageFileFinder.findLanguageFile(fileToTranslate.language, project)
                 document.setText(fileToTranslate.content)
                 // Explicitly save the document to disk
                 FileDocumentManager.getInstance().saveDocument(document)
-            }, "translation", "translate")
+
+                val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(document)
+                if (psiFile != null) {
+                    CodeStyleManager.getInstance(project).reformat(psiFile)
+                }
+            }, "Translation", "translate")
             log.trace("in saveTranslationFile, after executeCommand")
         }
         log.trace("in saveTranslationFile, after WriteAction.runAndWait")

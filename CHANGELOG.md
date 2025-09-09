@@ -9,6 +9,8 @@
 ### Added
 
 - fix parallelism config not applied - again
+- make best guesses also in parallel
+- ensure that after the task finished, we close the background task
 
 ## [2.0.5] - 2025-09-04
 

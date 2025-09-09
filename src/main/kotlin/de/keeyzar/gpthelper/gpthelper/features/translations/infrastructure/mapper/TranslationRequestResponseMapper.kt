@@ -7,7 +7,7 @@ import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.Transl
 
 class TranslationRequestResponseMapper(private val objectMapper: ObjectMapper) {
     fun toGPTContent(translation: Translation): String {
-        val simpleTranslationEntry = translation.entry;
+        val simpleTranslationEntry = translation.entry
         val map = mutableMapOf<String, Any>()
         map[simpleTranslationEntry.desiredKey] = simpleTranslationEntry.desiredValue
         map["@${simpleTranslationEntry.desiredKey}"] = mapOf("description" to simpleTranslationEntry.desiredDescription)
@@ -22,9 +22,16 @@ class TranslationRequestResponseMapper(private val objectMapper: ObjectMapper) {
     }
 
     fun toTranslationOnly(translation: Translation): String {
-        return """
-            "${translation.entry.desiredKey}": "${translation.entry.desiredValue}"
-        """.trimIndent()
+        val simpleTranslationEntry = translation.entry
+        val map = mutableMapOf<String, Any>()
+        map[simpleTranslationEntry.desiredKey] = simpleTranslationEntry.desiredValue
+        val metadataMap = mutableMapOf<String, Any>()
+        metadataMap["description"] = simpleTranslationEntry.desiredDescription
+        simpleTranslationEntry.placeholder?.let {
+            metadataMap["placeholder"] = it
+        }
+        map["@${simpleTranslationEntry.desiredKey}"] = metadataMap
+        return objectMapper.writeValueAsString(map)
     }
 
     fun fromResponse(targetLanguage: Language, gptResponse: String, baseTranslation: Translation): Translation {
@@ -40,7 +47,6 @@ class TranslationRequestResponseMapper(private val objectMapper: ObjectMapper) {
             desiredKey = desiredKey,
             desiredValue = map[desiredKey] as String,
             desiredDescription = metadata.getOrDefault("description", "") as String,
-            placeholder = metadata.getOrDefault("placeholders", null) as Map<String, *>?
         )
         return Translation(targetLanguage, entry)
     }
@@ -52,13 +58,14 @@ class TranslationRequestResponseMapper(private val objectMapper: ObjectMapper) {
         }
         val map: Map<*,*> = objectMapper.readValue(modifiedResponse, Map::class.java)
         val desiredKey = baseTranslation.entry.desiredKey
+        val metadata = map.get("@${desiredKey}") as? Map<*, *>
         try {
             val entry = SimpleTranslationEntry(
                 id = null,
                 desiredKey = desiredKey,
                 desiredValue = map[desiredKey] as String,
-                desiredDescription = "",
-                placeholder = null
+                desiredDescription = metadata?.getOrDefault("description", "") as? String ?: "",
+                placeholder = (metadata?.getOrDefault("placeholder", null) as? Map<*, *>) as? Map<String, *>?
             )
             return Translation(targetLanguage, entry)
         } catch (e: NullPointerException) {

@@ -9,6 +9,7 @@ import de.keeyzar.gpthelper.gpthelper.features.translations.domain.service.*
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.client.DispatcherConfiguration
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.joinAll
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -31,7 +32,7 @@ class MultiKeyTranslationProcessController(
         val requests = multiKeyTranslationContext.translationEntries.map {
             UserTranslationRequest(multiKeyTranslationContext.targetLanguages, Translation(multiKeyTranslationContext.baseLanguage, it))
         }
-
+        multiKeyTranslationContext.taskAmount = multiKeyTranslationContext.targetLanguages.size * requests.size
         // 1. Add all base entries to the base ARB file
         requests.forEach {
             ongoingTranslationHandler.onlyGenerateBaseEntry(it)
@@ -47,6 +48,12 @@ class MultiKeyTranslationProcessController(
         // val taskAmount = multiKeyTranslationContext.targetLanguages.size * requests.size
         // multiKeyTranslationContext.taskAmount = taskAmount
         processRequestsWithRetry(requests, multiKeyTranslationContext)
+
+        multiKeyTranslationContext.finished = true
+        multiKeyTranslationContext.finishedTasks = multiKeyTranslationContext.taskAmount
+        multiKeyTranslationContext.progressText = "Auto Localize: ${multiKeyTranslationContext.taskAmount}/${multiKeyTranslationContext.taskAmount}"
+        translationProgressBus.pushPercentage(TranslationProgress(multiKeyTranslationContext.taskAmount, multiKeyTranslationContext.taskAmount, multiKeyTranslationContext.uuid))
+        translationTriggeredHooks.translationTriggeredPostTranslation()
 
         reviewService.askUserForReviewIfItIsTime()
     }
@@ -102,15 +109,9 @@ class MultiKeyTranslationProcessController(
                             }
                         }
                     }
-                }.forEach { it.join() } // Wait for all jobs in this chunk to complete before starting the next chunk
+                }.joinAll() // Wait for all jobs in this chunk to complete before starting the next chunk
             }
         }
-        // Ensure that the progress is reported as finished after all requests are processed
-        // The finished flag is now set within the reportProgress function when all tasks are handled
-        // if (taskCounter.get() == multiKeyTranslationContext.taskAmount) {
-        //     multiKeyTranslationContext.finished = true
-        //     translationTriggeredHooks.translationTriggeredPostTranslation()
-        // }
         return failedRequests
     }
 
@@ -121,10 +122,6 @@ class MultiKeyTranslationProcessController(
         multiKeyTranslationContext.progressText = "Auto Localize: $taskAmountHandled/$taskAmount"
         val translationProgress = TranslationProgress(taskAmount, taskAmountHandled, multiKeyTranslationContext.uuid)
 
-        if (taskAmountHandled == taskAmount) {
-            val translationProgress = TranslationProgress(taskAmount, taskAmountHandled, multiKeyTranslationContext.uuid)
-            translationTriggeredHooks.translationTriggeredPostTranslation()
-        }
         translationProgressBus.pushPercentage(translationProgress)
     }
 }

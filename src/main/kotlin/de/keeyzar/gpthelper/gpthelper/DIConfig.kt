@@ -160,7 +160,7 @@ class DIConfig {
             single<PsiElementIdGenerator> { PsiElementIdGenerator() }
             single<GatherBestGuessContext> { IdeaGatherBestGuessContext(get(), get(), get()) }
             single<BestGuessOpenAIResponseParser> { BestGuessOpenAIResponseParser(get()) }
-            single<BestGuessL10nClient> { GeminiBestGuessClient(get(), get(), get()) }
+            single<BestGuessL10nClient> { GeminiBestGuessClient(get(), get(), get(), get()) }
             single<PsiElementIdReferenceProvider> { PsiElementIdReferenceProvider() }
             single<GuessAdaptionService> { IdeaBestGuessAdaptionService(get(), get(), get()) }
             single<ArbFilesService> { ArbFilesService(get(), get(), get(), get()) }

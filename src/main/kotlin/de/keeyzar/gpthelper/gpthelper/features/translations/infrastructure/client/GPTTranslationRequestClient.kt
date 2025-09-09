@@ -171,13 +171,15 @@ class GPTTranslationRequestClient(
     private suspend fun requestTranslationOnly(content: String, targetLanguage: String): String {
         val tonality = userSettingsRepository.getSettings().tonality
         val request = """
-            Can you please translate this flutter arb entry into the language '$targetLanguage' (ISO 639-1 Code language code)? do not change keys.
+            Can you please translate this flutter arb entry into the language '$targetLanguage' (ISO 639-1 Code language code)? do not change keys. Add the placeholder only, if there are changes to it.
             $content
             the translated tonality should be $tonality . Remember, you're an API server responding in valid JSON only and not in Markdown!. Do not change special chars, e.g. new lines (e.g. \n should stay \n). Thank you so much!
         """.trimIndent()
 
         val history = listOf(
-            Content.builder().role("user").parts(Part.builder().text(request).build()).build()
+            Content.builder().role("user")
+                .parts(Part.builder().text(request).build())
+                .build()
         )
 
         val gemini = LLMConfigProvider.getInstanceGemini()
