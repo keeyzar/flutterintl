@@ -4,12 +4,17 @@ import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.Transl
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.exceptions.TranslationFileModificationException
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.exceptions.UserSettingsException
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.TranslationFileRepository
+import java.util.concurrent.Semaphore
 
 class ArbFileModificationService(
     private val translationFileRepository: TranslationFileRepository,
     private val contentModificationService: ContentModificationService,
     private val formatTranslationFileContentService: FormatTranslationFileContentService,
 ) {
+    companion object {
+        private val concurrentFileTranslations = Semaphore(1)
+    }
+
     /**
      * the file is modified by adding the new entry, which, in this case, is json
      *
@@ -17,9 +22,14 @@ class ArbFileModificationService(
      */
     @Throws(UserSettingsException::class, TranslationFileModificationException::class)
     fun addSimpleTranslationEntry(translation: Translation) {
-        val fileToTranslate = translationFileRepository.getTranslationFileByLanguage(translation.lang);
-        val newFile = contentModificationService.appendTranslation(fileToTranslate, translation);
-        translationFileRepository.saveTranslationFile(newFile);
+        concurrentFileTranslations.acquire()
+        try {
+            val fileToTranslate = translationFileRepository.getTranslationFileByLanguage(translation.lang);
+            val newFile = contentModificationService.appendTranslation(fileToTranslate, translation);
+            translationFileRepository.saveTranslationFile(newFile);
+        } finally {
+            concurrentFileTranslations.release()
+        }
     }
 
     /**
@@ -28,9 +38,14 @@ class ArbFileModificationService(
      */
     @Throws(UserSettingsException::class, TranslationFileModificationException::class)
     fun replaceSimpleTranslationEntry(translation: Translation) {
-        val fileToTranslate = translationFileRepository.getTranslationFileByLanguage(translation.lang);
-        var newFile = contentModificationService.replaceWithNewTranslation(fileToTranslate, translation);
-        newFile = formatTranslationFileContentService.formatTranslationFileContent(newFile);
-        translationFileRepository.saveTranslationFile(newFile);
+        concurrentFileTranslations.acquire()
+        try {
+            val fileToTranslate = translationFileRepository.getTranslationFileByLanguage(translation.lang);
+            var newFile = contentModificationService.replaceWithNewTranslation(fileToTranslate, translation);
+            newFile = formatTranslationFileContentService.formatTranslationFileContent(newFile);
+            translationFileRepository.saveTranslationFile(newFile);
+        } finally {
+            concurrentFileTranslations.release()
+        }
     }
 }

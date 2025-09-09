@@ -45,7 +45,8 @@ class DartStringLiteralHelper(
         val callExpression = PsiTreeUtil.getParentOfType(element, DartCallExpression::class.java) ?: return false
         val referenceExpression = callExpression.expression ?: return false
         val functionName = referenceExpression.text
-        return functionName == "print" || functionName == "log"
+        val listOfFunctions = listOf("print", "log", "debugPrint", "debugPrintStack")
+        return listOfFunctions.contains(functionName)
     }
 
     /**

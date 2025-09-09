@@ -4,6 +4,12 @@
 
 ## [Unreleased]
 
+## [2.0.6] - 2025-09-04
+
+### Added
+
+- fix parallelism config not applied - again
+
 ## [2.0.5] - 2025-09-04
 
 ### Added
@@ -16,7 +22,6 @@
 
 - fix single quote issue in arb files
 - highlight text in translation dialog context field
-
 
 ## [2.0.3] - 2025-09-03
 
@@ -162,7 +167,10 @@
 
 - initial release
 
-[Unreleased]: https://github.com/keeyzar/gpt-helper/compare/v2.0.2...HEAD
+[Unreleased]: https://github.com/keeyzar/gpt-helper/compare/v2.0.5...HEAD
+[2.0.5]: https://github.com/keeyzar/gpt-helper/compare/v2.0.4...v2.0.5
+[2.0.4]: https://github.com/keeyzar/gpt-helper/compare/v2.0.3...v2.0.4
+[2.0.3]: https://github.com/keeyzar/gpt-helper/compare/v2.0.2...v2.0.3
 [2.0.2]: https://github.com/keeyzar/gpt-helper/compare/v2.0.1...v2.0.2
 [2.0.1]: https://github.com/keeyzar/gpt-helper/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/keeyzar/gpt-helper/compare/v1.18.2...v2.0.0

@@ -164,7 +164,7 @@ class DIConfig {
             single<PsiElementIdReferenceProvider> { PsiElementIdReferenceProvider() }
             single<GuessAdaptionService> { IdeaBestGuessAdaptionService(get(), get(), get()) }
             single<ArbFilesService> { ArbFilesService(get(), get(), get(), get()) }
-            single<MultiKeyTranslationProcessController> { MultiKeyTranslationProcessController(get(), get(), get(), get(), get()) }
+            single<MultiKeyTranslationProcessController> { MultiKeyTranslationProcessController(get(), get(), get(), get(), get(), get()) }
             single<MultiKeyTranslationTaskSizeEstimator> { OpenAIMultiKeyTranslationTaskSizeEstimator() }
             single<WaitingIndicatorService> { IdeaWaitingIndicatorService(get()) }
             single<DartConstModifierFinder> { DartConstModifierFinder() }

@@ -16,10 +16,6 @@ class OngoingTranslationHandler(
     private val arbFileModificationService: ArbFileModificationService,
 ) {
 
-    companion object {
-        private val concurrentTranslationTasks = Semaphore(1)
-    }
-
     /**
      * first, all the translations are translated with dummy placeholder, so that the user can proceed
      * but afterward we will replace the files under the hood.
@@ -50,22 +46,22 @@ class OngoingTranslationHandler(
 
         val baseLanguage = userTranslationRequest.baseTranslation.lang
 
-        concurrentTranslationTasks.withPermit {
-            val clientRequest = mapper.toClientRequest(userTranslationRequest);
-            val success = translateInBackground(clientRequest, shouldFixArb, isCancelled, progressReport) {
-                if (baseLanguage == it.lang) {
+
+        val clientRequest = mapper.toClientRequest(userTranslationRequest);
+        val success = translateInBackground(clientRequest, shouldFixArb, isCancelled, progressReport) {
+            if (baseLanguage == it.lang) {
+                arbFileModificationService.replaceSimpleTranslationEntry(it)
+            } else {
+                try {
                     arbFileModificationService.replaceSimpleTranslationEntry(it)
-                } else {
-                    try {
-                        arbFileModificationService.replaceSimpleTranslationEntry(it)
-                    } catch (e: ReplacementOfTranslationFailedException) {
-                        arbFileModificationService.addSimpleTranslationEntry(it)
-                    }
+                } catch (e: ReplacementOfTranslationFailedException) {
+                    arbFileModificationService.addSimpleTranslationEntry(it)
                 }
-                progressReport()
             }
-            return if (success) null else userTranslationRequest
+            progressReport()
         }
+        return if (success) null else userTranslationRequest
+
     }
 
     /**
@@ -73,7 +69,12 @@ class OngoingTranslationHandler(
      */
     fun translateWithPlaceholder(userTranslationRequest: UserTranslationRequest) {
         userTranslationRequest.targetLanguages.forEach {
-            arbFileModificationService.addSimpleTranslationEntry(Translation(it, userTranslationRequest.baseTranslation.entry))
+            arbFileModificationService.addSimpleTranslationEntry(
+                Translation(
+                    it,
+                    userTranslationRequest.baseTranslation.entry
+                )
+            )
         }
     }
 

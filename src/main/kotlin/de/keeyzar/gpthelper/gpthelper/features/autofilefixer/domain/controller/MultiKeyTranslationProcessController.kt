@@ -6,6 +6,7 @@ import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.presentation.widget
 import de.keeyzar.gpthelper.gpthelper.features.review.domain.service.ReviewService
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.*
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.service.*
+import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.client.DispatcherConfiguration
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicInteger
@@ -19,6 +20,7 @@ class MultiKeyTranslationProcessController(
     private val translationProgressBus: TranslationProgressBus,
     private val translationTriggeredHooks: TranslationTriggeredHooks,
     private val reviewService: ReviewService,
+    private val dispatcherConfiguration: DispatcherConfiguration,
 ) {
     suspend fun startTranslationProcess(multiKeyTranslationContext: MultiKeyTranslationContext) {
         val verified = settingsService.verifySettingsAndInformUserIfInvalid()
@@ -42,8 +44,8 @@ class MultiKeyTranslationProcessController(
         }
         translationTriggeredHooks.translationTriggeredPostTranslation()
 
-        val taskAmount = multiKeyTranslationContext.targetLanguages.size * requests.size
-        multiKeyTranslationContext.taskAmount = taskAmount
+        // val taskAmount = multiKeyTranslationContext.targetLanguages.size * requests.size
+        // multiKeyTranslationContext.taskAmount = taskAmount
         processRequestsWithRetry(requests, multiKeyTranslationContext)
 
         reviewService.askUserForReviewIfItIsTime()
@@ -77,19 +79,30 @@ class MultiKeyTranslationProcessController(
         val taskCounter = AtomicInteger(0)
         val failedRequests = mutableListOf<UserTranslationRequest>()
 
+        // Calculate max parallel requests based on dispatcher parallelism and target languages
+        val totalParallelism = dispatcherConfiguration.getLevelOfParallelism()
+        val targetLanguagesCount = multiKeyTranslationContext.targetLanguages.size
+        val maxParallelRequests = if (targetLanguagesCount > 0) {
+            (totalParallelism / targetLanguagesCount).coerceAtLeast(1)
+        } else {
+            totalParallelism
+        }
+
         coroutineScope {
-            // 3. Trigger asynchronous translation for all target languages
-            requests.forEach { request ->
-                launch {
-                    val failedRequest = ongoingTranslationHandler.translateAsynchronouslyWithoutPlaceholder(request, true, { false }) {
-                        reportProgress(taskCounter, multiKeyTranslationContext)
-                    }
-                    if (failedRequest != null) {
-                        synchronized(failedRequests) {
-                            failedRequests.add(failedRequest)
+            // Process requests in chunks to limit parallelism
+            requests.chunked(maxParallelRequests).forEach { requestChunk ->
+                requestChunk.map { request ->
+                    launch(dispatcherConfiguration.getDispatcher()) {
+                        val failedRequest = ongoingTranslationHandler.translateAsynchronouslyWithoutPlaceholder(request, true, { false }) {
+                            reportProgress(taskCounter, multiKeyTranslationContext)
+                        }
+                        if (failedRequest != null) {
+                            synchronized(failedRequests) {
+                                failedRequests.add(failedRequest)
+                            }
                         }
                     }
-                }
+                }.forEach { it.join() } // Wait for all jobs in this chunk to complete before starting the next chunk
             }
         }
         // Ensure that the progress is reported as finished after all requests are processed
@@ -106,10 +119,10 @@ class MultiKeyTranslationProcessController(
         val taskAmountHandled = realTaskCounter.incrementAndGet()
         multiKeyTranslationContext.finishedTasks = taskAmountHandled
         multiKeyTranslationContext.progressText = "Auto Localize: $taskAmountHandled/$taskAmount"
-        val translationProgress = TranslationProgress(taskAmount, taskAmountHandled, multiKeyTranslationContext.uuid);
+        val translationProgress = TranslationProgress(taskAmount, taskAmountHandled, multiKeyTranslationContext.uuid)
 
         if (taskAmountHandled == taskAmount) {
-            multiKeyTranslationContext.finished = true
+            val translationProgress = TranslationProgress(taskAmount, taskAmountHandled, multiKeyTranslationContext.uuid)
             translationTriggeredHooks.translationTriggeredPostTranslation()
         }
         translationProgressBus.pushPercentage(translationProgress)
