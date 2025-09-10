@@ -150,7 +150,7 @@ class DIConfig {
             single<FinishedFileTranslationHandler> { FlutterArbTranslateFileFinished(get(), get(), get()) }
             single<UserSettingsMapper> { Mappers.getMapper(UserSettingsMapper::class.java) }
             single<TranslationCredentialsServiceRepository> { IdeaTranslationCredentialsServiceRepository() }
-            single<AutoLocalizeOrchestrator> { AutoLocalizeOrchestrator(get()) }
+            single<AutoLocalizeOrchestrator> { AutoLocalizeOrchestrator(get(), get()) }
             single<UserSettingsDTOMapper> { Mappers.getMapper(UserSettingsDTOMapper::class.java) }
             single<ClientConnectionTester> { OpenAIClientConnectionTester(get()) }
             single<DartAdditiveExpressionExtractor> { DartAdditiveExpressionExtractor() }

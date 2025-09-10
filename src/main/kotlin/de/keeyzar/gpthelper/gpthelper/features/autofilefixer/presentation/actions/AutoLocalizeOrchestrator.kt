@@ -16,13 +16,14 @@ import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.clie
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.model.AutoLocalizeContext
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.presentation.widgets.CollectedStringsDialog
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.TranslationContext
+import de.keeyzar.gpthelper.gpthelper.features.translations.domain.service.VerifyTranslationSettingsService
 import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.dependencyinjection.FlutterArbTranslationInitializer
-import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.service.FlutterPsiService
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
 class AutoLocalizeOrchestrator(
-    private val generalErrorHandler: GeneralErrorHandler
+    private val generalErrorHandler: GeneralErrorHandler,
+    private val verifySettings: VerifyTranslationSettingsService
 ) {
     private val initializer = FlutterArbTranslationInitializer()
 
@@ -53,6 +54,11 @@ class AutoLocalizeOrchestrator(
         val initializer = FlutterArbTranslationInitializer()
         val uuid = UUID.randomUUID()
         val translationContext = TranslationContext(uuid.toString(), title, 0, null, 0)
+
+        val verified = verifySettings.verifySettingsAndInformUserIfInvalid()
+        if (!verified) {
+            return
+        }
 
         initializer.translationTaskBackgroundProgress.triggerInBlockingContext(project,
             {
