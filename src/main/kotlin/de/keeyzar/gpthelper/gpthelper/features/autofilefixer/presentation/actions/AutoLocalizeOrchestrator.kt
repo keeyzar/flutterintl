@@ -2,6 +2,7 @@ package de.keeyzar.gpthelper.gpthelper.features.autofilefixer.presentation.actio
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
@@ -15,6 +16,7 @@ import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.client.BestG
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.client.GeminiBestGuessClient
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.model.AutoLocalizeContext
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.presentation.widgets.CollectedStringsDialog
+import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.presentation.widgets.ExistingKeysDialog
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.TranslationContext
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.service.VerifyTranslationSettingsService
 import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.dependencyinjection.FlutterArbTranslationInitializer
@@ -23,14 +25,14 @@ import java.util.concurrent.atomic.AtomicInteger
 
 class AutoLocalizeOrchestrator(
     private val generalErrorHandler: GeneralErrorHandler,
-    private val verifySettings: VerifyTranslationSettingsService
+    private val verifySettings: VerifyTranslationSettingsService,
 ) {
     private val initializer = FlutterArbTranslationInitializer()
 
     fun orchestrate(project: Project, directory: VirtualFile, title: String) {
         val dartFiles = findDartFiles(project, directory)
         val stringLiteralHelper = initializer.dartStringLiteralHelper
-        val allLiteralsWithSelection =
+        val allLiteralsWithSelection: Map<PsiElement, Boolean> =
             dartFiles.flatMap { stringLiteralHelper.findStringPsiElements(it).entries }
                 .associate { it.key to it.value }
 
@@ -38,9 +40,52 @@ class AutoLocalizeOrchestrator(
             return
         }
 
+        val existingKeys = initializer.existingKeyFinder.findExistingKeys(allLiteralsWithSelection.keys.toList())
+
+        var userChoiceForExistingKeys: Map<PsiElement, Boolean> = emptyMap()
+        if (existingKeys.isNotEmpty()) {
+            ApplicationManager.getApplication().invokeAndWait {
+                val dialog = ExistingKeysDialog(project, existingKeys)
+                if (dialog.showAndGet()) {
+                    userChoiceForExistingKeys = dialog.getSelectedElements()
+                } else {
+                    // User cancelled, so we assume they don't want to replace anything
+                    userChoiceForExistingKeys = existingKeys.keys.associateWith { false }
+                }
+            }
+        }
+
+        val elementsToReplace = userChoiceForExistingKeys.filterValues { it }.keys
+
+        if (elementsToReplace.isNotEmpty()) {
+            //we need a write action, because we want to modify the psi tree
+            WriteCommandAction.runWriteCommandAction(project) {
+                val statementFixer = initializer.statementFixer
+                val importFixer = initializer.importFixer
+                val elementsByFile = elementsToReplace.groupBy { it.containingFile }
+
+                elementsByFile.forEach { (file, elements) ->
+                    importFixer.addTranslationImportIfMissing(project, file)
+                    elements.forEach { element ->
+                        val key = existingKeys[element]
+                        if (key != null) {
+                            statementFixer.fixStatement(project, element, key)
+                        }
+                    }
+                }
+            }
+        }
+
+        val remainingLiterals = allLiteralsWithSelection.filterKeys { it !in elementsToReplace }
+
+        if (remainingLiterals.isEmpty()) {
+            //everything is replaced, so we are done
+            return
+        }
+
         var selectedLiterals: List<PsiElement>? = null
         ApplicationManager.getApplication().invokeAndWait {
-            val dialog = CollectedStringsDialog(project, allLiteralsWithSelection)
+            val dialog = CollectedStringsDialog(project, remainingLiterals)
             if (dialog.showAndGet()) {
                 selectedLiterals = dialog.getSelectedLiterals()
             }
@@ -63,9 +108,9 @@ class AutoLocalizeOrchestrator(
         initializer.translationTaskBackgroundProgress.triggerInBlockingContext(project,
             {
                 try {
-                     val baseFile = runReadAction {
-                         finalLiterals.first().containingFile
-                     }
+                    val baseFile = runReadAction {
+                        finalLiterals.first().containingFile
+                    }
                     initializer.contextProvider.putAutoLocalizeContext(
                         uuid,
                         AutoLocalizeContext(project, baseFile)

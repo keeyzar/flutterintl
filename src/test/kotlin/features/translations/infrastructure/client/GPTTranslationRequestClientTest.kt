@@ -3,9 +3,11 @@ package de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.clie
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.genai.Client
 import de.keeyzar.gpthelper.gpthelper.features.shared.infrastructure.model.UserSettings
+import de.keeyzar.gpthelper.gpthelper.features.translations.domain.client.SingleTranslationRequestClient
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.UserSettingsRepository
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.configuration.LLMConfigProvider
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.mapper.TranslationRequestResponseMapper
+import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.service.JsonFileChunker
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
@@ -19,6 +21,8 @@ import java.util.concurrent.Executors
 class GPTTranslationRequestClientTest {
     @Mock
     private lateinit var LLMConfigProvider: LLMConfigProvider
+    @Mock
+    private lateinit var singleTranslationRequestClient: SingleTranslationRequestClient
     private lateinit var sut: GPTTranslationRequestClient
     private lateinit var parser: TranslationRequestResponseMapper
 
@@ -46,6 +50,7 @@ class GPTTranslationRequestClientTest {
                 "",
                 false,
                 "",
+                "",
                 1,
                 "informal",
                 "gpt-3.5-turbo-0613",
@@ -60,7 +65,14 @@ class GPTTranslationRequestClientTest {
                 .build()
         )
         parser = TranslationRequestResponseMapper(objectMapper)
-        sut = GPTTranslationRequestClient(LLMConfigProvider, parser, dispatcherConfiguration, userSettingsRepository)
+        sut = GPTTranslationRequestClient(
+            LLMConfigProvider,
+            parser,
+            dispatcherConfiguration,
+            userSettingsRepository,
+            jsonFileChunker = JsonFileChunker(objectMapper),
+            singleTranslationRequestClient = singleTranslationRequestClient
+            )
     }
 
     @Test

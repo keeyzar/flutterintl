@@ -12,6 +12,7 @@ class UserSettingsTest {
         "templateArbFile",
         "intlConfigFile",
         true,
+        "",
         "outputLocalizationFile",
         3,
         "",

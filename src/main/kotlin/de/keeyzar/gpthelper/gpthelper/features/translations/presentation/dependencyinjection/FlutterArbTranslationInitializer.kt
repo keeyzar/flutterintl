@@ -3,6 +3,7 @@ package de.keeyzar.gpthelper.gpthelper.features.translations.presentation.depend
 import com.intellij.psi.PsiElement
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.client.BestGuessL10nClient
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.controller.MultiKeyTranslationProcessController
+import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.service.ExistingKeyFinder
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.service.GatherBestGuessContext
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.service.GuessAdaptionService
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.service.WaitingIndicatorService
@@ -18,6 +19,8 @@ import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.repos
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.service.ContextProvider
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.service.LastStatementProviderForFlutterArbTranslation
 import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.service.FlutterPsiService
+import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.service.ImportFixer
+import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.service.StatementFixer
 import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.service.TranslationTaskBackgroundProgress
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -44,5 +47,7 @@ class FlutterArbTranslationInitializer : KoinComponent {
     val guessAdaptionService: GuessAdaptionService by inject()
     val dartStringLiteralHelper: DartStringLiteralHelper by inject()
     val orchestrator: AutoLocalizeOrchestrator by inject()
-
+    val existingKeyFinder: ExistingKeyFinder by inject()
+    val statementFixer: StatementFixer by inject()
+    val importFixer: ImportFixer by inject()
 }

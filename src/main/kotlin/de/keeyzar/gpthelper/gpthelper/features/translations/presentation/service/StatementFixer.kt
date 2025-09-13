@@ -108,7 +108,7 @@ class StatementFixer(
         }
     }
 
-    private fun createStatement(element: PsiElement, desiredKey: String, userSettings: UserSettings): String {
+    internal fun createStatement(element: PsiElement, desiredKey: String, userSettings: UserSettings = userSettingsRepository.getSettings()): String {
         val nullableGetter = when (userSettings.nullableGetter) {
             true -> "!"
             false -> ""
@@ -116,7 +116,7 @@ class StatementFixer(
         val outputClass = userSettings.outputClass
         val contextName = flutterPsiService.findBuildContextName(element) ?: "context"
 
-        return "$outputClass.of($contextName)$nullableGetter.$desiredKey,"
+        return "$outputClass.of($contextName)$nullableGetter.$desiredKey"
     }
 
 

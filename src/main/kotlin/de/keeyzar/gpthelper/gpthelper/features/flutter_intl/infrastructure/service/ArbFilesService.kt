@@ -1,5 +1,6 @@
 package de.keeyzar.gpthelper.gpthelper.features.flutter_intl.infrastructure.service
 
+import com.intellij.openapi.project.Project
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.Language
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.exceptions.NoTranslationFilesException
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.parser.ArbFilenameParser

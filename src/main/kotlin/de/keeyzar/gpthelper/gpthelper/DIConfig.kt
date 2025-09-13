@@ -186,7 +186,7 @@ class DIConfig {
             single<TranslationFileRepository> { PsiTranslationFileRepository(get(), get(), get()) }
             single<ThreadingService<TranslationContext>> { ThreadingService() }
             single<GeneralErrorHandler> { GeneralErrorHandler() }
-
+            single<ExistingKeyFinder> { ExistingKeyFinder(get(), get()) }
         }
     }
 }

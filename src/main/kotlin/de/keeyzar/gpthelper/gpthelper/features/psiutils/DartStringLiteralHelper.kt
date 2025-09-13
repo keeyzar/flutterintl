@@ -41,6 +41,10 @@ class DartStringLiteralHelper(
         }
     }
 
+    fun filterPsiElements(elements: List<PsiElement>): Map<PsiElement, Boolean> {
+        return elements.associateWith { !isInsidePrintOrlLogStatement(it) }
+    }
+
     private fun isInsidePrintOrlLogStatement(element: PsiElement): Boolean {
         if (element is DartStringLiteralExpression && element.text.isBlank()) {
             return true

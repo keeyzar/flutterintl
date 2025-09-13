@@ -12,6 +12,5 @@ interface TranslationFileRepository {
     fun createOrGetTranslationFileByLanguage(language: Language): FileToTranslate
     fun saveTranslationFile(fileToTranslate: FileToTranslate)
     fun getPathsToTranslationFiles(): List<Path>
-
     fun getPathToFile(language: Language): Path
 }

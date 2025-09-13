@@ -92,6 +92,9 @@
                         <className>de.keeyzar.gpthelper.gpthelper.features.missingtranslations.presentation.intention.MissingTranslationAction</className>
                         <category>ARB</category>
                     </intentionAction>
+                    <completion.contributor
+                            language="Dart"
+                            implementationClass="de.keeyzar.gpthelper.gpthelper.features.autofilefixer.presentation.actions.AutoCompleteArbJson"/>
                 </extensions>
 
                 <actions>

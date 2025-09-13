@@ -23,7 +23,8 @@ class ImportFixer(
         val userSettings = userSettingsRepository.getSettings()
         WriteCommandAction.runWriteCommandAction(project) {
             CommandProcessor.getInstance().executeCommand(project, {
-                val dartFile = element.findParentOfType<DartFile>();
+                val dartFile = element as? DartFile ?: element.findParentOfType<DartFile>()
+
                 //refresh the file, because it might be changed by another action inbetween
 
                 if (isImportMissing(dartFile, userSettings)) {
@@ -33,7 +34,8 @@ class ImportFixer(
             }, "translation", "translate")
         }
     }
-    private fun createStatement(element: PsiElement, userSettings: UserSettings): DartImportStatement {
+
+    internal fun createStatement(element: PsiElement, userSettings: UserSettings): DartImportStatement {
         val flutterImportStatement = getFlutterImportStatement(userSettings)
         val statement = "import '$flutterImportStatement${userSettings.outputLocalizationFile}';"
         val dummyFile = DartElementGenerator.createDummyFile(element.project, statement)

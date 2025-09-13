@@ -23,6 +23,7 @@ class MultiKeyTranslationProcessController(
     private val reviewService: ReviewService,
     private val dispatcherConfiguration: DispatcherConfiguration,
 ) {
+
     suspend fun startTranslationProcess(multiKeyTranslationContext: MultiKeyTranslationContext) {
         val verified = settingsService.verifySettingsAndInformUserIfInvalid()
         if (!verified) {
