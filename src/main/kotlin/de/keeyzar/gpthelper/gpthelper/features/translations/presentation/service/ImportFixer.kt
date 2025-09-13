@@ -27,7 +27,9 @@ class ImportFixer(
 
                 //refresh the file, because it might be changed by another action inbetween
 
+                println("import missing?")
                 if (isImportMissing(dartFile, userSettings)) {
+                    println("looks like it!")
                     val newImportStatement = createStatement(element, userSettings)
                     dartFile?.addBefore(newImportStatement, dartFile.firstChild);
                 }

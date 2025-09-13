@@ -55,7 +55,14 @@ class ExistingKeyFinder(
     }
 
     private fun findBestMatch(text: String, arbValueToKey: Map<String, String>): String? {
-        // 1. Case-insensitive exact match
+        // 1. Exact case-sensitive match for very short strings (e.g., up to 4 characters)
+        if (text.length <= 4) {
+            return arbValueToKey.entries.find { (value, _) ->
+                value == text
+            }?.value
+        }
+
+        // 2. Case-insensitive exact match for longer strings
         val exactIgnoreCaseMatch = arbValueToKey.entries.find { (value, _) ->
             value.equals(text, ignoreCase = true)
         }
@@ -63,11 +70,18 @@ class ExistingKeyFinder(
             return exactIgnoreCaseMatch.value
         }
 
-        // 2. Fuzzy match
+        // 3. Fuzzy match for longer strings with a dynamic threshold
         var bestMatch: String? = null
-        var minDistance = 3 // Threshold is 3, so we search for anything below that
+        // Dynamic threshold: for longer strings, allow for more differences.
+        // For a string of length 10, the threshold will be 2. For a length of 5, it's 1.
+        var minDistance = (text.length / 5).coerceAtLeast(1)
 
         for ((value, key) in arbValueToKey) {
+            // only compare strings that are not drastically different in length
+            if (kotlin.math.abs(text.length - value.length) > minDistance + 1) {
+                continue
+            }
+
             val distance = levenshtein(text.lowercase(), value.lowercase())
             if (distance < minDistance) {
                 minDistance = distance
@@ -82,6 +96,16 @@ class ExistingKeyFinder(
      * calculates the levenshtein distance
      */
     private fun levenshtein(lhs: String, rhs: String): Int {
+        if (lhs == rhs) {
+            return 0
+        }
+        if (lhs.isEmpty()) {
+            return rhs.length
+        }
+        if (rhs.isEmpty()) {
+            return lhs.length
+        }
+
         val lhsLength = lhs.length
         val rhsLength = rhs.length
 

@@ -76,10 +76,10 @@ class AutoLocalizeOrchestrator(
             }
         }
 
-        val remainingLiterals = allLiteralsWithSelection.filterKeys { it !in elementsToReplace }
+        val remainingLiterals = allLiteralsWithSelection.filterKeys { it !in existingKeys.keys }
 
-        if (remainingLiterals.isEmpty()) {
-            //everything is replaced, so we are done
+        if (remainingLiterals.isEmpty() && elementsToReplace.isEmpty()) {
+            //everything is replaced, or nothing to do so we are done
             return
         }
 
