@@ -4,7 +4,6 @@
 
 ## [Unreleased]
 
-
 ## [2.0.7] - 2025-09-10
 
 ### Added
@@ -13,7 +12,6 @@
 - fix parallelism config not applied - again
 - make best guesses also in parallel
 - ensure that after the task finished, we close the background task
-
 
 ## [2.0.6] - 2025-09-09
 
@@ -180,7 +178,8 @@
 
 - initial release
 
-[Unreleased]: https://github.com/keeyzar/gpt-helper/compare/v2.0.6...HEAD
+[Unreleased]: https://github.com/keeyzar/gpt-helper/compare/v2.0.7...HEAD
+[2.0.7]: https://github.com/keeyzar/gpt-helper/compare/v2.0.6...v2.0.7
 [2.0.6]: https://github.com/keeyzar/gpt-helper/compare/v2.0.5...v2.0.6
 [2.0.5]: https://github.com/keeyzar/gpt-helper/compare/v2.0.4...v2.0.5
 [2.0.4]: https://github.com/keeyzar/gpt-helper/compare/v2.0.3...v2.0.4

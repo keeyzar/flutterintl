@@ -37,11 +37,14 @@ class DartStringLiteralHelper(
                     }
                 }.toSet()
 
-            elements.associateWith { !isInsidePrintOrLogStatement(it) }
+            elements.associateWith { !isInsidePrintOrlLogStatement(it) }
         }
     }
 
-    private fun isInsidePrintOrLogStatement(element: PsiElement): Boolean {
+    private fun isInsidePrintOrlLogStatement(element: PsiElement): Boolean {
+        if (element is DartStringLiteralExpression && element.text.isBlank()) {
+            return true
+        }
         val callExpression = PsiTreeUtil.getParentOfType(element, DartCallExpression::class.java) ?: return false
         val referenceExpression = callExpression.expression ?: return false
         val functionName = referenceExpression.text
