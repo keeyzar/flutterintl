@@ -4,6 +4,14 @@
 
 ## [Unreleased]
 
+## [2.0.8] - 2025-09-13
+
+### Added
+
+- auto completion based on arb VALUES - not keys with n-gram search - for arb entries (Text(tra(autocomplete)) -> Text(AppLocalization.of(ctx)!.train_something_whatever)
+- before translating - find similar translations and ask to replace them, first. e.g. "Save" or "Cancel" are in there pretty often, and you can ask to replace them
+- auto disable empty strings for translation
+
 ## [2.0.7] - 2025-09-10
 
 ### Added
