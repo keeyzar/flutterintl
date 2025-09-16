@@ -6,7 +6,6 @@ import de.keeyzar.gpthelper.gpthelper.features.translations.domain.exceptions.No
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.parser.ArbFilenameParser
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.TranslationFileRepository
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.UserSettingsRepository
-import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.repository.CurrentProjectProvider
 import java.nio.file.Path
 
 /**
@@ -16,7 +15,7 @@ import java.nio.file.Path
 class ArbFilesService(
     private val arbFilenameParser: ArbFilenameParser,
     private val translationFileRepository: TranslationFileRepository,
-    private val currentProjectProvider: CurrentProjectProvider,
+    private val project: Project,
     private val userSettingsRepository: UserSettingsRepository,
 ) {
 
@@ -36,7 +35,7 @@ class ArbFilesService(
         val definitivePath = when (path) {
             null -> {
                 val relativePath = userSettingsRepository.getSettings().templateArbFile
-                Path.of("${currentProjectProvider.project.basePath}/$relativePath")
+                Path.of("${project.basePath}/$relativePath")
             }
             else -> path
         }

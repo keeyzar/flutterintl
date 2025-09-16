@@ -15,8 +15,6 @@ import org.jetbrains.annotations.NotNull
 @NonNls
 class GenerateArbIntentionAction : PsiElementBaseIntentionAction(), IntentionAction {
 
-    private var flutterArbTranslationInitializer: FlutterArbTranslationInitializer? = null
-
     /**
      * If this action is applicable, returns the text to be shown in the list of intention actions available.
      */
@@ -56,24 +54,17 @@ class GenerateArbIntentionAction : PsiElementBaseIntentionAction(), IntentionAct
         return isDartString(element)
     }
 
-    private fun getInitializer(): FlutterArbTranslationInitializer {
-        return when (flutterArbTranslationInitializer) {
-            null -> {
-                flutterArbTranslationInitializer = FlutterArbTranslationInitializer()
-                flutterArbTranslationInitializer!!
-            }
-
-            else -> flutterArbTranslationInitializer!!
-        }
+    private fun getInitializer(project: Project): FlutterArbTranslationInitializer {
+        return FlutterArbTranslationInitializer.create(project)
     }
 
     private fun isDartString(element: PsiElement): Boolean {
-        return getInitializer().flutterPsiService.isDartString(element)
+        return getInitializer(element.project).flutterPsiService.isDartString(element)
     }
 
     @Throws(IncorrectOperationException::class)
     override fun invoke(project: Project, editor: Editor?, element: PsiElement) {
-        val initializer = getInitializer()
+        val initializer = getInitializer(project)
         val directory = element.containingFile.virtualFile ?: return
 
         initializer.orchestrator.orchestrate(project, directory, "Auto Localizing String")

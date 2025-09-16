@@ -2,6 +2,7 @@ package de.keeyzar.gpthelper.gpthelper.features.autofilefixer.presentation.widge
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.DocumentAdapter
@@ -36,6 +37,7 @@ import javax.swing.text.Highlighter
  * Refactored to use the modern IntelliJ UI DSL for a cleaner look and more maintainable code.
  */
 class BestGuessAdaptionDialog(
+    private var project: Project,
     bestGuessResponse: List<BestGuessWithPsiReference>,
     availableLanguages: List<Language>,
     private val flutterPsiService: FlutterPsiService, // Added as constructor parameter
@@ -287,7 +289,7 @@ class BestGuessAdaptionDialog(
         currentBestGuessWithPsiReferenceModel = model
 
         // 1. Update the context text area
-        val contextFinder = FlutterArbTranslationInitializer().literalInContextFinder
+        val contextFinder = FlutterArbTranslationInitializer.create(project).literalInContextFinder
         val fullContextText = contextFinder.findContext(model.literalReference.psiElement).text
         contextTextArea.text = fullContextText
 

@@ -4,6 +4,15 @@
 
 ## [Unreleased]
 
+## [2.0.9] - 2025-09-16
+
+### Added
+
+- fix multi-project issues... finally
+- automatically create the import statement without user input
+- fix shell issues
+- allow using without gemini api key - you will run into rate limits, though
+
 ## [2.0.8] - 2025-09-13
 
 ### Added
@@ -186,7 +195,9 @@
 
 - initial release
 
-[Unreleased]: https://github.com/keeyzar/gpt-helper/compare/v2.0.7...HEAD
+[Unreleased]: https://github.com/keeyzar/gpt-helper/compare/v2.0.9...HEAD
+[2.0.9]: https://github.com/keeyzar/gpt-helper/compare/v2.0.8...v2.0.9
+[2.0.8]: https://github.com/keeyzar/gpt-helper/compare/v2.0.7...v2.0.8
 [2.0.7]: https://github.com/keeyzar/gpt-helper/compare/v2.0.6...v2.0.7
 [2.0.6]: https://github.com/keeyzar/gpt-helper/compare/v2.0.5...v2.0.6
 [2.0.5]: https://github.com/keeyzar/gpt-helper/compare/v2.0.4...v2.0.5

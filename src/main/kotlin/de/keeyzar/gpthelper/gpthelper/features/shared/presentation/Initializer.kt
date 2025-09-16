@@ -1,21 +1,30 @@
 package de.keeyzar.gpthelper.gpthelper.features.shared.presentation
 
+import com.intellij.openapi.project.Project
 import de.keeyzar.gpthelper.gpthelper.features.flutter_intl.domain.repository.FlutterIntlSettingsRepository
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.client.ClientConnectionTester
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.client.GPTModelProvider
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.TranslationCredentialsServiceRepository
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.UserSettingsRepository
-import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.repository.CurrentProjectProvider
-import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.service.IdeaTranslationProgressBus
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
+import de.keeyzar.gpthelper.gpthelper.project.ProjectKoinService
 
-class Initializer : KoinComponent {
-    val translationPercentageBus: IdeaTranslationProgressBus by inject();
-    val currentProjectProvider: CurrentProjectProvider by inject();
-    val userSettingsRepository: UserSettingsRepository by inject();
-    val flutterIntlSettingsRepository: FlutterIntlSettingsRepository by inject();
-    val connectionTester: ClientConnectionTester by inject()
-    val credentialsServiceRepository: TranslationCredentialsServiceRepository by inject()
-    val gptModelProvider: GPTModelProvider by inject()
+class Initializer(
+    val userSettingsRepository: UserSettingsRepository,
+    val flutterIntlSettingsRepository: FlutterIntlSettingsRepository,
+    val connectionTester: ClientConnectionTester,
+    val credentialsServiceRepository: TranslationCredentialsServiceRepository,
+    val gptModelProvider: GPTModelProvider
+) {
+    companion object {
+        fun create(project: Project): Initializer {
+            val koin = ProjectKoinService.getInstance(project).getKoin()
+            return Initializer(
+                userSettingsRepository = koin.get(),
+                flutterIntlSettingsRepository = koin.get(),
+                connectionTester = koin.get(),
+                credentialsServiceRepository = koin.get(),
+                gptModelProvider = koin.get()
+            )
+        }
+    }
 }

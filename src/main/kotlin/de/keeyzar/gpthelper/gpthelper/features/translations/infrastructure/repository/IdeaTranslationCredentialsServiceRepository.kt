@@ -19,6 +19,10 @@ class IdeaTranslationCredentialsServiceRepository : TranslationCredentialsServic
         return PasswordSafe.instance.get(credentialAttributes)?.getPasswordAsString()
     }
 
+    override fun hasPassword(): Boolean {
+        return getKey() != null
+    }
+
     private fun createCredentialAttributes(): CredentialAttributes {
         return CredentialAttributes(
             serviceName = generateServiceName("openai", "apikey"),

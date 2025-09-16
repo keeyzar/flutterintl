@@ -34,28 +34,21 @@ class ChangeTranslationAction : PsiElementBaseIntentionAction(), IntentionAction
         return element.containingFile.fileType === ArbFileType.INSTANCE && element.containingFile.name != "untranslated_messages.txt"
     }
 
-    private fun getInitializer(): FlutterArbTranslationInitializer {
-        return when (flutterArbTranslationInitializer) {
-            null -> {
-                flutterArbTranslationInitializer = FlutterArbTranslationInitializer()
-                flutterArbTranslationInitializer!!
-            }
-
-            else -> flutterArbTranslationInitializer!!
-        }
+    private fun getInitializer(project: Project): FlutterArbTranslationInitializer {
+        return FlutterArbTranslationInitializer.create(project)
     }
 
     override fun invoke(project: Project, editor: Editor, element: PsiElement) {
-        getInitializer().lastStatementProviderForFlutterArbTranslation.lastStatement = element
-        val translationProcessController = getInitializer().translationProcessController
+        getInitializer(project).lastStatementProviderForFlutterArbTranslation.lastStatement = element
+        val translationProcessController = getInitializer(project).translationProcessController
         val taskId = UUID.randomUUID().toString()
         val translationContext = TranslationContext(taskId, "Change Translation Init", 0, null, 0)
-        val arbPsiUtils = getInitializer().arbPsiUtils
+        val arbPsiUtils = getInitializer(project).arbPsiUtils
         arbPsiUtils.getCurrentJsonProperty(element)?.let { value ->
             translationContext.changeTranslationContext = ChangeTranslationContext(value.key, value.value, value.description)
         }
 
-        getInitializer().translationTaskBackgroundProgress.triggerInBlockingContext(project, {
+        getInitializer(project).translationTaskBackgroundProgress.triggerInBlockingContext(project, {
             translationProcessController.startTranslationProcess(translationContext)
         }, translationContext = translationContext)
     }

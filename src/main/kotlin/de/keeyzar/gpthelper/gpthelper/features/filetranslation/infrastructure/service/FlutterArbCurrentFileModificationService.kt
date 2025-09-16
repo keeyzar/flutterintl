@@ -1,10 +1,10 @@
 package de.keeyzar.gpthelper.gpthelper.features.filetranslation.infrastructure.service
 
+import com.intellij.openapi.project.Project
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.service.PsiElementIdReferenceProvider
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.Translation
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.exceptions.CurrentFileModificationException
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.service.CurrentFileModificationService
-import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.repository.CurrentProjectProvider
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.service.LastStatementProviderForFlutterArbTranslation
 import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.service.ImportFixer
 import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.service.StatementFixer
@@ -14,7 +14,7 @@ class FlutterArbCurrentFileModificationService(
     private val importFixer: ImportFixer,
     private val statementFixer: StatementFixer,
     private val lastStatementProviderForFlutterArbTranslation: LastStatementProviderForFlutterArbTranslation,
-    private val currentProjectProvider: CurrentProjectProvider,
+    private val project: Project,
     private val psiElementIdReferenceProvider: PsiElementIdReferenceProvider,
 ) : CurrentFileModificationService {
 
@@ -41,7 +41,7 @@ class FlutterArbCurrentFileModificationService(
             }
 
             try {
-                importFixer.addTranslationImportIfMissing(currentProjectProvider.project, lastStatement)
+                importFixer.addTranslationImportIfMissing(project, lastStatement)
             } catch (e: Exception) {
                 throw CurrentFileModificationException(
                     "Could not add the import for the file, you should add it manually, if you want to use the translation.",
@@ -50,7 +50,7 @@ class FlutterArbCurrentFileModificationService(
             }
 
             try {
-                statementFixer.fixStatement(currentProjectProvider.project, lastStatement, translation.entry.desiredKey)
+                statementFixer.fixStatement(project, lastStatement, translation.entry.desiredKey)
             } catch (e: Exception) {
                 throw CurrentFileModificationException(
                     "Could not fix the current statement. You should fix it manually.",

@@ -14,7 +14,7 @@
 //import de.keeyzar.gpthelper.gpthelper.features.shared.infrastructure.model.UserSettings
 //import de.keeyzar.gpthelper.gpthelper.features.shared.infrastructure.utils.ObjectMapperProvider
 //import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.UserSettingsRepository
-//import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.repository.CurrentProjectProvider
+//import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.repository.
 //import org.assertj.core.api.Assertions.assertThat
 //import org.assertj.core.api.Assertions.assertThatCode
 //import org.junit.After

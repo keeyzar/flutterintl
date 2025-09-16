@@ -13,15 +13,12 @@ import com.intellij.ui.components.JBPasswordField
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.dsl.builder.*
 import com.intellij.ui.layout.ComponentPredicate
-import de.keeyzar.gpthelper.gpthelper.DIConfig.Companion.appModule
 import de.keeyzar.gpthelper.gpthelper.features.flutter_intl.domain.repository.FlutterIntlSettingsRepository
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.client.GPTModelProvider
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.UserSettingsRepository
-import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.repository.CurrentProjectProvider
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.repository.UserSettingsPersistentStateComponent
+import de.keeyzar.gpthelper.gpthelper.project.ProjectKoinService
 import kotlinx.coroutines.runBlocking
-import org.koin.core.context.GlobalContext
-import org.koin.core.context.startKoin
 import java.nio.file.Path
 import java.util.*
 import javax.swing.DefaultComboBoxModel
@@ -43,7 +40,6 @@ class GptHelperSettings(val project: Project) : Configurable {
     private lateinit var nullableGetter: Cell<JCheckBox>
     private lateinit var userSettingsRepository: UserSettingsRepository
     private lateinit var flutterIntlSettingsRepository: FlutterIntlSettingsRepository
-    private lateinit var currentProjectProvider: CurrentProjectProvider
     private lateinit var gptModelProvider: GPTModelProvider
     private var corruptSettings = false
     private var errorListener: ((Boolean) -> Unit)? = null
@@ -56,10 +52,9 @@ class GptHelperSettings(val project: Project) : Configurable {
     override fun createComponent(): JComponent {
         //ensure koin is not started twice
         startKoin()
-        val initializer = Initializer()
+        val initializer = Initializer.create(project)
         userSettingsRepository = initializer.userSettingsRepository
         flutterIntlSettingsRepository = initializer.flutterIntlSettingsRepository
-        currentProjectProvider = initializer.currentProjectProvider
         gptModelProvider = initializer.gptModelProvider
 
 
@@ -70,10 +65,15 @@ class GptHelperSettings(val project: Project) : Configurable {
                     openAIKeyField = cell(JBPasswordField())
                         .resizableColumn()
                         .align(Align.FILL)
+                }.layout(RowLayout.PARENT_GRID)
+                row {
                     button("Test and Save Password") {
                         testPassword(openAIKeyField.component.password)
                     }
-                }.layout(RowLayout.PARENT_GRID)
+                }
+                row {
+                    browserLink("Get your Gemini API Key here", "https://aistudio.google.com/app/apikey")
+                }
                 row("Connection failed") {
                     textArea()
                         .bindText(myModel::connectionTestErrorStackTrace)
@@ -99,8 +99,10 @@ class GptHelperSettings(val project: Project) : Configurable {
                         .bindText(UserSettingsPersistentStateComponent.getInstance(project).state::tonality)
                         .resizableColumn()
                         .align(Align.FILL)
-                        .comment("Provide english instructions on the tonality of the text, i.e. in german there is a difference between a formal you(Sie) " +
-                                "and informal you(du). Choose something like 'formal' or 'informal and funny' etc.")
+                        .comment(
+                            "Provide english instructions on the tonality of the text, i.e. in german there is a difference between a formal you(Sie) " +
+                                    "and informal you(du). Choose something like 'formal' or 'informal and funny' etc."
+                        )
                 }.layout(RowLayout.PARENT_GRID)
                 row {
                     label("AI Model to use")
@@ -156,13 +158,6 @@ class GptHelperSettings(val project: Project) : Configurable {
                         )
                 }.layout(RowLayout.PARENT_GRID)
                 row {
-                    label("Flutter import statement:")
-                    textField()
-                        .align(Align.FILL)
-                        .bindText(UserSettingsPersistentStateComponent.getInstance(project).state::flutterImportStatement)
-                        .comment("The import statement for the generated localization class.")
-                }.layout(RowLayout.PARENT_GRID)
-                row {
                     label("Output localization file:")
                     outputLocalizationFile = textField()
                         .align(Align.FILL)
@@ -182,7 +177,7 @@ class GptHelperSettings(val project: Project) : Configurable {
                         .comment("If enabled, the generated getter will be nullable, i.e. S.of(context)?.helloWorld instead of S.of(context).helloWorld")
                 }
             }
-            group ("Other Settings") {
+            group("Other Settings") {
                 row {
                     label("Max translation history size")
                     textField()
@@ -214,24 +209,18 @@ class GptHelperSettings(val project: Project) : Configurable {
      * might be necessary, as these settings is started headless while being built
      */
     private fun startKoin() {
-        if (GlobalContext.getOrNull() == null) {
-            startKoin {
-                modules(appModule)
-            }
-            val initializer = Initializer()
-            initializer.translationPercentageBus.init(project)
-            initializer.currentProjectProvider.project = project
-        }
+        ProjectKoinService.getInstance(project).start()
     }
 
     private fun initialValueForModel(): List<String> {
         return mutableListOf(UserSettingsPersistentStateComponent.getInstance(project).state::gptModel.get()!!)
     }
+
     private fun getValuesFromGPT(): List<String> {
         return gptModelProvider.getAllModels()
             .sortedWith(
                 compareBy<String> { !it.startsWith("models/gemini") }
-                .thenBy { it }
+                    .thenBy { it }
             )
     }
 
@@ -284,7 +273,8 @@ class GptHelperSettings(val project: Project) : Configurable {
         submitTask({}, {
             runBlocking {
                 val it: Throwable? = try {
-                    val testClientConnection = Initializer().connectionTester.testClientConnection(text.concatToString())
+                    val testClientConnection =
+                        Initializer.create(project).connectionTester.testClientConnection(text.concatToString())
                     savePassword(text)
                     testClientConnection
                 } catch (e: Throwable) {
@@ -300,8 +290,10 @@ class GptHelperSettings(val project: Project) : Configurable {
                         connectionSuccess = true
                         connectionSuccessListener?.invoke(true)
                     }
+
                     else -> {
-                        myModel.connectionTestErrorStackTrace = "Message:" + it.message + "\n\nStackTrace:\n" + it.stackTraceToString()
+                        myModel.connectionTestErrorStackTrace =
+                            "Message:" + it.message + "\n\nStackTrace:\n" + it.stackTraceToString()
                         myModel.connectionTestError = true
                         connectionErrorListener?.invoke(true)
                         // I guess must be called from EDT?
@@ -315,7 +307,7 @@ class GptHelperSettings(val project: Project) : Configurable {
     }
 
     private fun savePassword(text: CharArray) {
-        Initializer().credentialsServiceRepository.persistKey(text.concatToString())
+        Initializer.create(project).credentialsServiceRepository.persistKey(text.concatToString())
         text.fill('0')
         openAIKeyField.text("")
     }
@@ -352,7 +344,7 @@ class GptHelperSettings(val project: Project) : Configurable {
     }
 
     override fun isModified(): Boolean {
-        return panel?.isModified()?: false
+        return panel?.isModified() ?: false
     }
 
 

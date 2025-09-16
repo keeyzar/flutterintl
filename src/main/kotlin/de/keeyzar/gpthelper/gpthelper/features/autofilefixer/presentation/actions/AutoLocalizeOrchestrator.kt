@@ -27,10 +27,14 @@ class AutoLocalizeOrchestrator(
     private val generalErrorHandler: GeneralErrorHandler,
     private val verifySettings: VerifyTranslationSettingsService,
 ) {
-    private val initializer = FlutterArbTranslationInitializer()
 
     fun orchestrate(project: Project, directory: VirtualFile, title: String) {
         val dartFiles = findDartFiles(project, directory)
+        if (dartFiles.isEmpty()) {
+            return
+        }
+
+        val initializer = FlutterArbTranslationInitializer.create(project)
         val stringLiteralHelper = initializer.dartStringLiteralHelper
         val allLiteralsWithSelection: Map<PsiElement, Boolean> =
             dartFiles.flatMap { stringLiteralHelper.findStringPsiElements(it).entries }
@@ -76,7 +80,7 @@ class AutoLocalizeOrchestrator(
             }
         }
 
-        val remainingLiterals = allLiteralsWithSelection.filterKeys { it !in existingKeys.keys }
+        val remainingLiterals = allLiteralsWithSelection.filterKeys { it !in elementsToReplace }
 
         if (remainingLiterals.isEmpty() && elementsToReplace.isEmpty()) {
             //everything is replaced, or nothing to do so we are done
@@ -96,7 +100,6 @@ class AutoLocalizeOrchestrator(
             return
         }
 
-        val initializer = FlutterArbTranslationInitializer()
         val uuid = UUID.randomUUID()
         val translationContext = TranslationContext(uuid.toString(), title, 0, null, 0)
 

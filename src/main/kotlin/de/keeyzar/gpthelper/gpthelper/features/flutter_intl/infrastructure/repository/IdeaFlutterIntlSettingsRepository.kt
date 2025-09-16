@@ -7,11 +7,10 @@ import de.keeyzar.gpthelper.gpthelper.features.flutter_intl.domain.entity.Flutte
 import de.keeyzar.gpthelper.gpthelper.features.flutter_intl.domain.exceptions.FlutterIntlFileParseException
 import de.keeyzar.gpthelper.gpthelper.features.flutter_intl.domain.repository.FlutterIntlSettingsRepository
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.UserSettingsRepository
-import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.repository.CurrentProjectProvider
 import java.nio.file.Path
 
 class IdeaFlutterIntlSettingsRepository(
-    private val currentProjectProvider: CurrentProjectProvider,
+    private val project: Project,
     private val objectMapper: ObjectMapper,
     private val userSettingsRepository: UserSettingsRepository,
     private val flutterFileRepository: FlutterFileRepository,
@@ -30,12 +29,11 @@ class IdeaFlutterIntlSettingsRepository(
             null
         }
         val absolutePath = userSettings?.intlConfigFile ?: DEFAULT_FLUTTER_INTL_CONFIG_FILE
-        val project = currentProjectProvider.project
         return load(project, Path.of(absolutePath))
     }
 
     override fun loadFlutterIntlSettingsByPath(path: Path): FlutterIntlSettings {
-        return load(currentProjectProvider.project, path)
+        return load(project, path)
     }
 
     private fun load(project: Project, filePath: Path): FlutterIntlSettings {

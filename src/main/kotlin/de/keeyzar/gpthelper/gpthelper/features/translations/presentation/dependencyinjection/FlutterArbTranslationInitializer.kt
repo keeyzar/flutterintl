@@ -1,5 +1,6 @@
 package de.keeyzar.gpthelper.gpthelper.features.translations.presentation.dependencyinjection
 
+import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.client.BestGuessL10nClient
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.controller.MultiKeyTranslationProcessController
@@ -15,39 +16,64 @@ import de.keeyzar.gpthelper.gpthelper.features.psiutils.DartStringLiteralHelper
 import de.keeyzar.gpthelper.gpthelper.features.psiutils.LiteralInContextFinder
 import de.keeyzar.gpthelper.gpthelper.features.psiutils.arb.ArbPsiUtils
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.controller.TranslationProcessController
-import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.repository.CurrentProjectProvider
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.service.ContextProvider
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.service.LastStatementProviderForFlutterArbTranslation
 import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.service.FlutterPsiService
 import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.service.ImportFixer
 import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.service.StatementFixer
 import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.service.TranslationTaskBackgroundProgress
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
+import de.keeyzar.gpthelper.gpthelper.project.ProjectKoinService
 
 /**
  * provides all the relevant dependencies for the translation feature, there might be a cleaner way to do that... but okay for now
  */
-class FlutterArbTranslationInitializer : KoinComponent {
-    val flutterPsiService: FlutterPsiService by inject()
-    val translationProcessController: TranslationProcessController by inject()
-    val missingTranslationController: MissingTranslationController<PsiElement> by inject()
-    val translationTaskBackgroundProgress: TranslationTaskBackgroundProgress by inject()
-    val lastStatementProviderForFlutterArbTranslation: LastStatementProviderForFlutterArbTranslation by inject()
-    val fileTranslationProcessController: FileTranslationProcessController by inject()
-    val contextProvider: ContextProvider by inject()
-    val literalInContextFinder: LiteralInContextFinder by inject()
-    val multiKeyTranslationProcessController: MultiKeyTranslationProcessController by inject()
-    val currentProjectProvider: CurrentProjectProvider by inject()
-    val psiElementIdReferenceProvider: PsiElementIdReferenceProvider by inject()
-    val arbPsiUtils: ArbPsiUtils by inject()
-    val gatherBestGuessContext: GatherBestGuessContext by inject()
-    val waitingIndicatorService: WaitingIndicatorService by inject()
-    val bestGuessL10nClient: BestGuessL10nClient by inject()
-    val guessAdaptionService: GuessAdaptionService by inject()
-    val dartStringLiteralHelper: DartStringLiteralHelper by inject()
-    val orchestrator: AutoLocalizeOrchestrator by inject()
-    val existingKeyFinder: ExistingKeyFinder by inject()
-    val statementFixer: StatementFixer by inject()
-    val importFixer: ImportFixer by inject()
+class FlutterArbTranslationInitializer(
+    val flutterPsiService: FlutterPsiService,
+    val translationProcessController: TranslationProcessController,
+    val missingTranslationController: MissingTranslationController<PsiElement>,
+    val translationTaskBackgroundProgress: TranslationTaskBackgroundProgress,
+    val lastStatementProviderForFlutterArbTranslation: LastStatementProviderForFlutterArbTranslation,
+    val fileTranslationProcessController: FileTranslationProcessController,
+    val contextProvider: ContextProvider,
+    val literalInContextFinder: LiteralInContextFinder,
+    val multiKeyTranslationProcessController: MultiKeyTranslationProcessController,
+    val psiElementIdReferenceProvider: PsiElementIdReferenceProvider,
+    val arbPsiUtils: ArbPsiUtils,
+    val gatherBestGuessContext: GatherBestGuessContext,
+    val waitingIndicatorService: WaitingIndicatorService,
+    val bestGuessL10nClient: BestGuessL10nClient,
+    val guessAdaptionService: GuessAdaptionService,
+    val dartStringLiteralHelper: DartStringLiteralHelper,
+    val orchestrator: AutoLocalizeOrchestrator,
+    val existingKeyFinder: ExistingKeyFinder,
+    val statementFixer: StatementFixer,
+    val importFixer: ImportFixer
+) {
+    companion object {
+        fun create(project: Project): FlutterArbTranslationInitializer {
+            val koin = ProjectKoinService.getInstance(project).getKoin()
+            return FlutterArbTranslationInitializer(
+                flutterPsiService = koin.get(),
+                translationProcessController = koin.get(),
+                missingTranslationController = koin.get(),
+                translationTaskBackgroundProgress = koin.get(),
+                lastStatementProviderForFlutterArbTranslation = koin.get(),
+                fileTranslationProcessController = koin.get(),
+                contextProvider = koin.get(),
+                literalInContextFinder = koin.get(),
+                multiKeyTranslationProcessController = koin.get(),
+                psiElementIdReferenceProvider = koin.get(),
+                arbPsiUtils = koin.get(),
+                gatherBestGuessContext = koin.get(),
+                waitingIndicatorService = koin.get(),
+                bestGuessL10nClient = koin.get(),
+                guessAdaptionService = koin.get(),
+                dartStringLiteralHelper = koin.get(),
+                orchestrator = koin.get(),
+                existingKeyFinder = koin.get(),
+                statementFixer = koin.get(),
+                importFixer = koin.get()
+            )
+        }
+    }
 }

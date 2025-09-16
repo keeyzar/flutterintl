@@ -6,17 +6,15 @@ import com.intellij.util.messages.MessageBusConnection
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.TranslationProgress
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.service.TranslationProgressBus
 
-class IdeaTranslationProgressBus : TranslationProgressBus {
-    var project: Project? = null
-    fun init(project: Project) {
-        this.project = project
-    }
+class IdeaTranslationProgressBus(
+    val project: Project
+) : TranslationProgressBus {
+
     override fun pushPercentage(translationProgress: TranslationProgress) {
-        project?.let { nullSafeProject ->
-            val messageBus: MessageBus = nullSafeProject.messageBus
-            val connection: MessageBusConnection = messageBus.connect()
-            messageBus.syncPublisher(TranslationProgressChangeNotifier.CHANGE_ACTION_TOPIC).afterAction(translationProgress)
-            connection.disconnect()
-        }
+        val messageBus: MessageBus = project.messageBus
+        val connection: MessageBusConnection = messageBus.connect()
+        messageBus.syncPublisher(TranslationProgressChangeNotifier.CHANGE_ACTION_TOPIC)
+            .afterAction(translationProgress)
+        connection.disconnect()
     }
 }

@@ -6,8 +6,14 @@ import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.Tr
 class LLMConfigProvider(private val credentialsServiceRepository: TranslationCredentialsServiceRepository) {
 
     fun getInstanceGemini(): Client {
-        val key = credentialsServiceRepository.getKey() ?: throw Exception("API Key missing")
-        return withKeyGemini(key)
+        return credentialsServiceRepository.getKey()?.let {
+            withKeyGemini(it)
+        } ?: withoutGeminiKey()
+    }
+
+    private fun withoutGeminiKey(): Client {
+        return Client.builder()
+            .build()
     }
 
     fun withKeyGemini(key: String): Client {

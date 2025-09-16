@@ -1,5 +1,8 @@
 package de.keeyzar.gpthelper.gpthelper.features.translations.presentation.service
 
+import com.intellij.notification.NotificationAction
+import com.intellij.notification.NotificationGroupManager
+import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
@@ -10,10 +13,8 @@ import de.keeyzar.gpthelper.gpthelper.features.shared.infrastructure.model.UserS
 import de.keeyzar.gpthelper.gpthelper.features.shared.presentation.GptHelperSettings
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.exceptions.UserSettingsCorruptException
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.exceptions.UserSettingsMissingException
-import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.TranslationCredentialsServiceRepository
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.UserSettingsRepository
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.service.VerifyTranslationSettingsService
-import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.repository.CurrentProjectProvider
 import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.validation.FlutterIntlValidator
 import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.validation.TranslationClientSettingsValidator
 
@@ -21,16 +22,14 @@ import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.validat
  * try to load settings, if there are none, ask the user, whether he wants to use the default settings or something thereof
  */
 class ArbVerifyTranslationSettingsService(
+    private val project: Project,
     private val userSettingsRepository: UserSettingsRepository,
     //TODO Might be a list here, and you register as many validators as you want?
     private val translationClientSettingsValidator: TranslationClientSettingsValidator,
     private val flutterIntlValidator: FlutterIntlValidator,
     private val flutterIntlSettingsRepository: FlutterIntlSettingsRepository,
-    private val currentProjectProvider: CurrentProjectProvider,
 ) : VerifyTranslationSettingsService {
     override fun verifySettingsAndInformUserIfInvalid(): Boolean {
-        val project = currentProjectProvider.project
-
         val userSettings = try {
             userSettingsRepository.getSettings()
         } catch (e: UserSettingsMissingException) {
@@ -96,15 +95,28 @@ class ArbVerifyTranslationSettingsService(
     ): Boolean {
         val errors = translationClientSettingsValidator.valid()
         if (errors.isNotEmpty()) {
-            askToNavigateToSettingsPage(
-                project,
-                "Missing Open AI Key",
-                "There is no Open AI Key configured, please configure it in the settings page. Error details: ${errors.joinToString("<br>")}"
-            )
-            return true
+            showApiKeyNotification(project)
         }
         return false
     }
+
+    private fun showApiKeyNotification(project: Project) {
+        val notification = NotificationGroupManager.getInstance()
+            .getNotificationGroup("GPT Flutter Intl")
+            .createNotification(
+                "Missing Gemini API Key",
+                "You may add a Gemini API key in the settings to avoid potential rate limits.",
+                NotificationType.INFORMATION
+            )
+
+        val openSettingsAction = NotificationAction.createSimple("Open Settings") {
+            ShowSettingsUtil.getInstance().showSettingsDialog(project, GptHelperSettings::class.java)
+        }
+
+        notification.addAction(openSettingsAction)
+        notification.notify(project)
+    }
+
 
     private fun askToNavigateToSettingsPage(project: Project, title: String, message: String) {
         ApplicationManager.getApplication().invokeAndWait {

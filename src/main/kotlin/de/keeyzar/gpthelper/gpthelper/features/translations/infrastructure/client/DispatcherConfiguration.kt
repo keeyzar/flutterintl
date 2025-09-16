@@ -1,5 +1,6 @@
 package de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.client
 
+import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.TranslationCredentialsServiceRepository
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.UserSettingsRepository
 import groovy.util.logging.Slf4j
 import kotlinx.coroutines.ExecutorCoroutineDispatcher
@@ -9,6 +10,7 @@ import java.util.concurrent.Executors
 @Slf4j
 class DispatcherConfiguration(
     private val userSettingsRepository: UserSettingsRepository,
+    private val translationCredentialsServiceRepository: TranslationCredentialsServiceRepository,
 ) {
     private var dispatcher: ExecutorCoroutineDispatcher? = null
 
@@ -41,7 +43,13 @@ class DispatcherConfiguration(
     }
 
     private fun checkIfParallelismChanged() {
-        val newParallelism = userSettingsRepository.getSettings().parallelism
+        val key = translationCredentialsServiceRepository.getKey()
+        val newParallelism = if (key.isNullOrBlank()) {
+            3
+        } else {
+            userSettingsRepository.getSettings().parallelism
+        }
+
         if (newParallelism != levelOfParallelism) {
             println("parallelism changed from $levelOfParallelism to $newParallelism, creating new dispatcher")
             levelOfParallelism = newParallelism

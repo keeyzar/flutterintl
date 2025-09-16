@@ -2,6 +2,7 @@ package de.keeyzar.gpthelper.gpthelper
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
+import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import de.keeyzar.gpthelper.gpthelper.common.error.GeneralErrorHandler
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.client.BestGuessL10nClient
@@ -14,7 +15,6 @@ import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.serv
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.presentation.actions.AutoLocalizeOrchestrator
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.presentation.service.IdeaWaitingIndicatorService
 import de.keeyzar.gpthelper.gpthelper.features.changetranslation.domain.controller.ChangeTranslationController
-import de.keeyzar.gpthelper.gpthelper.features.psiutils.arb.ArbPsiUtils
 import de.keeyzar.gpthelper.gpthelper.features.filetranslation.domain.controller.FileTranslationProcessController
 import de.keeyzar.gpthelper.gpthelper.features.filetranslation.domain.factories.TranslationRequestFactory
 import de.keeyzar.gpthelper.gpthelper.features.filetranslation.domain.service.FinishedFileTranslationHandler
@@ -36,6 +36,7 @@ import de.keeyzar.gpthelper.gpthelper.features.missingtranslations.infrastructur
 import de.keeyzar.gpthelper.gpthelper.features.missingtranslations.infrastructure.service.MissingTranslationCollectionServiceIdea
 import de.keeyzar.gpthelper.gpthelper.features.missingtranslations.infrastructure.service.MissingTranslationInputServiceIdea
 import de.keeyzar.gpthelper.gpthelper.features.psiutils.*
+import de.keeyzar.gpthelper.gpthelper.features.psiutils.arb.ArbPsiUtils
 import de.keeyzar.gpthelper.gpthelper.features.psiutils.filter.DartStringLiteralFilter
 import de.keeyzar.gpthelper.gpthelper.features.psiutils.filter.ImportStatementFilterDartString
 import de.keeyzar.gpthelper.gpthelper.features.review.domain.config.ReviewConfig
@@ -68,125 +69,202 @@ import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.mappe
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.mapper.UserSettingsMapper
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.parser.ARBFileContentParser
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.parser.GPTARBResponseParser
-import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.repository.*
+import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.repository.IdeaTranslationCredentialsServiceRepository
+import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.repository.LanguageFileFinder
+import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.repository.PropertiesUserSettingsRepository
+import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.repository.PropertiesUserTranslationInputRepository
+import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.repository.PsiTranslationFileRepository
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.service.*
 import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.service.*
 import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.validation.FlutterIntlValidator
 import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.validation.TranslationClientSettingsValidator
+import org.koin.core.module.Module
 import org.koin.dsl.bind
 import org.koin.dsl.module
 import org.mapstruct.factory.Mappers
 
-/**
- * this one must be refactored...
- */
-class DIConfig {
-    companion object {
-        val appModule = module {
-            single<ARBTemplateService> { ARBTemplateService() }
-            single<GPTARBResponseParser> { GPTARBResponseParser(get()) }
-            single<ObjectMapper> { ObjectMapperProvider().provideObjectMapper(null) }
-            single<ARBFileContentParser> { ARBFileContentParser(get(), get()) }
-            single<SingleTranslationRequestClient> { GPTARBRequester(get(), get(), get(), get()) }
-            single<LLMConfigProvider> { LLMConfigProvider(get()) }
-            single<ImmediateTranslationService> { ImmediateTranslationService(get(), get()) }
-            single<UserSettingsRepository> { PropertiesUserSettingsRepository(get(), get()) }
-            single<JsonUtils> { JsonUtils(get()) }
-            single<JsonChunkMerger> { JsonChunkMerger(get()) }
-            single<JsonFileChunker> { JsonFileChunker(get()) }
-            val ideaTranslationPercentageBus = IdeaTranslationProgressBus()
-            single<TranslationProgressBus> { ideaTranslationPercentageBus }
-            single<IdeaTranslationProgressBus> { ideaTranslationPercentageBus }
-            single<IdeaTerminalConsoleService> { IdeaTerminalConsoleService() }
-            single<CurrentProjectProvider> { CurrentProjectProvider() }
-            single<FlutterIntlSettingsRepository> {
-                IdeaFlutterIntlSettingsRepository(
-                    get(),
-                    ObjectMapperProvider().provideObjectMapper(YAMLFactory()),
-                    get(),
-                    get()
-                )
-            }
-            single<FlutterIntlValidator> { FlutterIntlValidator() }
-            single<TranslationFileRepository> { PsiTranslationFileRepository(get(), get(), get()) }
-            single<ContentModificationService> { ArbContentModificationService(get()) }
-            single<TranslationRequestMapper> { Mappers.getMapper(TranslationRequestMapper::class.java) }
-            single<DispatcherConfiguration> {DispatcherConfiguration(get())}
-            single<DDDTranslationRequestClient> { GPTTranslationRequestClient(get(), get(), get(), get(), get(), get()) }
-            single<ArbFileModificationService> { ArbFileModificationService(get(), get(), get()) }
-            single<VerifyTranslationSettingsService> { ArbVerifyTranslationSettingsService(get(), get(), get(), get(), get()) }
-            single<TranslationClientSettingsValidator> { TranslationClientSettingsValidator(get()) }
-            single<UserTranslationInputRepository> { PropertiesUserTranslationInputRepository(get(), get()) }
-            single<UserTranslationInputParser> { UserTranslationInputParser(get()) }
-            single<ArbFilenameParser> { ArbFilenameParser() }
-            single<CurrentFileModificationService> { FlutterArbCurrentFileModificationService(get(), get(), get(), get(), get()) }
-            single<ExternalTranslationProcessService> { FlutterGenCommandProcessService(get(), get()) }
-            single<TranslationErrorProcessHandler> { IdeaTranslationErrorProcessHandlerImpl() }
-            single<FlutterPsiService> { FlutterPsiService() }
-            single<TranslationProcessController> { TranslationProcessController(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
-            single<TranslationPreprocessor> { TranslationPreprocessor(get(), get(), get()) }
-            single<LastStatementProviderForFlutterArbTranslation> { LastStatementProviderForFlutterArbTranslation() }
-            single<LanguageFileFinder> { LanguageFileFinder(get()) }
-            single<TranslationRequestResponseMapper> { TranslationRequestResponseMapper(get()) }
-            single<ImportFixer> { ImportFixer(get()) }
-            single<StatementFixer> { StatementFixer(get(), get(), get()) }
-            single<TranslationTaskBackgroundProgress> { TranslationTaskBackgroundProgress(get()) }
-            single<UserSettingsMapper> { Mappers.getMapper(UserSettingsMapper::class.java) }
-            single<FlutterFileRepository> { FlutterFileRepository() }
-            single<FormatTranslationFileContentService> { ArbFormatTranslationFileContentService(get()) }
-            single<TaskAmountCalculator> { TranslateKeyTaskAmountCalculator() }
-            single<TranslationTriggeredHooks> { TranslateKeyTranslationTriggeredHooks(get(), get()) }
-            single<FlutterGenCommandProcessService> { FlutterGenCommandProcessService(get(), get()) }
-            single<OngoingTranslationHandler> { OngoingTranslationHandler(get(), get(), get()) }
-            single<FlutterArbCurrentFileModificationService> { FlutterArbCurrentFileModificationService(get(), get(), get(), get(), get()) }
-            single<ContextProvider> { ContextProvider() }
-            single<GatherFileTranslationContext> { IdeaGatherFileTranslationContext(get(), get(), get()) }
-            single<TargetLanguageProvider> { TargetLanguageProvider(get()) }
-            single<PartialFileResponseHandler> { ArbFlutterPartialFileTranslationResponseHandler(get(), get()) }
-            single<TranslationRequestFactory> { TranslationRequestFactoryImpl(get()) }
-            single<FileTranslationProcessController> { FileTranslationProcessController(get(), get(), get(), get(), get(), get(), get(), get()) }
-            single<TargetLanguageProvider> { IdeaTargetLanguageProvider(get()) }
-            single<ArbFileContentModificationService> { ArbFileContentModificationService(get()) }
-            single<FinishedFileTranslationHandler> { FlutterArbTranslateFileFinished(get(), get(), get()) }
-            single<UserSettingsMapper> { Mappers.getMapper(UserSettingsMapper::class.java) }
-            single<TranslationCredentialsServiceRepository> { IdeaTranslationCredentialsServiceRepository() }
-            single<AutoLocalizeOrchestrator> { AutoLocalizeOrchestrator(get(), get()) }
-            single<UserSettingsDTOMapper> { Mappers.getMapper(UserSettingsDTOMapper::class.java) }
-            single<ClientConnectionTester> { OpenAIClientConnectionTester(get()) }
-            single<DartAdditiveExpressionExtractor> { DartAdditiveExpressionExtractor() }
-            single<DartStringLiteralHelper> { DartStringLiteralHelper(get(), getAll()) }
-            single { ImportStatementFilterDartString() } bind DartStringLiteralFilter::class
-            single<LiteralInContextFinder> { LiteralInContextFinder() }
-            single<PsiElementIdGenerator> { PsiElementIdGenerator() }
-            single<GatherBestGuessContext> { IdeaGatherBestGuessContext(get(), get(), get()) }
-            single<BestGuessOpenAIResponseParser> { BestGuessOpenAIResponseParser(get()) }
-            single<BestGuessL10nClient> { GeminiBestGuessClient(get(), get(), get(), get()) }
-            single<PsiElementIdReferenceProvider> { PsiElementIdReferenceProvider() }
-            single<GuessAdaptionService> { IdeaBestGuessAdaptionService(get(), get(), get()) }
-            single<ArbFilesService> { ArbFilesService(get(), get(), get(), get()) }
-            single<MultiKeyTranslationProcessController> { MultiKeyTranslationProcessController(get(), get(), get(), get(), get(), get()) }
-            single<MultiKeyTranslationTaskSizeEstimator> { OpenAIMultiKeyTranslationTaskSizeEstimator() }
-            single<WaitingIndicatorService> { IdeaWaitingIndicatorService(get()) }
-            single<DartConstModifierFinder> { DartConstModifierFinder() }
-            single<ReviewSettingsMapper> {Mappers.getMapper(ReviewSettingsMapper::class.java)}
-            single< ReviewRepository> { IdeaReviewRepository(get(), get()) }
-            single< OpenPageService> { IdeaOpenPageService() }
-            single<ReviewService> {ReviewService(get(), get(), get(), get())}
-            single< AskUserForReviewService> { IdeaAskUserForReviewService() }
-            single<ReviewConfig> {ReviewConfig()}
-            single<GPTModelProvider> { GptModelProviderImpl(get())}
-            single<ArbPsiUtils> { ArbPsiUtils() }
-            single<ChangeTranslationController> { ChangeTranslationController() }
-            single<ThreadingService<MissingTranslationContext<TranslationContext>>> { ThreadingService() }
-            single<MissingTranslationController<PsiElement>> { MissingTranslationController(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
-            single<MissingTranslationCollectionService<PsiElement>> { MissingTranslationCollectionServiceIdea(get()) }
-            single<ExistingTranslationRepository<PsiElement>> { ExistingTranslationRepositoryIdea(get(), get()) }
-            single<MissingTranslationInputService> { MissingTranslationInputServiceIdea() }
-            single<ArbPsiUtils> { ArbPsiUtils() }
-            single<TranslationFileRepository> { PsiTranslationFileRepository(get(), get(), get()) }
-            single<ThreadingService<TranslationContext>> { ThreadingService() }
-            single<GeneralErrorHandler> { GeneralErrorHandler() }
-            single<ExistingKeyFinder> { ExistingKeyFinder(get(), get()) }
+fun createAppModule(project: Project): Module {
+    return module {
+        single { project } bind Project::class
+        single<ARBTemplateService> { ARBTemplateService() }
+        single<GPTARBResponseParser> { GPTARBResponseParser(get()) }
+        single<ObjectMapper> { ObjectMapperProvider().provideObjectMapper(null) }
+        single<ARBFileContentParser> { ARBFileContentParser(get(), get()) }
+        single<SingleTranslationRequestClient> { GPTARBRequester(get(), get(), get(), get()) }
+        single<LLMConfigProvider> { LLMConfigProvider(get()) }
+        single<ImmediateTranslationService> { ImmediateTranslationService(get(), get()) }
+        single<UserSettingsRepository> { PropertiesUserSettingsRepository(get(), get()) }
+        single<JsonUtils> { JsonUtils(get()) }
+        single<JsonChunkMerger> { JsonChunkMerger(get()) }
+        single<JsonFileChunker> { JsonFileChunker(get()) }
+        single<TranslationProgressBus> { IdeaTranslationProgressBus(get()) }
+        single<IdeaTerminalConsoleService> { IdeaTerminalConsoleService() }
+        single<FlutterIntlSettingsRepository> {
+            IdeaFlutterIntlSettingsRepository(
+                get(),
+                ObjectMapperProvider().provideObjectMapper(YAMLFactory()),
+                get(),
+                get()
+            )
         }
+        single<FlutterIntlValidator> { FlutterIntlValidator() }
+        single<TranslationFileRepository> { PsiTranslationFileRepository(get(), get(), get()) }
+        single<ContentModificationService> { ArbContentModificationService(get()) }
+        single<TranslationRequestMapper> { Mappers.getMapper(TranslationRequestMapper::class.java) }
+        single<DispatcherConfiguration> { DispatcherConfiguration(get(), get()) }
+        single<DDDTranslationRequestClient> {
+            GPTTranslationRequestClient(
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get()
+            )
+        }
+        single<ArbFileModificationService> { ArbFileModificationService(get(), get(), get()) }
+        single<VerifyTranslationSettingsService> {
+            ArbVerifyTranslationSettingsService(
+                get(),
+                get(),
+                get(),
+                get(),
+                get()
+            )
+        }
+        single<TranslationClientSettingsValidator> { TranslationClientSettingsValidator(get()) }
+        single<UserTranslationInputRepository> { PropertiesUserTranslationInputRepository(get(), get()) }
+        single<UserTranslationInputParser> { UserTranslationInputParser(get()) }
+        single<ArbFilenameParser> { ArbFilenameParser() }
+        single<CurrentFileModificationService> {
+            FlutterArbCurrentFileModificationService(
+                get(),
+                get(),
+                get(),
+                get(),
+                get()
+            )
+        }
+        single<ExternalTranslationProcessService> { FlutterGenCommandProcessService(get(), get()) }
+        single<TranslationErrorProcessHandler> { IdeaTranslationErrorProcessHandlerImpl() }
+        single<FlutterPsiService> { FlutterPsiService() }
+        single<TranslationProcessController> {
+            TranslationProcessController(
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get()
+            )
+        }
+        single<TranslationPreprocessor> { TranslationPreprocessor(get(), get(), get()) }
+        single<LastStatementProviderForFlutterArbTranslation> { LastStatementProviderForFlutterArbTranslation() }
+        single<LanguageFileFinder> { LanguageFileFinder(get()) }
+        single<TranslationRequestResponseMapper> { TranslationRequestResponseMapper(get()) }
+        single<ImportFixer> { ImportFixer(get()) }
+        single<StatementFixer> { StatementFixer(get(), get(), get()) }
+        single<TranslationTaskBackgroundProgress> { TranslationTaskBackgroundProgress(get()) }
+        single<UserSettingsMapper> { Mappers.getMapper(UserSettingsMapper::class.java) }
+        single<FlutterFileRepository> { FlutterFileRepository() }
+        single<FormatTranslationFileContentService> { ArbFormatTranslationFileContentService(get()) }
+        single<TaskAmountCalculator> { TranslateKeyTaskAmountCalculator() }
+        single<TranslationTriggeredHooks> { TranslateKeyTranslationTriggeredHooks(get(), get()) }
+        single<FlutterGenCommandProcessService> { FlutterGenCommandProcessService(get(), get()) }
+        single<OngoingTranslationHandler> { OngoingTranslationHandler(get(), get(), get()) }
+        single<FlutterArbCurrentFileModificationService> {
+            FlutterArbCurrentFileModificationService(
+                get(),
+                get(),
+                get(),
+                get(),
+                get()
+            )
+        }
+        single<ContextProvider> { ContextProvider() }
+        single<GatherFileTranslationContext> { IdeaGatherFileTranslationContext(get(), get(), get()) }
+        single<TargetLanguageProvider> { TargetLanguageProvider(get()) }
+        single<PartialFileResponseHandler> { ArbFlutterPartialFileTranslationResponseHandler(get(), get()) }
+        single<TranslationRequestFactory> { TranslationRequestFactoryImpl(get()) }
+        single<FileTranslationProcessController> {
+            FileTranslationProcessController(
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get()
+            )
+        }
+        single<TargetLanguageProvider> { IdeaTargetLanguageProvider(get()) }
+        single<ArbFileContentModificationService> { ArbFileContentModificationService(get()) }
+        single<FinishedFileTranslationHandler> { FlutterArbTranslateFileFinished(get(), get(), get()) }
+        single<UserSettingsMapper> { Mappers.getMapper(UserSettingsMapper::class.java) }
+        single<TranslationCredentialsServiceRepository> { IdeaTranslationCredentialsServiceRepository() }
+        single<AutoLocalizeOrchestrator> { AutoLocalizeOrchestrator(get(), get()) }
+        single<UserSettingsDTOMapper> { Mappers.getMapper(UserSettingsDTOMapper::class.java) }
+        single<ClientConnectionTester> { OpenAIClientConnectionTester(get()) }
+        single<DartAdditiveExpressionExtractor> { DartAdditiveExpressionExtractor() }
+        single<DartStringLiteralHelper> { DartStringLiteralHelper(get(), getAll()) }
+        single { ImportStatementFilterDartString() } bind DartStringLiteralFilter::class
+        single<LiteralInContextFinder> { LiteralInContextFinder() }
+        single<PsiElementIdGenerator> { PsiElementIdGenerator() }
+        single<GatherBestGuessContext> { IdeaGatherBestGuessContext(get(), get(), get()) }
+        single<BestGuessOpenAIResponseParser> { BestGuessOpenAIResponseParser(get()) }
+        single<BestGuessL10nClient> { GeminiBestGuessClient(get(), get(), get(), get()) }
+        single<PsiElementIdReferenceProvider> { PsiElementIdReferenceProvider() }
+        single<GuessAdaptionService> { IdeaBestGuessAdaptionService(get(), get(), get(), get()) }
+        single<ArbFilesService> { ArbFilesService(get(), get(), get(), get()) }
+        single<MultiKeyTranslationProcessController> {
+            MultiKeyTranslationProcessController(
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get()
+            )
+        }
+        single<MultiKeyTranslationTaskSizeEstimator> { OpenAIMultiKeyTranslationTaskSizeEstimator() }
+        single<WaitingIndicatorService> { IdeaWaitingIndicatorService(get()) }
+        single<DartConstModifierFinder> { DartConstModifierFinder() }
+        single<ReviewSettingsMapper> { Mappers.getMapper(ReviewSettingsMapper::class.java) }
+        single<ReviewRepository> { IdeaReviewRepository(get(), get()) }
+        single<OpenPageService> { IdeaOpenPageService() }
+        single<ReviewService> { ReviewService(get(), get(), get(), get()) }
+        single<AskUserForReviewService> { IdeaAskUserForReviewService() }
+        single<ReviewConfig> { ReviewConfig() }
+        single<GPTModelProvider> { GptModelProviderImpl(get()) }
+        single<ArbPsiUtils> { ArbPsiUtils() }
+        single<ChangeTranslationController> { ChangeTranslationController() }
+        single<ThreadingService<MissingTranslationContext<TranslationContext>>> { ThreadingService() }
+        single<MissingTranslationController<PsiElement>> {
+            MissingTranslationController(
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get(),
+                get()
+            )
+        }
+        single<GatherTranslationContextService> { FlutterArbTranslationContextService(get(), get(), get(), get(), get(), get())}
+        single<MissingTranslationCollectionService<PsiElement>> { MissingTranslationCollectionServiceIdea(get()) }
+        single<ExistingTranslationRepository<PsiElement>> { ExistingTranslationRepositoryIdea(get(), get()) }
+        single<MissingTranslationInputService> { MissingTranslationInputServiceIdea() }
+        single<ArbPsiUtils> { ArbPsiUtils() }
+        single<TranslationFileRepository> { PsiTranslationFileRepository(get(), get(), get()) }
+        single<ThreadingService<TranslationContext>> { ThreadingService() }
+        single<GeneralErrorHandler> { GeneralErrorHandler() }
+        single<ExistingKeyFinder> { ExistingKeyFinder(get(), get()) }
+        single<GatherUserInputService> { FlutterArbUserInputService(get()) }
     }
 }

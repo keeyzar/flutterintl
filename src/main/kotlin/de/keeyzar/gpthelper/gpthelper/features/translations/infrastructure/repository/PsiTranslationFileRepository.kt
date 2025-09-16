@@ -6,6 +6,7 @@ import com.intellij.openapi.application.WriteAction
 import com.intellij.openapi.command.CommandProcessor
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.codeStyle.CodeStyleManager
 import de.keeyzar.gpthelper.gpthelper.features.shared.domain.exception.GPTHelperBaseException
@@ -21,7 +22,7 @@ import java.nio.file.Path
  * accesses the file by Psi from Intellij
  */
 class PsiTranslationFileRepository(
-    private val currentProjectProvider: CurrentProjectProvider,
+    private val project: Project,
     private val languageFileFinder: LanguageFileFinder,
     private val userSettingsRepository: UserSettingsRepository,
 ) : TranslationFileRepository {
@@ -32,7 +33,6 @@ class PsiTranslationFileRepository(
         log.trace("before reading the file for language: $language")
         val computeAction = ReadAction.compute<FileToTranslate, GPTHelperBaseException> {
             log.trace("inside ReadAction.compute for language: $language")
-            val project = currentProjectProvider.project
             val document = languageFileFinder.findLanguageFile(language, project)
             return@compute FileToTranslate(language, document.text)
         }
@@ -44,7 +44,6 @@ class PsiTranslationFileRepository(
         var fileToTranslate: FileToTranslate? = null
         ApplicationManager.getApplication().invokeAndWait {
             fileToTranslate = WriteAction.compute<FileToTranslate, GPTHelperBaseException> {
-                val project = currentProjectProvider.project
                 val file = languageFileFinder.createOrGetLanguageFile(language, project)
                 return@compute FileToTranslate(language, file.text)
             }
@@ -56,9 +55,8 @@ class PsiTranslationFileRepository(
         log.trace("in saveTranslationFile, prior to WriteAction.runAndWait")
         WriteAction.runAndWait<GPTHelperBaseException> {
             log.trace("in saveTranslationFile, inside WriteAction.runAndWait")
-            CommandProcessor.getInstance().executeCommand(currentProjectProvider.project, {
+            CommandProcessor.getInstance().executeCommand(project, {
                 log.trace("in saveTranslationFile, inside executeCommand")
-                val project = currentProjectProvider.project
                 val document = languageFileFinder.findLanguageFile(fileToTranslate.language, project)
                 document.setText(fileToTranslate.content)
                 // Explicitly save the document to disk
@@ -76,7 +74,7 @@ class PsiTranslationFileRepository(
 
     override fun getPathsToTranslationFiles(): List<Path> {
         val arbDir = userSettingsRepository.getSettings().arbDir ?: throw UserSettingsException("The setting for Arb directory is missing")
-        val arbDirAbsolute = "${currentProjectProvider.project.basePath}/$arbDir"
+        val arbDirAbsolute = "${project.basePath}/$arbDir"
         return File(arbDirAbsolute).listFiles()
             ?.filter { it.isFile && it.extension == "arb" }
             ?.map { it.toPath() } ?: throw UserSettingsException("The setting for Arb directory seems to be incorrect, there is no directory at Path: '$arbDirAbsolute'")
@@ -84,7 +82,7 @@ class PsiTranslationFileRepository(
 
     override fun getPathToFile(language: Language): Path {
         val arbDir = userSettingsRepository.getSettings().arbDir ?: throw UserSettingsException("The setting for Arb directory is missing")
-        val arbDirAbsolute = "${currentProjectProvider.project.basePath}/$arbDir"
+        val arbDirAbsolute = "${project.basePath}/$arbDir"
         return Path.of("$arbDirAbsolute/app_${language.toISOLangString()}.arb")
     }
 }

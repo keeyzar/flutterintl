@@ -33,20 +33,13 @@ class MissingTranslationAction : PsiElementBaseIntentionAction(), IntentionActio
         return element.containingFile.fileType === ArbFileType.INSTANCE && element.containingFile.name == "untranslated_messages.txt"
     }
 
-    private fun getInitializer(): FlutterArbTranslationInitializer {
-        return when (flutterArbTranslationInitializer) {
-            null -> {
-                flutterArbTranslationInitializer = FlutterArbTranslationInitializer()
-                flutterArbTranslationInitializer!!
-            }
-
-            else -> flutterArbTranslationInitializer!!
-        }
+    private fun getInitializer(project: Project): FlutterArbTranslationInitializer {
+        return FlutterArbTranslationInitializer.create(project)
     }
 
     override fun invoke(project: Project, editor: Editor, element: PsiElement) {
-        getInitializer().lastStatementProviderForFlutterArbTranslation.lastStatement = element
-        val translationProcessController = getInitializer().missingTranslationController
+        getInitializer(project).lastStatementProviderForFlutterArbTranslation.lastStatement = element
+        val translationProcessController = getInitializer(project).missingTranslationController
         val uuid = UUID.randomUUID().toString()
 
         val missingTranslationContext = MissingTranslationContext(
@@ -55,7 +48,7 @@ class MissingTranslationAction : PsiElementBaseIntentionAction(), IntentionActio
             missingTranslations = emptyList()
         )
 
-        getInitializer().translationTaskBackgroundProgress.triggerInBlockingContext(project, {
+        getInitializer(project).translationTaskBackgroundProgress.triggerInBlockingContext(project, {
             translationProcessController.startMissingTranslationProcess(missingTranslationContext)
         }, translationContext = missingTranslationContext)
     }

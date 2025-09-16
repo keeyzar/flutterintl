@@ -1,6 +1,7 @@
 package de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.service
 
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.project.Project
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.client.BestGuessResponse
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.entity.MultiKeyTranslationContext
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.service.PsiElementIdReferenceProvider
@@ -16,6 +17,7 @@ import java.util.*
  *
  */
 class IdeaBestGuessAdaptionService(
+    private val project: Project,
     private val psiElementIdReferenceProvider: PsiElementIdReferenceProvider,
     private val arbFilesService: ArbFilesService,
     private val flutterPsiService: FlutterPsiService,
@@ -31,7 +33,7 @@ class IdeaBestGuessAdaptionService(
 
         var multiKeyTranslationContext: MultiKeyTranslationContext? = null
         ApplicationManager.getApplication().invokeAndWait {
-            val dialog = BestGuessAdaptionDialog(bestGuessWithPsiReferenceEntries, arbFilesService.findAvailableLanguages(), flutterPsiService)
+            val dialog = BestGuessAdaptionDialog(project,bestGuessWithPsiReferenceEntries, arbFilesService.findAvailableLanguages(), flutterPsiService)
             multiKeyTranslationContext = if (dialog.showAndGet()) {
                 val userInput = dialog.getUserInput()
                 parseToMultiKeyTranslationContext(processUUID, userInput)

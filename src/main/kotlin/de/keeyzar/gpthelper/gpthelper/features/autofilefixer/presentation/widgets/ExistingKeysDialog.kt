@@ -152,7 +152,7 @@ class ExistingKeysDialog(
     }
 
     private fun updateContextView(element: PsiElement) {
-        val contextFinder = FlutterArbTranslationInitializer().literalInContextFinder
+        val contextFinder = FlutterArbTranslationInitializer.create(element.project).literalInContextFinder
         val fullContextText = contextFinder.findContext(element).text
         contextTextArea.text = fullContextText
 
