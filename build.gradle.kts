@@ -30,7 +30,7 @@ repositories {
     }
 }
 val ktor_version = "3.2.3"
-val koin_version = "3.5.0"
+val koin_version = "4.1.1"
 // Dependencies are managed with Gradle version catalog - read more: https://docs.gradle.org/current/userguide/platforms.html#sub:version-catalog
 dependencies {
     testImplementation(libs.junit)
