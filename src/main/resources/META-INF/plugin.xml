@@ -65,6 +65,9 @@
                      Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
                 <extensions defaultExtensionNs="com.intellij">
                     <projectService serviceImplementation="de.keeyzar.gpthelper.gpthelper.project.ProjectKoinService"/>
+                    <projectService serviceImplementation="de.keeyzar.gpthelper.gpthelper.project.ProjectSetupStateService"/>
+                    <!-- Notification group used by the startup notification -->
+                    <notificationGroup id="gpt-helper" displayType="BALLOON"/>
                     <intentionAction>
                         <language>Dart</language>
                         <className>de.keeyzar.gpthelper.gpthelper.features.translations.presentation.actions.GenerateArbIntentionAction</className>

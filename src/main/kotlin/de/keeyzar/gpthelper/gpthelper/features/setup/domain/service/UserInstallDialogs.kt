@@ -10,4 +10,18 @@ interface UserInstallDialogs {
     fun confirmProjectFileModification(diffContent: String): String?
     fun selectAppFile(files: List<String>): String?
     fun showInfo(title: String, message: String)
+
+    /**
+     * Presents multiple proposed file modifications (original vs modified) and allows the user
+     * to select which referenced items should be applied. Returns the list of selected references
+     * (the original "reference" objects) or null if the user cancelled.
+     */
+    fun confirmProjectFileModifications(changes: List<ProjectFileChange>): List<Any>?
 }
+
+/** Represents a single file/reference change (original and modified content). */
+data class ProjectFileChange(
+    val reference: Any,
+    val original: String,
+    val modified: String
+)

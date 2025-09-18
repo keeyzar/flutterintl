@@ -6,6 +6,8 @@ import com.intellij.diff.requests.SimpleDiffRequest
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.Messages
+import de.keeyzar.gpthelper.gpthelper.features.setup.domain.service.ProjectFileChange
+import de.keeyzar.gpthelper.gpthelper.features.setup.presentation.widgets.ProjectFileChangesDialog
 import de.keeyzar.gpthelper.gpthelper.features.setup.domain.service.UserInstallDialogs
 import org.jetbrains.yaml.YAMLFileType
 import javax.swing.JComponent
@@ -19,7 +21,6 @@ class IdeaUserInstallDialogs(private val project: Project) : UserInstallDialogs 
         val content1 = diffContentFactory.create(before)
         val content2 = diffContentFactory.createEditable(project, after, YAMLFileType.YML)
         val request = SimpleDiffRequest(title, content1, content2, "Before", "After")
-
         val diffViewer = DiffManager.getInstance().createRequestPanel(project, {}, null)
         diffViewer.setRequest(request)
 
@@ -51,6 +52,13 @@ class IdeaUserInstallDialogs(private val project: Project) : UserInstallDialogs 
     override fun confirmProjectFileModification(diffContent: String): String? {
         println("We need to modify your main application file to enable localization. Do you accept the following changes?")
         return showDiff("Application file changes", "dummy before content", diffContent)
+    }
+
+    override fun confirmProjectFileModifications(changes: List<ProjectFileChange>): List<Any>? {
+        val dialog = ProjectFileChangesDialog(project, changes)
+        return if (dialog.showAndGet()) {
+            dialog.getSelectedChanges().map { it.reference }
+        } else null
     }
 
     override fun selectAppFile(files: List<String>): String? {

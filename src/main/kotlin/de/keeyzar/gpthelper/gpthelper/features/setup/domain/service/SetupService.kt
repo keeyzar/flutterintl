@@ -153,26 +153,31 @@ class SetupService(
      */
     fun combineIntlAndProject(references: List<Any>): Boolean {
         if (references.isEmpty()) {
-            println("Keine MaterialApp oder CupertinoApp gefunden.")
+            println("No MaterialApp or CupertinoApp found.")
             return false
         }
-        val chosenReference = when {
-            references.size == 1 -> references.first()
-            else -> {
-                val fileList = references.map { it.toString() }
-                val chosenPath = userInstallDialogs.selectAppFile(fileList)
-                references.find { it.toString() == chosenPath } ?: return false
-            }
+
+        // For each reference, create a dummy modified version and collect changes
+        val changes = mutableListOf<de.keeyzar.gpthelper.gpthelper.features.setup.domain.service.ProjectFileChange>()
+        for (ref in references) {
+            val original = appReferenceProvider.getContent(ref) ?: continue
+            val modified = appReferenceProvider.enableLocalizationOnDummy(ref) ?: continue
+            changes.add(ProjectFileChange(ref, original, modified))
         }
-        val originalContent = appReferenceProvider.getContent(chosenReference) ?: return false
-        val dummyContent = appReferenceProvider.enableLocalizationOnDummy(chosenReference) ?: return false
-        val acceptedContent = userInstallDialogs.showDiff("Enable Localization in App", originalContent, dummyContent)
-        if (acceptedContent != null) {
-            appReferenceProvider.modifyFileContent(chosenReference, acceptedContent)
-            return true
-        } else {
-            return false
+
+        if (changes.isEmpty()) return false
+
+        // Ask the user which of the proposed changes should be applied
+        val selected = userInstallDialogs.confirmProjectFileModifications(changes) ?: return false
+
+        // Apply modifications for selected references
+        for (sel in selected) {
+            // find the matching change
+            val change = changes.find { it.reference == sel } ?: continue
+            appReferenceProvider.modifyFileContent(sel, change.modified)
         }
+
+        return true
     }
 }
 

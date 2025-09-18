@@ -4,7 +4,6 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.intellij.psi.PsiRecursiveElementVisitor
 import com.intellij.psi.codeStyle.CodeStyleManager
@@ -76,22 +75,43 @@ class IdeaAppReferenceProvider(
             val argumentList = elementInDummy.arguments?.argumentList ?: return@runWriteAction
 
             val outputClass = l10nContentService.getOutputClass()
-            val localizationsDelegateArgument =
-                createNamedArgument(project, "localizationsDelegates", "$outputClass.localizationsDelegates")
-            if (localizationsDelegateArgument != null) {
-                argumentList.add(localizationsDelegateArgument)
+            // Use textual forms for insertion into the temporary argument list builder
+            val localizationsDelegateText = "localizationsDelegates: ${outputClass}.localizationsDelegates"
+            val supportedLocalesText = "supportedLocales: ${outputClass}.supportedLocales"
+
+            // Build a new argument-list string by inspecting PSI children (avoid naive split on commas that breaks nested commas)
+            val children = argumentList.children.filter { it.text.trim().isNotEmpty() }
+            val existingParts = children
+                .map { it.text.trim() }
+                .filter { it != "," && it != "(" && it != ")" }
+                .toMutableList()
+
+            // Find index of a `child:` argument if present (match leading 'child' or 'child:')
+            val childIndex = existingParts.indexOfFirst { it.startsWith("child") || it.startsWith("child:") }
+
+            if (childIndex >= 0) {
+                existingParts.add(childIndex, localizationsDelegateText)
+                existingParts.add(childIndex + 1, supportedLocalesText)
+            } else {
+                // append at end
+                existingParts.add(localizationsDelegateText)
+                existingParts.add(supportedLocalesText)
             }
 
-            val supportedLocalesArgument =
-                createNamedArgument(project, "supportedLocales", "$outputClass.supportedLocales")
-            if (supportedLocalesArgument != null) {
-                argumentList.add(supportedLocalesArgument)
-            }
+            val newInner = existingParts.joinToString(", ")
+            val newArgsText = "($newInner)"
+
+            // Create a temporary call to obtain a properly parsed argument list and replace the dummy one
+            val temp = DartElementGenerator.createDummyFile(project, "void main() { dummy$newArgsText; }")
+            val tempCall = PsiTreeUtil.findChildOfType(temp, DartCallExpression::class.java)
+            val newArgList = tempCall?.arguments?.argumentList ?: return@runWriteAction
+
+            argumentList.replace(newArgList)
 
             // Add import to the dummy file
             importFixer.addTranslationImportIfMissing(project, elementInDummy)
 
-            // 3. (Highly Recommended) Reformat the modified element to fix spacing and add commas.
+            // 3. (Highly Recommended) Reformat the modified element to fix spacing and ensure commas, etc.
             CodeStyleManager.getInstance(project).reformat(elementInDummy)
         }
 
