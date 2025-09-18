@@ -5,25 +5,32 @@ Use AI to internationalize your Flutter apps in Android Studio.
 
 ## Features
 
-1. **Internationalize file/directory**: Right click file or directory, select translate file/directory, choose strings to translate (e.g. print statements you may ignore). Get a best guess for the intl keys (i.e. based on context of the file, and also filename) by AI. Accept and translate to all languages configured in your project.
 
-2. **Translate to new Language**: You can right-click on an `.arb` (Application Resource Bundle) file in the project view and choose the "Translate this to new Arb file" option. This action translates the entire file.
+1. **SetUp intl**: If INTL is not yet set up: right click anywhere and click "Setup Flutter Intl". It will add imports, and fix your MaterialApp/CupertinoApps based on your settings 
+2. **Internationalize file/directory**: Right click file or directory, select translate file/directory, choose strings to translate (e.g. print statements you may ignore). Get a best guess for the intl keys (i.e. based on context of the file, and also filename) by AI. Accept and translate to all languages configured in your project.
+3. **Translate to new Language**: You can right-click on an `.arb` (Application Resource Bundle) file in the project view and choose the "Translate this to new Arb file" option. This action translates the entire file.
 
-3. **Translate missing keys**: go to untranslated-messages.txt and right-click anywhere, choose "Translate missing keys"  This will translate all missing keys in your project.
+4. **Translate missing keys**: go to untranslated-messages.txt and right-click anywhere, choose "Translate missing keys"  This will translate all missing keys in your project.
 
-4. **Custom instructions**: You can customize the instructions for the AI model to suit your translation needs. This allows you to provide specific guidelines or context for the translations.
+5. **Custom instructions**: You can customize the instructions for the AI model to suit your translation needs. This allows you to provide specific guidelines or context for the translations.
 
-5. **Select model**: You can choose between different AI models (e.g., gemini-flash, ...). I choose Gemini, because it's affordable, ridiculously fast and works well for this use case. Initially I had used openAI, but you all know what happened to them. They got steamrolled.
+6. **Select model**: You can choose between different AI models (e.g., gemini-flash, ...). I choose Gemini, because it's affordable, ridiculously fast and works well for this use case. Initially I had used openAI, but you all know what happened to them. They got steamrolled.
 
 ## Requirements 
 
-To use this plugin, you need a Gemini API key. Please make sure you have the API key before proceeding.
+Nothing, but rate limits will apply - Please use a Gemini API Key.
 
 ## Possible Improvements
 Here are some ideas, if you want to improve (sorry for the code base)
 
-### Gemini without API key
-Gemini has a free tier, with very strict limitations, but that's enough for an initial test for users. If they want to speed up things, they can add their own API key.
+### separate tree for ignored entries
+
+- When localizing, some things are just never localized
+- Don't mark them by default
+- how to identify them? hash with file + context + string
+- show them in a separate view somehow.
+- mark them as ignored, when not translated, once
+- still show them (e.g. in a second tab, when tabbed (ignored from previous runs)
 
 ### Performance Speedup by translating multiple keys per request instead of one
 
@@ -37,11 +44,6 @@ e.g. when we translate a file there are many common buttons, like e.g. Cancel, S
 
 ### error on existing keys
 currently you can add existing keys, which is an error
-
-### autocomplete
-
-- add autocomplete for arb keys
-- a template to add intl import and the (AppLocalizations.of(ctx).<cursor>)
 
 ## Disclaimer
 

@@ -6,6 +6,8 @@ linter: jetbrains/qodana-jvm-community:2024.3
 projectJDK: "21"
 profile:
   name: qodana.recommended
+  some:
+    more: nice
 exclude:
   - name: All
     paths:

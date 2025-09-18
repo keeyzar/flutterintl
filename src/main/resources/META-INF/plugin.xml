@@ -112,5 +112,12 @@
                         <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
                         <add-to-group group-id="EditorPopupMenu" anchor="last"/>
                     </action>
+
+                    <action id="de.keeyzar.gpthelper.gpthelper.features.setup.presentation.actions.SetupIntlAction"
+                            class="de.keeyzar.gpthelper.gpthelper.features.setup.presentation.actions.SetupIntlAction"
+                            text="Setup Flutter Intl"
+                            description="Sets up Flutter Internationalization for the current project.">
+                        <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
+                    </action>
                 </actions>
             </idea-plugin>

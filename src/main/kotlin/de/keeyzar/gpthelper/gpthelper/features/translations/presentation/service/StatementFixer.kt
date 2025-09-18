@@ -13,12 +13,14 @@ import com.jetbrains.lang.dart.psi.DartShortTemplateEntry
 import com.jetbrains.lang.dart.util.DartElementGenerator
 import de.keeyzar.gpthelper.gpthelper.features.psiutils.DartConstModifierFinder
 import de.keeyzar.gpthelper.gpthelper.features.shared.infrastructure.model.UserSettings
+import de.keeyzar.gpthelper.gpthelper.features.shared.infrastructure.service.L10NContentService
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.UserSettingsRepository
 
 class StatementFixer(
     private val userSettingsRepository: UserSettingsRepository,
     private val dartConstModifierFinder: DartConstModifierFinder,
     private val flutterPsiService: FlutterPsiService,
+    private val l10nContentService: L10NContentService
 ) {
     /**
      * create a statement like this
@@ -31,10 +33,9 @@ class StatementFixer(
             fixStatementAdvanced(project, element, desiredKey);
             return
         }
-        val userSettings = userSettingsRepository.getSettings()
         WriteCommandAction.runWriteCommandAction(project) {
             CommandProcessor.getInstance().executeCommand(project, {
-                val newStatement = createStatement(element, desiredKey, userSettings)
+                val newStatement = createStatement(element, desiredKey)
                 checkForConstExpressionsInHierarchy(element)
                 replaceStatementWithNewStatement(element, newStatement)
             }, "translation", "translate")
@@ -53,10 +54,9 @@ class StatementFixer(
     }
 
     private fun fixStatementAdvanced(project: Project, element: PsiElement, desiredKey: String) {
-        val userSettings = userSettingsRepository.getSettings()
         WriteCommandAction.runWriteCommandAction(project) {
             CommandProcessor.getInstance().executeCommand(project, {
-                var newStatement = createStatement(element, desiredKey, userSettings)
+                var newStatement = createStatement(element, desiredKey)
                 val argumentList = appendVariablesToStatement(element)
                 if(argumentList != "") {
                     newStatement = newStatement.removeSuffix(",") + argumentList + ","
@@ -108,12 +108,12 @@ class StatementFixer(
         }
     }
 
-    internal fun createStatement(element: PsiElement, desiredKey: String, userSettings: UserSettings = userSettingsRepository.getSettings()): String {
-        val nullableGetter = when (userSettings.nullableGetter) {
+    internal fun createStatement(element: PsiElement, desiredKey: String): String {
+        val nullableGetter = when (l10nContentService.getNullableGetter()) {
             true -> "!"
             false -> ""
         }
-        val outputClass = userSettings.outputClass
+        val outputClass = l10nContentService.getOutputClass()
         val contextName = flutterPsiService.findBuildContextName(element) ?: "context"
 
         return "$outputClass.of($contextName)$nullableGetter.$desiredKey"

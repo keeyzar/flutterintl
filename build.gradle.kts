@@ -73,12 +73,13 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter:5.8.0")
     testImplementation("org.assertj:assertj-core:3.24.2")
     testImplementation("io.insert-koin:koin-test:$koin_version")
-    testImplementation("org.mockito:mockito-core:5.3.1")
-    testImplementation("org.mockito.kotlin:mockito-kotlin:4.1.0")
+    testImplementation("org.mockito:mockito-core:5.12.0")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:5.4.0")
 
     implementation("org.mapstruct:mapstruct:1.6.3")
     kapt("org.mapstruct:mapstruct-processor:1.6.3")
     runtimeOnly("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2") //in context of gradle.properties with kotlin.stdlib.default.dependency
+    implementation("org.yaml:snakeyaml:2.5")
 }
 
 // Configure IntelliJ Platform Gradle Plugin - read more: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-extension.html

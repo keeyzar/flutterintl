@@ -48,7 +48,19 @@ import de.keeyzar.gpthelper.gpthelper.features.review.domain.service.ReviewServi
 import de.keeyzar.gpthelper.gpthelper.features.review.infrastructure.mapper.ReviewSettingsMapper
 import de.keeyzar.gpthelper.gpthelper.features.review.infrastructure.repository.IdeaReviewRepository
 import de.keeyzar.gpthelper.gpthelper.features.review.infrastructure.service.IdeaOpenPageService
+import de.keeyzar.gpthelper.gpthelper.features.setup.domain.service.AppReferenceProvider
+import de.keeyzar.gpthelper.gpthelper.features.setup.domain.service.SetupService
+import de.keeyzar.gpthelper.gpthelper.features.setup.domain.service.UserInstallDialogs
+import de.keeyzar.gpthelper.gpthelper.features.setup.domain.service.YamlModificationService
+import de.keeyzar.gpthelper.gpthelper.features.setup.infrastructure.service.IdeaAppReferenceProvider
+import de.keeyzar.gpthelper.gpthelper.features.setup.infrastructure.service.IdeaUserInstallDialogs
+import de.keeyzar.gpthelper.gpthelper.features.setup.infrastructure.service.IdeaYamlModificationService
+import de.keeyzar.gpthelper.gpthelper.features.shared.domain.service.InstallFileProvider
+import de.keeyzar.gpthelper.gpthelper.features.shared.domain.service.PathProvider
 import de.keeyzar.gpthelper.gpthelper.features.shared.domain.service.ThreadingService
+import de.keeyzar.gpthelper.gpthelper.features.shared.infrastructure.service.IdeaInstallFileProvider
+import de.keeyzar.gpthelper.gpthelper.features.shared.infrastructure.service.IdeaPathProvider
+import de.keeyzar.gpthelper.gpthelper.features.shared.infrastructure.service.L10NContentService
 import de.keeyzar.gpthelper.gpthelper.features.shared.infrastructure.utils.JsonUtils
 import de.keeyzar.gpthelper.gpthelper.features.shared.infrastructure.utils.ObjectMapperProvider
 import de.keeyzar.gpthelper.gpthelper.features.shared.presentation.mapper.UserSettingsDTOMapper
@@ -166,7 +178,8 @@ fun createAppModule(project: Project): Module {
         single<LanguageFileFinder> { LanguageFileFinder(get()) }
         single<TranslationRequestResponseMapper> { TranslationRequestResponseMapper(get()) }
         single<ImportFixer> { ImportFixer(get()) }
-        single<StatementFixer> { StatementFixer(get(), get(), get()) }
+        single<L10NContentService> { L10NContentService(project) }
+        single<StatementFixer> { StatementFixer(get(), get(), get(), get()) }
         single<TranslationTaskBackgroundProgress> { TranslationTaskBackgroundProgress(get()) }
         single<UserSettingsMapper> { Mappers.getMapper(UserSettingsMapper::class.java) }
         single<FlutterFileRepository> { FlutterFileRepository() }
@@ -266,5 +279,11 @@ fun createAppModule(project: Project): Module {
         single<GeneralErrorHandler> { GeneralErrorHandler() }
         single<ExistingKeyFinder> { ExistingKeyFinder(get(), get()) }
         single<GatherUserInputService> { FlutterArbUserInputService(get()) }
+        single<SetupService> { SetupService(get(), get(), get(), get(), get()) }
+        single<PathProvider> { IdeaPathProvider(project) }
+        single<UserInstallDialogs> { IdeaUserInstallDialogs(project) }
+        single<InstallFileProvider> { IdeaInstallFileProvider(project) }
+        single<AppReferenceProvider> { IdeaAppReferenceProvider(project, get(), get()) }
+        single<YamlModificationService> { IdeaYamlModificationService(project) }
     }
 }

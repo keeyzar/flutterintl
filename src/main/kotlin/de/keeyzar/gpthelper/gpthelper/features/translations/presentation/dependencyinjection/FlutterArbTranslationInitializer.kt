@@ -15,6 +15,7 @@ import de.keeyzar.gpthelper.gpthelper.features.missingtranslations.domain.contro
 import de.keeyzar.gpthelper.gpthelper.features.psiutils.DartStringLiteralHelper
 import de.keeyzar.gpthelper.gpthelper.features.psiutils.LiteralInContextFinder
 import de.keeyzar.gpthelper.gpthelper.features.psiutils.arb.ArbPsiUtils
+import de.keeyzar.gpthelper.gpthelper.features.setup.domain.service.SetupService
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.controller.TranslationProcessController
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.service.ContextProvider
 import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.service.LastStatementProviderForFlutterArbTranslation
@@ -47,7 +48,8 @@ class FlutterArbTranslationInitializer(
     val orchestrator: AutoLocalizeOrchestrator,
     val existingKeyFinder: ExistingKeyFinder,
     val statementFixer: StatementFixer,
-    val importFixer: ImportFixer
+    val importFixer: ImportFixer,
+    val setupService: SetupService,
 ) {
     companion object {
         fun create(project: Project): FlutterArbTranslationInitializer {
@@ -72,7 +74,8 @@ class FlutterArbTranslationInitializer(
                 orchestrator = koin.get(),
                 existingKeyFinder = koin.get(),
                 statementFixer = koin.get(),
-                importFixer = koin.get()
+                importFixer = koin.get(),
+                setupService = koin.get(),
             )
         }
     }

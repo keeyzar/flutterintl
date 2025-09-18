@@ -4,6 +4,13 @@
 
 ## [Unreleased]
 
+## [2.0.10] - 2025-09-18
+
+### Added
+
+- NEW FEATURE: SetUp Flutter intl: right click any file in Project View, and select "Setup Flutter Intl" if required
+- Partially: Import / created statements already use l10n.yaml file instead of settings - refactor is not entirely complete, though
+
 ## [2.0.9] - 2025-09-16
 
 ### Added
