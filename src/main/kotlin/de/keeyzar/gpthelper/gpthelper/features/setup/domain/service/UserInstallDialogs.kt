@@ -9,4 +9,5 @@ interface UserInstallDialogs {
     fun confirmL10nConfiguration(config: String): Boolean
     fun confirmProjectFileModification(diffContent: String): String?
     fun selectAppFile(files: List<String>): String?
+    fun showInfo(title: String, message: String)
 }

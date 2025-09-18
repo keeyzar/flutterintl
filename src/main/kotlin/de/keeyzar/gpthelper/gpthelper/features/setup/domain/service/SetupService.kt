@@ -47,7 +47,7 @@ class SetupService(
                 return
             }
         } else {
-            println("Dependencies are already installed.")
+            userInstallDialogs.showInfo("Dependencies already installed", "Your pubspec.yaml is already configured with flutter_localizations and intl.")
         }
 
         // Step 2: Check and configure l10n.yaml
@@ -58,7 +58,7 @@ class SetupService(
                 return
             }
         } else {
-            println("l10n.yaml is already configured.")
+            userInstallDialogs.showInfo("l10n.yaml already configured", "Your l10n.yaml is already configured.")
         }
 
         // Step 3: Modify MaterialApp/CupertinoApp
@@ -70,10 +70,10 @@ class SetupService(
                 return
             }
         } else {
-            println("Project already seems to be configured for localization.")
+            userInstallDialogs.showInfo("Localization already integrated", "Your intl is already integrated into your Flutter app.")
         }
 
-        println("Setup orchestration finished successfully!")
+        userInstallDialogs.showInfo("Localization setup done", "Your intl is already successfully installed.")
     }
 
     /**
@@ -82,10 +82,9 @@ class SetupService(
      */
     fun isInstalled(model: SetupProcessModel): Boolean {
         val yaml = Yaml()
-        val pubspec = yaml.load<Map<String, Any>>(model.pubspecContent)
-        return (pubspec["dependencies"] as? Map<String, *>)?.run {
-            containsKey("flutter_localizations") && containsKey("intl")
-        } ?: false
+        val loaded = yaml.load<Any>(model.pubspecContent) as? Map<*, *> ?: return false
+        val dependencies = loaded["dependencies"] as? Map<*, *> ?: return false
+        return dependencies.containsKey("flutter_localizations") && dependencies.containsKey("intl")
     }
 
     /**

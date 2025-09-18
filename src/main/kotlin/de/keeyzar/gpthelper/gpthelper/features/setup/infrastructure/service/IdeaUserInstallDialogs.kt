@@ -5,6 +5,7 @@ import com.intellij.diff.DiffManager
 import com.intellij.diff.requests.SimpleDiffRequest
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
+import com.intellij.openapi.ui.Messages
 import de.keeyzar.gpthelper.gpthelper.features.setup.domain.service.UserInstallDialogs
 import org.jetbrains.yaml.YAMLFileType
 import javax.swing.JComponent
@@ -64,5 +65,9 @@ class IdeaUserInstallDialogs(private val project: Project) : UserInstallDialogs 
         val choice = 0
         println("User chose index: $choice")
         return files.getOrNull(choice)
+    }
+
+    override fun showInfo(title: String, message: String) {
+        Messages.showInfoMessage(project, message, title)
     }
 }
