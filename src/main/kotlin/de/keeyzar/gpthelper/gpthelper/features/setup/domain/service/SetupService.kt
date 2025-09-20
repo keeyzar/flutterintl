@@ -1,8 +1,9 @@
 package de.keeyzar.gpthelper.gpthelper.features.setup.domain.service
 
 import de.keeyzar.gpthelper.gpthelper.features.setup.domain.model.SetupProcessModel
-import de.keeyzar.gpthelper.gpthelper.features.shared.domain.service.PathProvider
 import de.keeyzar.gpthelper.gpthelper.features.shared.domain.service.InstallFileProvider
+import de.keeyzar.gpthelper.gpthelper.features.shared.domain.service.PathProvider
+import de.keeyzar.gpthelper.gpthelper.features.translations.domain.service.ConsoleService
 import org.yaml.snakeyaml.Yaml
 import java.nio.file.Paths
 
@@ -11,7 +12,8 @@ class SetupService(
     private val userInstallDialogs: UserInstallDialogs,
     private val fileProvider: InstallFileProvider,
     private val appReferenceProvider: AppReferenceProvider,
-    private val yamlModificationService: YamlModificationService
+    private val yamlModificationService: YamlModificationService,
+    private val terminalConsoleService: ConsoleService
 ) {
     /**
      * Orchestrates the entire setup process, step by step.
@@ -47,11 +49,14 @@ class SetupService(
                 return
             }
         } else {
-            userInstallDialogs.showInfo("Dependencies already installed", "Your pubspec.yaml is already configured with flutter_localizations and intl.")
+            userInstallDialogs.showInfo(
+                "Dependencies already installed",
+                "Your pubspec.yaml is already configured with flutter_localizations and intl."
+            )
         }
 
         // Step 2: Check and configure l10n.yaml
-        if (!isL10nConfigured(model, l10nPath)) {
+        if (!isL10nConfigured(l10nPath)) {
             val success = configureIntl(model, l10nPath)
             if (!success) {
                 println("User declined l10n.yaml configuration. Aborting.")
@@ -70,9 +75,13 @@ class SetupService(
                 return
             }
         } else {
-            userInstallDialogs.showInfo("Localization already integrated", "Your intl is already integrated into your Flutter app.")
+            userInstallDialogs.showInfo(
+                "Localization already integrated",
+                "Your intl is already integrated into your Flutter app."
+            )
         }
 
+        terminalConsoleService.executeCommand("flutter gen-l10n")
         userInstallDialogs.showInfo("Localization setup done", "Your intl is already successfully installed.")
     }
 
@@ -94,11 +103,13 @@ class SetupService(
     fun installIntl(model: SetupProcessModel, pubspecPath: String): Boolean {
         var newContent = model.pubspecContent
 
-        newContent = yamlModificationService.addDependency(newContent, "flutter_localizations", mapOf("sdk" to "flutter"))
+        newContent =
+            yamlModificationService.addDependency(newContent, "flutter_localizations", mapOf("sdk" to "flutter"))
         newContent = yamlModificationService.addDependency(newContent, "intl", "any")
         newContent = yamlModificationService.addFlutterGenerate(newContent)
 
-        val acceptedContent = userInstallDialogs.showDiff("Install Localization Libraries", model.pubspecContent, newContent)
+        val acceptedContent =
+            userInstallDialogs.showDiff("Install Localization Libraries", model.pubspecContent, newContent)
         if (acceptedContent != null) {
             model.pubspecContent = acceptedContent
             fileProvider.writeFile(pubspecPath, acceptedContent)
@@ -110,7 +121,7 @@ class SetupService(
     /**
      * Checks if l10n.yaml exists and contains required keys.
      */
-    fun isL10nConfigured(model: SetupProcessModel, l10nPath: String): Boolean {
+    fun isL10nConfigured(l10nPath: String): Boolean {
         if (!fileProvider.fileExists(l10nPath)) return false
         val yaml = Yaml()
         return yaml.load<Map<String, Any>>(fileProvider.readFile(l10nPath) ?: return false).run {
@@ -130,12 +141,27 @@ class SetupService(
             "untranslated-messages-file" to "untranslated_messages.txt",
             "nullable-getter" to true
         )
-        val yaml = Yaml()
-        val l10nConfig = yaml.dump(l10nConfigMap)
+        val l10nConfig = yamlModificationService.createL10nYaml(l10nConfigMap)
         val accepted = userInstallDialogs.confirmL10nConfiguration(l10nConfig)
         if (accepted) {
             model.l10nFileContent = l10nConfig
             fileProvider.writeFile(l10nPath, l10nConfig)
+
+            // Ensure arb-dir exists and create a dummy template file if it doesn't
+            val arbDir = l10nConfigMap["arb-dir"] as String
+            val templateFileName = l10nConfigMap["template-arb-file"] as String
+            val rootPath = pathProvider.getRootPath()
+            val arbDirPath = Paths.get(rootPath, arbDir)
+            val templateFilePath = Paths.get(arbDirPath.toString(), templateFileName)
+
+            if (!fileProvider.fileExists(templateFilePath.toString())) {
+                fileProvider.writeFile(
+                    templateFilePath.toString(),
+                    """{
+                                "hello_world": "Hi! You set up intl!"
+                            }""".trimIndent()
+                ) //this is fine
+            }
         }
         return accepted
     }
@@ -158,7 +184,7 @@ class SetupService(
         }
 
         // For each reference, create a dummy modified version and collect changes
-        val changes = mutableListOf<de.keeyzar.gpthelper.gpthelper.features.setup.domain.service.ProjectFileChange>()
+        val changes = mutableListOf<ProjectFileChange>()
         for (ref in references) {
             val original = appReferenceProvider.getContent(ref) ?: continue
             val modified = appReferenceProvider.enableLocalizationOnDummy(ref) ?: continue

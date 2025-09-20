@@ -1,5 +1,7 @@
 package de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.client
 
+import com.google.genai.types.GenerateContentConfig
+import com.google.genai.types.ThinkingConfig
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.client.BestGuessL10nClient
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.client.BestGuessRequest
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.client.BestGuessResponse
@@ -75,7 +77,11 @@ class GeminiBestGuessClient(
         val response = gemini.models.generateContent(
             modelId,
             request,
-            null
+            GenerateContentConfig.builder()
+                .thinkingConfig(ThinkingConfig.builder()
+                    .thinkingBudget(0)
+                    .build())
+                .build()
         )
 
         val resultText = response.text() ?: throw BestGuessClientException("Gemini hat nicht geantwortet oder die Antwort war leer.")

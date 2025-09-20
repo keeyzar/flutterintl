@@ -6,18 +6,19 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.terminal.ui.TerminalWidget
+import de.keeyzar.gpthelper.gpthelper.features.translations.domain.service.ConsoleService
 import org.jetbrains.plugins.terminal.TerminalToolWindowFactory
 import org.jetbrains.plugins.terminal.TerminalToolWindowManager
 import java.util.*
 import kotlin.concurrent.schedule
 
-class IdeaTerminalConsoleService {
-
+class IdeaTerminalConsoleService(
+    private val project: Project) : ConsoleService {
     companion object {
         const val TAB_NAME_FOR_L10N_GENERATION = "L10N Generation"
     }
 
-    fun executeCommand(project: Project, command: String) {
+    override fun executeCommand(command: String) {
         ApplicationManager.getApplication().invokeLater {
             val terminalView = TerminalToolWindowManager.getInstance(project)
             val window = ToolWindowManager.getInstance(project).getToolWindow(TerminalToolWindowFactory.TOOL_WINDOW_ID)

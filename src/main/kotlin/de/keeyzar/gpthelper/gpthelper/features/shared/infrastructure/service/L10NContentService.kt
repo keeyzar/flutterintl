@@ -1,5 +1,7 @@
 package de.keeyzar.gpthelper.gpthelper.features.shared.infrastructure.service
 
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.psi.PsiManager
@@ -12,17 +14,21 @@ class L10NContentService(private val project: Project) {
 
 
     fun getProjectName(): String {
-        val basePath = project.basePath ?: throw IllegalStateException("Project base path is null")
-        val pubspecPath = Paths.get(basePath, "pubspec.yaml")
-        val pubspecFile =
-            VfsUtil.findFile(pubspecPath, true) ?: throw IllegalStateException("pubspec.yaml not found at $pubspecPath")
-        val psiFile = PsiManager.getInstance(project).findFile(pubspecFile) as? YAMLFile
-            ?: throw IllegalStateException("Could not parse pubspec.yaml as YAML file.")
+        return runReadAction {
+            val basePath = project.basePath ?: throw IllegalStateException("Project base path is null")
+            val pubspecPath = Paths.get(basePath, "pubspec.yaml")
+            val pubspecFile =
+                VfsUtil.findFile(pubspecPath, true)
+                    ?: throw IllegalStateException("pubspec.yaml not found at $pubspecPath")
+            val psiFile = PsiManager.getInstance(project).findFile(pubspecFile) as? YAMLFile
+                ?: throw IllegalStateException("Could not parse pubspec.yaml as YAML file.")
 
-        return PsiTreeUtil.findChildrenOfType(psiFile, YAMLKeyValue::class.java)
-            .firstOrNull { it.keyText == "name" }
-            ?.valueText
-            ?: throw IllegalStateException("Could not find 'name' in pubspec.yaml")
+            PsiTreeUtil.findChildrenOfType(psiFile, YAMLKeyValue::class.java)
+                .firstOrNull { it.keyText == "name" }
+                ?.valueText
+                ?: throw IllegalStateException("Could not find 'name' in pubspec.yaml")
+        }
+
     }
 
     fun getArbDir(): String {
@@ -49,14 +55,16 @@ class L10NContentService(private val project: Project) {
     }
 
     private fun getL10nYamlValue(key: String): String? {
-        val basePath = project.basePath ?: return null
-        val l10nPath = Paths.get(basePath, "l10n.yaml")
-        val l10nVirtual = VfsUtil.findFile(l10nPath, true) ?: return null
-        val psiFile = PsiManager.getInstance(project).findFile(l10nVirtual) as? YAMLFile ?: return null
+        return runReadAction {
+            val basePath = project.basePath ?: return@runReadAction null
+            val l10nPath = Paths.get(basePath, "l10n.yaml")
+            val l10nVirtual = VfsUtil.findFile(l10nPath, true) ?: return@runReadAction null
+            val psiFile = PsiManager.getInstance(project).findFile(l10nVirtual) as? YAMLFile ?: return@runReadAction null
 
-        return PsiTreeUtil.findChildrenOfType(psiFile, YAMLKeyValue::class.java)
-            .firstOrNull { it.keyText == key }
-            ?.valueText
+            PsiTreeUtil.findChildrenOfType(psiFile, YAMLKeyValue::class.java)
+                .firstOrNull { it.keyText == key }
+                ?.valueText
+        }
     }
 
 }

@@ -43,10 +43,8 @@ class IdeaUserInstallDialogs(private val project: Project) : UserInstallDialogs 
     }
 
     override fun confirmL10nConfiguration(config: String): Boolean {
-        println("We did not find a l10n.yaml file. We will create one with the following configuration, is this okay?")
-        println(config)
-        println("User clicks 'OK'")
-        return true
+        val acceptedContent = showDiff("l10n.yaml Configuration", "", config)
+        return acceptedContent != null
     }
 
     override fun confirmProjectFileModification(diffContent: String): String? {

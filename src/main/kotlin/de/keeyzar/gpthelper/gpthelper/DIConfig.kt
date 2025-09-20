@@ -110,7 +110,7 @@ fun createAppModule(project: Project): Module {
         single<JsonChunkMerger> { JsonChunkMerger(get()) }
         single<JsonFileChunker> { JsonFileChunker(get()) }
         single<TranslationProgressBus> { IdeaTranslationProgressBus(get()) }
-        single<IdeaTerminalConsoleService> { IdeaTerminalConsoleService() }
+        single<ConsoleService> { IdeaTerminalConsoleService(project) }
         single<FlutterIntlSettingsRepository> {
             IdeaFlutterIntlSettingsRepository(
                 get(),
@@ -157,7 +157,7 @@ fun createAppModule(project: Project): Module {
                 get()
             )
         }
-        single<ExternalTranslationProcessService> { FlutterGenCommandProcessService(get(), get()) }
+        single<ExternalTranslationProcessService> { FlutterGenCommandProcessService(get()) }
         single<TranslationErrorProcessHandler> { IdeaTranslationErrorProcessHandlerImpl() }
         single<FlutterPsiService> { FlutterPsiService() }
         single<TranslationProcessController> {
@@ -186,7 +186,6 @@ fun createAppModule(project: Project): Module {
         single<FormatTranslationFileContentService> { ArbFormatTranslationFileContentService(get()) }
         single<TaskAmountCalculator> { TranslateKeyTaskAmountCalculator() }
         single<TranslationTriggeredHooks> { TranslateKeyTranslationTriggeredHooks(get(), get()) }
-        single<FlutterGenCommandProcessService> { FlutterGenCommandProcessService(get(), get()) }
         single<OngoingTranslationHandler> { OngoingTranslationHandler(get(), get(), get()) }
         single<FlutterArbCurrentFileModificationService> {
             FlutterArbCurrentFileModificationService(
@@ -279,7 +278,7 @@ fun createAppModule(project: Project): Module {
         single<GeneralErrorHandler> { GeneralErrorHandler() }
         single<ExistingKeyFinder> { ExistingKeyFinder(get(), get()) }
         single<GatherUserInputService> { FlutterArbUserInputService(get()) }
-        single<SetupService> { SetupService(get(), get(), get(), get(), get()) }
+        single<SetupService> { SetupService(get(), get(), get(), get(), get(), get()) }
         single<PathProvider> { IdeaPathProvider(project) }
         single<UserInstallDialogs> { IdeaUserInstallDialogs(project) }
         single<InstallFileProvider> { IdeaInstallFileProvider(project) }

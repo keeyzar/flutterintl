@@ -4,6 +4,15 @@
 
 ## [Unreleased]
 
+## [2.0.12] - 2025-09-20
+
+### Added
+
+- speed up key guess generation - thinking budget is likely not required
+
+### Bugfix
+ 
+- setup-intl now also fixes l10n file, if it's not existing
 
 ## [2.0.11] - 2025-09-18
 
@@ -12,7 +21,6 @@
 - NEW FEATURE: SetUp Flutter intl: right click any file in Project View, and select "Setup Flutter Intl" if required
 - Partially: Import / created statements already use l10n.yaml file instead of settings - refactor is not entirely complete, though
 - Ask on project startup for set-up (once)
-
 
 ## [2.0.10] - 2025-09-18
 
@@ -212,7 +220,8 @@
 
 - initial release
 
-[Unreleased]: https://github.com/keeyzar/gpt-helper/compare/v2.0.10...HEAD
+[Unreleased]: https://github.com/keeyzar/gpt-helper/compare/v2.0.11...HEAD
+[2.0.11]: https://github.com/keeyzar/gpt-helper/compare/v2.0.10...v2.0.11
 [2.0.10]: https://github.com/keeyzar/gpt-helper/compare/v2.0.9...v2.0.10
 [2.0.9]: https://github.com/keeyzar/gpt-helper/compare/v2.0.8...v2.0.9
 [2.0.8]: https://github.com/keeyzar/gpt-helper/compare/v2.0.7...v2.0.8

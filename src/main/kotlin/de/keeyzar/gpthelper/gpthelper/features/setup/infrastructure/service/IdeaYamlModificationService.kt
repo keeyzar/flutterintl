@@ -3,6 +3,7 @@ package de.keeyzar.gpthelper.gpthelper.features.setup.infrastructure.service
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFileFactory
+import com.intellij.psi.codeStyle.CodeStyleManager
 import com.intellij.psi.util.PsiTreeUtil
 import de.keeyzar.gpthelper.gpthelper.features.setup.domain.service.YamlModificationService
 import org.jetbrains.yaml.YAMLElementGenerator
@@ -56,6 +57,30 @@ class IdeaYamlModificationService(private val project: Project) : YamlModificati
     private fun createYamlFile(content: String): YAMLFile {
         return PsiFileFactory.getInstance(project)
             .createFileFromText("dummy.yaml", YAMLFileType.YML, content) as YAMLFile
+    }
+
+    override fun createL10nYaml(l10nConfigMap: Map<String, Any>): String {
+        val yamlContentBuilder = StringBuilder()
+        l10nConfigMap.forEach { (key, value) ->
+            yamlContentBuilder.append("$key: ")
+            when (value) {
+                is Boolean -> yamlContentBuilder.append(value.toString())
+                is String -> yamlContentBuilder.append(value)
+                else -> throw IllegalArgumentException("Unsupported value type for l10n.yaml configuration")
+            }
+            yamlContentBuilder.append("\n")
+        }
+
+        val rawYamlContent = yamlContentBuilder.toString()
+        val dummyFile = PsiFileFactory.getInstance(project)
+            .createFileFromText("l10n.yaml", YAMLFileType.YML, rawYamlContent) as YAMLFile
+
+        // Reformat the file to ensure correct spacing and structure
+        WriteCommandAction.runWriteCommandAction(project) {
+            CodeStyleManager.getInstance(project).reformat(dummyFile)
+        }
+
+        return dummyFile.text
     }
 
     /**

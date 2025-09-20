@@ -8,7 +8,7 @@ import de.keeyzar.gpthelper.gpthelper.features.translations.infrastructure.servi
  * implements the domain service for the external translation process
  */
 class TranslateKeyTranslationTriggeredHooks(
-    private val flutterGenCommandProcessService: FlutterGenCommandProcessService,
+    private val flutterGenCommandProcessService: ExternalTranslationProcessService,
     private val currentFileModificationService: FlutterArbCurrentFileModificationService
 ) : TranslationTriggeredHooks {
     override fun translationTriggered(translation: Translation) {
