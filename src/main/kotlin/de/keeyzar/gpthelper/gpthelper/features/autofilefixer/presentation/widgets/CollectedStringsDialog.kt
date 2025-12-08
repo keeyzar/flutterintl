@@ -1,5 +1,6 @@
 package de.keeyzar.gpthelper.gpthelper.features.autofilefixer.presentation.widgets
 
+import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.openapi.ui.DialogWrapper
@@ -16,6 +17,7 @@ import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.builder.rows
 import com.intellij.util.ui.tree.TreeUtil
+import de.keeyzar.gpthelper.gpthelper.features.psiutils.SmartPsiElementWrapper
 import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.dependencyinjection.FlutterArbTranslationInitializer
 import java.awt.BorderLayout
 import java.awt.Dimension
@@ -27,7 +29,7 @@ import javax.swing.tree.TreePath
 
 class CollectedStringsDialog(
     private val project: Project,
-    private val stringLiteralsWithSelection: Map<PsiElement, Boolean>
+    private val stringLiteralsWithSelection: Map<SmartPsiElementWrapper<PsiElement>, Boolean>
 ) : DialogWrapper(project) {
 
     private lateinit var contextTextArea: JBTextArea
@@ -109,8 +111,16 @@ class CollectedStringsDialog(
         }
     }
 
-    private fun buildTree(stringLiteralsWithSelection: Map<PsiElement, Boolean>) {
-        val fileToLiteralsMap = stringLiteralsWithSelection.keys.groupBy { it.containingFile }
+    private fun buildTree(stringLiteralsWithSelection: Map<SmartPsiElementWrapper<PsiElement>, Boolean>) {
+        // Resolve all pointers to current PSI elements, filtering out invalidated ones
+        // SmartPointer.getElement() requires read access
+        val validElements = ReadAction.compute<Map<PsiElement, Boolean>, Throwable> {
+            stringLiteralsWithSelection.mapNotNull { (wrapper, selected) ->
+                wrapper.element?.let { it to selected }
+            }.toMap()
+        }
+
+        val fileToLiteralsMap = validElements.keys.groupBy { it.containingFile }
         val nodeMap = mutableMapOf<String, CheckedTreeNode>()
 
         for ((psiFile, literals) in fileToLiteralsMap) {
@@ -143,7 +153,7 @@ class CollectedStringsDialog(
             // Create literal nodes
             for (literal in literals) {
                 val literalNode = CheckedTreeNode(literal) // User object is the PsiElement
-                literalNode.isChecked = stringLiteralsWithSelection[literal] ?: true // Select based on map, default to true
+                literalNode.isChecked = validElements[literal] ?: true // Select based on map, default to true
                 fileNode.add(literalNode)
             }
         }

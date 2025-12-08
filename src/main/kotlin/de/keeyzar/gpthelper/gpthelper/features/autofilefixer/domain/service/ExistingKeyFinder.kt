@@ -5,6 +5,7 @@ import com.intellij.openapi.application.ReadAction
 import com.intellij.psi.PsiElement
 import com.jetbrains.lang.dart.psi.DartStringLiteralExpression
 import de.keeyzar.gpthelper.gpthelper.features.flutter_intl.infrastructure.service.ArbFilesService
+import de.keeyzar.gpthelper.gpthelper.features.psiutils.SmartPsiElementWrapper
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.Language
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.TranslationFileRepository
 import kotlinx.coroutines.Dispatchers
@@ -16,7 +17,10 @@ class ExistingKeyFinder(
     private val translationFileRepository: TranslationFileRepository,
     private val arbFilesService: ArbFilesService
 ) {
-    fun findExistingKeys(allEntries: List<PsiElement>): Map<PsiElement, String> {
+    fun findExistingKeys(allEntries: List<PsiElement>): Map<SmartPsiElementWrapper<PsiElement>, String> {
+        if (allEntries.isEmpty()) return emptyMap()
+
+        val project = allEntries.first().project
         val lang = ReadAction.compute<Language, RuntimeException> {
             arbFilesService.getBaseLanguage(null)
         }
@@ -46,7 +50,12 @@ class ExistingKeyFinder(
                 async(Dispatchers.Default) {
                     chunk.mapNotNull { (element, text) ->
                         findBestMatch(text, arbValueToKey)?.let { key ->
-                            element to key
+                            // SmartPointerManager.createSmartPsiElementPointer internally calls isValid()
+                            // which requires read access
+                            val wrapper = ReadAction.compute<SmartPsiElementWrapper<PsiElement>, RuntimeException> {
+                                SmartPsiElementWrapper.create(project, element)
+                            }
+                            wrapper to key
                         }
                     }
                 }

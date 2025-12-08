@@ -17,6 +17,7 @@ import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.clie
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.model.AutoLocalizeContext
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.presentation.widgets.CollectedStringsDialog
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.presentation.widgets.ExistingKeysDialog
+import de.keeyzar.gpthelper.gpthelper.features.psiutils.SmartPsiElementWrapper
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.entity.TranslationContext
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.service.VerifyTranslationSettingsService
 import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.dependencyinjection.FlutterArbTranslationInitializer
@@ -36,7 +37,7 @@ class AutoLocalizeOrchestrator(
 
         val initializer = FlutterArbTranslationInitializer.create(project)
         val stringLiteralHelper = initializer.dartStringLiteralHelper
-        val allLiteralsWithSelection: Map<PsiElement, Boolean> =
+        val allLiteralsWithSelection: Map<SmartPsiElementWrapper<PsiElement>, Boolean> =
             dartFiles.flatMap { stringLiteralHelper.findStringPsiElements(it).entries }
                 .associate { it.key to it.value }
 
@@ -44,7 +45,9 @@ class AutoLocalizeOrchestrator(
             return
         }
 
-        val existingKeys = initializer.existingKeyFinder.findExistingKeys(allLiteralsWithSelection.keys.toList())
+        // Resolve wrappers to get actual PSI elements for existing key finder
+        val resolvedElements = SmartPsiElementWrapper.unwrapList(allLiteralsWithSelection.keys.toList())
+        val existingKeys = initializer.existingKeyFinder.findExistingKeys(resolvedElements)
 
         var userChoiceForExistingKeys: Map<PsiElement, Boolean> = emptyMap()
         if (existingKeys.isNotEmpty()) {
@@ -54,7 +57,9 @@ class AutoLocalizeOrchestrator(
                     userChoiceForExistingKeys = dialog.getSelectedElements()
                 } else {
                     // User cancelled, so we assume they don't want to replace anything
-                    userChoiceForExistingKeys = existingKeys.keys.associateWith { false }
+                    // Resolve existing keys to PsiElements
+                    val resolvedKeys = SmartPsiElementWrapper.unwrapMap(existingKeys)
+                    userChoiceForExistingKeys = resolvedKeys.keys.associateWith { false }
                 }
             }
         }
@@ -68,10 +73,13 @@ class AutoLocalizeOrchestrator(
                 val importFixer = initializer.importFixer
                 val elementsByFile = elementsToReplace.groupBy { it.containingFile }
 
+                // Resolve existingKeys map to get the actual key strings
+                val resolvedExistingKeys = SmartPsiElementWrapper.unwrapMap(existingKeys)
+
                 elementsByFile.forEach { (file, elements) ->
                     importFixer.addTranslationImportIfMissing(project, file)
                     elements.forEach { element ->
-                        val key = existingKeys[element]
+                        val key = resolvedExistingKeys[element]
                         if (key != null) {
                             statementFixer.fixStatement(project, element, key)
                         }
@@ -80,7 +88,10 @@ class AutoLocalizeOrchestrator(
             }
         }
 
-        val remainingLiterals = allLiteralsWithSelection.filterKeys { it !in elementsToReplace }
+        val remainingLiterals = allLiteralsWithSelection.filterKeys { wrapper ->
+            val element = runReadAction { wrapper.element }
+            element !in elementsToReplace
+        }
 
         if (remainingLiterals.isEmpty()) {
             // No remaining literals to process (either all replaced or nothing to do)
@@ -173,8 +184,8 @@ class AutoLocalizeOrchestrator(
     private fun performAiPreFiltering(
         project: Project,
         initializer: FlutterArbTranslationInitializer,
-        remainingLiterals: Map<PsiElement, Boolean>
-    ): Map<PsiElement, Boolean> {
+        remainingLiterals: Map<SmartPsiElementWrapper<PsiElement>, Boolean>
+    ): Map<SmartPsiElementWrapper<PsiElement>, Boolean> {
         if (remainingLiterals.isEmpty()) {
             return remainingLiterals
         }
@@ -220,17 +231,27 @@ class AutoLocalizeOrchestrator(
                 }
             )
 
-            // Map results back to PsiElements
+            // Map results back to SmartPsiElementWrapper
             val resultMap = mutableMapOf<String, Boolean>()
             preFilterResponse.results.forEach { result ->
                 resultMap[result.id] = result.shouldTranslate
             }
 
+            // Create a map from PsiElement to wrapper for reverse lookup
+            val elementToWrapper = runReadAction {
+                candidatesForAi.mapNotNull { (wrapper, _) ->
+                    wrapper.element?.let { it to wrapper }
+                }.toMap()
+            }
+
             // Update selection based on AI results for candidates
-            val aiFilteredLiterals = mutableMapOf<PsiElement, Boolean>()
+            val aiFilteredLiterals = mutableMapOf<SmartPsiElementWrapper<PsiElement>, Boolean>()
             preFilterRequest.literals.forEach { literal ->
-                val shouldTranslate = resultMap[literal.id] ?: candidatesForAi[literal.psiElement] ?: false
-                aiFilteredLiterals[literal.psiElement] = shouldTranslate
+                val shouldTranslate = resultMap[literal.id] ?: false
+                val wrapper = elementToWrapper[literal.psiElement]
+                if (wrapper != null) {
+                    aiFilteredLiterals[wrapper] = shouldTranslate
+                }
             }
 
             // Merge with already-filtered strings (keep them as false)

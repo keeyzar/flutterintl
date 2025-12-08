@@ -2,6 +2,7 @@ package de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.cli
 
 import com.google.genai.types.GenerateContentConfig
 import com.google.genai.types.ThinkingConfig
+import com.intellij.openapi.diagnostic.Logger
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.client.BestGuessL10nClient
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.client.BestGuessRequest
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.client.BestGuessResponse
@@ -23,6 +24,8 @@ class GeminiBestGuessClient(
 
     companion object {
         const val PARALLELISM_THRESHOLD = 20
+        const val MAX_RETRY_ATTEMPTS = 3
+        private val LOG = Logger.getInstance(GeminiBestGuessClient::class.java)
     }
 
     private fun createRequestContent(bestGuessRequest: BestGuessRequest): String {
@@ -75,19 +78,47 @@ class GeminiBestGuessClient(
         val request = createRequestContent(bestGuessRequest)
         val thinkingBudget = getThinkingBudget(modelId)
 
-        val response = gemini.models.generateContent(
-            modelId,
-            request,
-            GenerateContentConfig.builder()
-                .thinkingConfig(ThinkingConfig.builder()
-                    .thinkingBudget(thinkingBudget)
-                    .build())
-                .build()
-        )
+        // Retry up to MAX_RETRY_ATTEMPTS times
+        repeat(MAX_RETRY_ATTEMPTS) { attempt ->
+            try {
+                val response = gemini.models.generateContent(
+                    modelId,
+                    request,
+                    GenerateContentConfig.builder()
+                        .thinkingConfig(ThinkingConfig.builder()
+                            .thinkingBudget(thinkingBudget)
+                            .build())
+                        .build()
+                )
 
-        val resultText = response.text() ?: throw BestGuessClientException("Gemini hat nicht geantwortet oder die Antwort war leer.")
-        progressReport?.invoke()
-        return bestGuessOpenAIResponseParser.parse(resultText)
+                val resultText = response.text()
+                    ?: throw BestGuessClientException("Gemini hat nicht geantwortet oder die Antwort war leer.")
+
+                progressReport?.invoke()
+
+                // Try to parse the response
+                return bestGuessOpenAIResponseParser.parse(resultText)
+
+            } catch (e: BestGuessClientException) {
+                LOG.warn("Attempt ${attempt + 1}/$MAX_RETRY_ATTEMPTS failed to parse Gemini response: ${e.message}")
+
+                // If this was the last attempt, log and return empty response
+                if (attempt == MAX_RETRY_ATTEMPTS - 1) {
+                    LOG.error("All $MAX_RETRY_ATTEMPTS attempts failed for batch with ${bestGuessRequest.context.literals.size} literals. Skipping this batch.", e)
+                }
+                // Otherwise, retry
+            } catch (e: Exception) {
+                LOG.warn("Attempt ${attempt + 1}/$MAX_RETRY_ATTEMPTS failed with unexpected error: ${e.message}", e)
+
+                if (attempt == MAX_RETRY_ATTEMPTS - 1) {
+                    LOG.error("All $MAX_RETRY_ATTEMPTS attempts failed with unexpected error. Skipping this batch.", e)
+                }
+            }
+        }
+
+        // If all retries failed, return empty response instead of throwing exception
+        LOG.info("Returning empty response for batch with ${bestGuessRequest.context.literals.size} literals after $MAX_RETRY_ATTEMPTS failed attempts")
+        return BestGuessResponse(emptyList())
     }
 
     private suspend fun parallelGuess(bestGuessRequest: BestGuessRequest, progressReport: (() -> Unit)?): BestGuessResponse = coroutineScope {
@@ -101,6 +132,8 @@ class GeminiBestGuessClient(
                         literals = chunk
                     )
                 )
+                // singleRequestGuess now returns empty response on failure after retries
+                // instead of throwing exception, so we can continue with other batches
                 val response = singleRequestGuess(chunkRequest, progressReport)
                 progressReport?.invoke()
                 response
@@ -109,6 +142,7 @@ class GeminiBestGuessClient(
 
         val responses = deferredResponses.awaitAll()
 
+        // Merge all responses (including empty ones from failed batches)
         val allGuesses = responses.flatMap { it.responseEntries }
         return@coroutineScope BestGuessResponse(allGuesses)
     }

@@ -20,29 +20,40 @@ class DartStringLiteralHelper(
 
     /**
      * this PsiElement is either a [DartStringLiteralExpression] or a [DartAdditiveExpression]
-     * @return a map of the psi element and a boolean, whether it should be preselected or not
+     * @return a map of the SmartPsiElementWrapper and a boolean, whether it should be preselected or not
      */
-    fun findStringPsiElements(psiFile: PsiFile): Map<PsiElement, Boolean> {
+    fun findStringPsiElements(psiFile: PsiFile): Map<SmartPsiElementWrapper<PsiElement>, Boolean> {
         //I bet there are some easier ways to do this. e.g. TreeUtils, get all string literals, get all additive expressions, only take additive expressions with children of the type string literal
         //and then remove all string literals, which are already part of the additive expressions (child)
         //anyway, seems to work for now
 
         //we have a list of filters, because over time we want to add more and more stuff to automatically be removed
-        return ReadAction.compute<Map<PsiElement, Boolean>, Throwable> {
-            val elements = findLiterals(psiFile)
+        return ReadAction.compute<Map<SmartPsiElementWrapper<PsiElement>, Boolean>, Throwable> {
+            val elements: Set<PsiElement> = findLiterals(psiFile)
                 .map { dartAdditiveExpressionExtractor.extractAdditiveExpression(it) ?: it }
                 .filter { stringLiteral ->
                     dartStringLiteralFilters.all { literalFilter ->
                         literalFilter.filter(stringLiteral)
                     }
-                }.toSet()
+                }
+                .map { it as PsiElement }
+                .toSet()
 
-            elements.associateWith { !isInsidePrintOrlLogStatement(it) }
+            val project = psiFile.project
+            elements.associate { element ->
+                SmartPsiElementWrapper.create(project, element) to !isInsidePrintOrlLogStatement(element)
+            }
         }
     }
 
-    fun filterPsiElements(elements: List<PsiElement>): Map<PsiElement, Boolean> {
-        return elements.associateWith { !isInsidePrintOrlLogStatement(it) }
+    fun filterPsiElements(elements: List<PsiElement>): Map<SmartPsiElementWrapper<PsiElement>, Boolean> {
+        if (elements.isEmpty()) return emptyMap()
+        val project = elements.first().project
+        return ReadAction.compute<Map<SmartPsiElementWrapper<PsiElement>, Boolean>, Throwable> {
+            elements.associate { element ->
+                SmartPsiElementWrapper.create(project, element) to !isInsidePrintOrlLogStatement(element)
+            }
+        }
     }
 
     private fun isInsidePrintOrlLogStatement(element: PsiElement): Boolean {

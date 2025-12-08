@@ -1,5 +1,6 @@
 package de.keeyzar.gpthelper.gpthelper.features.autofilefixer.presentation.widgets
 
+import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.openapi.ui.DialogWrapper
@@ -15,6 +16,7 @@ import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.builder.rows
 import com.intellij.util.ui.tree.TreeUtil
+import de.keeyzar.gpthelper.gpthelper.features.psiutils.SmartPsiElementWrapper
 import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.dependencyinjection.FlutterArbTranslationInitializer
 import java.awt.BorderLayout
 import java.awt.Dimension
@@ -26,7 +28,7 @@ import javax.swing.tree.TreePath
 
 class ExistingKeysDialog(
     private val project: Project,
-    private val existingKeys: Map<PsiElement, String>
+    private val existingKeys: Map<SmartPsiElementWrapper<PsiElement>, String>
 ) : DialogWrapper(project) {
 
     private lateinit var contextTextArea: JBTextArea
@@ -63,7 +65,15 @@ class ExistingKeysDialog(
     }
 
     private fun createTreePanel(): JComponent {
-        tree = CheckboxTree(MyTreeCellRenderer(existingKeys), rootNode)
+        // Resolve the map for tree renderer
+        // SmartPointer.getElement() requires read access
+        val resolvedKeys = ReadAction.compute<Map<PsiElement, String>, Throwable> {
+            existingKeys.mapNotNull { (wrapper, key) ->
+                wrapper.element?.let { it to key }
+            }.toMap()
+        }
+
+        tree = CheckboxTree(MyTreeCellRenderer(resolvedKeys), rootNode)
         tree.model = DefaultTreeModel(rootNode)
 
         val expandAllButton = JButton("Expand All")
@@ -104,8 +114,16 @@ class ExistingKeysDialog(
         }
     }
 
-    private fun buildTree(stringLiteralsWithSelection: Map<PsiElement, String>) {
-        val fileToLiteralsMap = stringLiteralsWithSelection.keys.groupBy { it.containingFile }
+    private fun buildTree(stringLiteralsWithSelection: Map<SmartPsiElementWrapper<PsiElement>, String>) {
+        // Resolve all pointers to current PSI elements, filtering out invalidated ones
+        // SmartPointer.getElement() requires read access
+        val validElements = ReadAction.compute<Map<PsiElement, String>, Throwable> {
+            stringLiteralsWithSelection.mapNotNull { (wrapper, key) ->
+                wrapper.element?.let { it to key }
+            }.toMap()
+        }
+
+        val fileToLiteralsMap = validElements.keys.groupBy { it.containingFile }
         val nodeMap = mutableMapOf<String, CheckedTreeNode>()
 
         for ((psiFile, literals) in fileToLiteralsMap) {
