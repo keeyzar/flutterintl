@@ -73,13 +73,14 @@ class GeminiBestGuessClient(
         val gemini = LLMConfigProvider.getInstanceGemini()
         val modelId = userSettingsRepository.getSettings().gptModel
         val request = createRequestContent(bestGuessRequest)
+        val thinkingBudget = getThinkingBudget(modelId)
 
         val response = gemini.models.generateContent(
             modelId,
             request,
             GenerateContentConfig.builder()
                 .thinkingConfig(ThinkingConfig.builder()
-                    .thinkingBudget(0)
+                    .thinkingBudget(thinkingBudget)
                     .build())
                 .build()
         )
@@ -110,5 +111,13 @@ class GeminiBestGuessClient(
 
         val allGuesses = responses.flatMap { it.responseEntries }
         return@coroutineScope BestGuessResponse(allGuesses)
+    }
+
+    private fun getThinkingBudget(modelId: String): Int {
+        return if (modelId.contains("flash")) {
+            0 // Flash models don't need thinking budget
+        } else {
+            -1 // Automatically define thinking budget for other models
+        }
     }
 }

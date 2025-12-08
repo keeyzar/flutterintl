@@ -3,10 +3,12 @@ package de.keeyzar.gpthelper.gpthelper.features.translations.presentation.depend
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.client.BestGuessL10nClient
+import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.client.PreFilterClient
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.controller.MultiKeyTranslationProcessController
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.service.ExistingKeyFinder
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.service.GatherBestGuessContext
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.service.GuessAdaptionService
+import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.service.PreFilterRequestBuilder
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.service.WaitingIndicatorService
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.service.PsiElementIdReferenceProvider
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.presentation.actions.AutoLocalizeOrchestrator
@@ -43,6 +45,8 @@ class FlutterArbTranslationInitializer(
     val gatherBestGuessContext: GatherBestGuessContext,
     val waitingIndicatorService: WaitingIndicatorService,
     val bestGuessL10nClient: BestGuessL10nClient,
+    val preFilterClient: PreFilterClient,
+    val preFilterRequestBuilder: PreFilterRequestBuilder,
     val guessAdaptionService: GuessAdaptionService,
     val dartStringLiteralHelper: DartStringLiteralHelper,
     val orchestrator: AutoLocalizeOrchestrator,
@@ -69,6 +73,8 @@ class FlutterArbTranslationInitializer(
                 gatherBestGuessContext = koin.get(),
                 waitingIndicatorService = koin.get(),
                 bestGuessL10nClient = koin.get(),
+                preFilterClient = koin.get(),
+                preFilterRequestBuilder = koin.get(),
                 guessAdaptionService = koin.get(),
                 dartStringLiteralHelper = koin.get(),
                 orchestrator = koin.get(),

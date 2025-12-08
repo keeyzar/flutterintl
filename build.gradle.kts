@@ -70,7 +70,10 @@ dependencies {
     implementation("org.slf4j:slf4j-api:2.0.7")
 
 
-    testImplementation("org.junit.jupiter:junit-jupiter:5.8.0")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.2")
+    testImplementation("org.junit.jupiter:junit-jupiter-params:5.10.2")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.2")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation("org.assertj:assertj-core:3.24.2")
     testImplementation("io.insert-koin:koin-test:$koin_version")
     testImplementation("org.mockito:mockito-core:5.12.0")
@@ -164,6 +167,10 @@ tasks {
 
     publishPlugin {
         dependsOn(patchChangelog)
+    }
+
+    test {
+        useJUnitPlatform()
     }
 }
 

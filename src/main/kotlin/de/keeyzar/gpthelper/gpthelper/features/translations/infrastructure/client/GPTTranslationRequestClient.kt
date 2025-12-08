@@ -7,6 +7,8 @@ import com.google.genai.types.GenerateContentConfig
 import com.google.genai.types.Part
 import de.keeyzar.gpthelper.gpthelper.features.filetranslation.domain.client.FileTranslationRequest
 import de.keeyzar.gpthelper.gpthelper.features.filetranslation.domain.client.PartialFileTranslationResponse
+import de.keeyzar.gpthelper.gpthelper.features.translations.domain.client.BatchClientTranslationRequest
+import de.keeyzar.gpthelper.gpthelper.features.translations.domain.client.BatchPartialTranslationResponse
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.client.ClientTranslationRequest
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.client.DDDTranslationRequestClient
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.client.PartialTranslationResponse
@@ -226,6 +228,92 @@ class GPTTranslationRequestClient(
         }
     }
 
+    override suspend fun createComplexArbEntryBatch(
+        batchRequest: BatchClientTranslationRequest,
+        isCancelled: () -> Boolean,
+        progressReport: () -> Unit
+    ): BatchPartialTranslationResponse {
+        if (isCancelled()) {
+            return BatchPartialTranslationResponse(emptyList())
+        }
+
+        val translations = batchRequest.requests.map { it.translation }
+        val baseContent = translationRequestResponseParser.toBatchGPTContentAdvanced(translations)
+        val targetLang = translations.first().lang
+
+        try {
+            val requestComplexTranslation = requestBatchComplexTranslationLong(baseContent, targetLang.toISOLangString())
+            val responses = translationRequestResponseParser.fromBatchResponse(targetLang, requestComplexTranslation, translations)
+
+            progressReport()
+
+            return BatchPartialTranslationResponse(responses.map { PartialTranslationResponse(it) })
+        } catch (e: Exception) {
+            throw TranslationRequestException(
+                "Failed to create complex arb entries batch",
+                e,
+                translations.first()
+            )
+        }
+    }
+
+    internal suspend fun requestBatchComplexTranslationLong(content: String, targetLanguage: String): String {
+        val tonality = userSettingsRepository.getSettings().tonality
+        val realRequest = """
+            Target Language: ISO CODE $targetLanguage, tonality: $tonality 
+            User Input (multiple entries):
+            $content
+            
+            Please respond with a single JSON object containing ALL entries. Format:
+            {
+              "key1": "value1",
+              "@key1": {"description": "desc1"},
+              "key2": "value2",
+              "@key2": {"description": "desc2"}
+            }
+        """.trimIndent()
+
+        val history = listOf(
+            Content.builder().role("user").parts(Part.builder().text(realRequest).build()).build()
+        )
+
+        val gemini = LLMConfigProvider.getInstanceGemini()
+        val model = userSettingsRepository.getSettings().gptModel
+        val thinkingBudget = getThinkingBudget(model)
+
+        val config = GenerateContentConfig.builder()
+            .systemInstruction(
+                Content.builder().parts(
+                    Part.builder().text(
+                        """
+                        You're a flutter intl expert. You return valid intl translations for multiple entries at once. You answer only in JSON. If you encounter variables in the value (e.g. ${'$'}{y.x}, ${'$'}x, ${'$'}{x}) you must make a valid placeholderName out of that => {x}
+                        A valid placeholderName is always letters only.
+                        Return ALL entries in a single JSON object.
+                        """
+                    ).build()
+                ).build()
+            )
+            .thinkingConfig(
+                com.google.genai.types.ThinkingConfig.builder()
+                    .thinkingBudget(thinkingBudget)
+                    .build()
+            )
+            .build()
+
+        val response = retryWithBackoff {
+            gemini.models.generateContent(model, history, config)
+        }
+        return response.text() ?: throw Exception("Could not translate content")
+    }
+
+    private fun getThinkingBudget(modelId: String): Int {
+        return if (modelId.contains("flash")) {
+            0 // no need
+        } else {
+            -1 // automatically define thinking budget
+        }
+    }
+
     override suspend fun translateValueOnly(
         clientTranslationRequest: ClientTranslationRequest,
         partialTranslationResponse: PartialTranslationResponse,
@@ -273,6 +361,100 @@ class GPTTranslationRequestClient(
                 }
             }
         }
+    }
+
+    override suspend fun translateValueOnlyBatch(
+        batchRequest: BatchClientTranslationRequest,
+        batchResponse: BatchPartialTranslationResponse,
+        isCancelled: () -> Boolean,
+        partialTranslationFinishedCallback: (PartialTranslationResponse) -> Unit
+    ) {
+        if (isCancelled()) {
+            return
+        }
+
+        val translations = batchResponse.responses.map { it.translation }
+        val baseContent = translationRequestResponseParser.toBatchTranslationOnly(translations)
+        val dispatcher = dispatcherConfiguration.getDispatcher()
+        val parallelism = dispatcherConfiguration.getLevelOfParallelism()
+        val baseLanguage = translations.first().lang
+        val allLanguagesExceptBaseLanguage = batchRequest.targetLanguages.filter { it != baseLanguage }
+
+        coroutineScope {
+            val deferredTranslations = allLanguagesExceptBaseLanguage.chunked(parallelism).flatMap { chunk ->
+                chunk.map { targetLang ->
+                    async(dispatcher) {
+                        if (isCancelled()) {
+                            return@async
+                        }
+
+                        try {
+                            val response = requestBatchTranslationOnly(baseContent, targetLang.toISOLangString())
+                            val translatedEntries = translationRequestResponseParser.fromBatchResponse(targetLang, response, translations)
+
+                            if (!isCancelled()) {
+                                translatedEntries.forEach { translation ->
+                                    partialTranslationFinishedCallback(PartialTranslationResponse(translation))
+                                }
+                            }
+                        } catch (e: Throwable) {
+                            throw TranslationRequestException(
+                                "Batch translation request failed for ${targetLang.toISOLangString()}", e,
+                                Translation(lang = targetLang, translations.first().entry)
+                            )
+                        }
+                    }
+                }
+            }
+
+            deferredTranslations.forEach {
+                if (!isCancelled()) {
+                    it.await()
+                }
+            }
+        }
+    }
+
+    private suspend fun requestBatchTranslationOnly(content: String, targetLanguage: String): String {
+        val tonality = userSettingsRepository.getSettings().tonality
+        val request = """
+            Can you please translate these flutter arb entries into the language '$targetLanguage' (ISO 639-1 Code language code)? Do not change keys. Add the placeholder only if there are changes to it.
+            
+            $content
+            
+            The translated tonality should be $tonality. Remember, you're an API server responding in valid JSON only and not in Markdown! Do not change special chars, e.g. new lines (e.g. \n should stay \n). Respond with ALL entries in a single JSON object.
+        """.trimIndent()
+
+        val history = listOf(
+            Content.builder().role("user")
+                .parts(Part.builder().text(request).build())
+                .build()
+        )
+
+        val gemini = LLMConfigProvider.getInstanceGemini()
+        val model = userSettingsRepository.getSettings().gptModel
+        val thinkingBudget = getThinkingBudget(model)
+
+        val config = GenerateContentConfig.builder()
+            .systemInstruction(
+                Content.builder().parts(
+                    Part.builder().text("You are a helpful REST API Server answering in valid JSON, that creates flutter INTL ARB entries for multiple keys at once.")
+                ).build()
+            )
+            .thinkingConfig(
+                com.google.genai.types.ThinkingConfig.builder()
+                    .thinkingBudget(thinkingBudget)
+                    .build()
+            )
+            .build()
+
+        val response = retryWithBackoff {
+            gemini.models.generateContent(model, history, config)
+        }
+
+        val responseText = response.text() ?: throw Exception("Could not translate content")
+
+        return removeMarkdown(responseText)
     }
 
     private suspend fun <T> retryWithBackoff(

@@ -40,17 +40,6 @@ class StatementFixer(
                 replaceStatementWithNewStatement(element, newStatement)
             }, "translation", "translate")
         }
-        //this caused a lot of headaches in the past, so we postpone it a little bit
-        //TODO allow formatting again - currently I do not know how to get the statement, also it's bugged oftentimes..
-//        try {
-//            WriteCommandAction.runWriteCommandAction(project) {
-//                CodeStyleManager.getInstance(project).reformat(newPsiElement)
-//            }
-//        } catch (e: Exception) {
-//            e.printStackTrace()
-//            print("failed to reformat the code..., but this should not interrupt the whole process..")
-//            //sometimes this just fails, for whatever reason
-//        }
     }
 
     private fun fixStatementAdvanced(project: Project, element: PsiElement, desiredKey: String) {

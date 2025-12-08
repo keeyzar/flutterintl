@@ -82,14 +82,17 @@ class AutoLocalizeOrchestrator(
 
         val remainingLiterals = allLiteralsWithSelection.filterKeys { it !in elementsToReplace }
 
-        if (remainingLiterals.isEmpty() && elementsToReplace.isEmpty()) {
-            //everything is replaced, or nothing to do so we are done
+        if (remainingLiterals.isEmpty()) {
+            // No remaining literals to process (either all replaced or nothing to do)
             return
         }
 
+        // NEW: AI-based pre-filtering
+        val preFilteredLiterals = performAiPreFiltering(project, initializer, remainingLiterals)
+
         var selectedLiterals: List<PsiElement>? = null
         ApplicationManager.getApplication().invokeAndWait {
-            val dialog = CollectedStringsDialog(project, remainingLiterals)
+            val dialog = CollectedStringsDialog(project, preFilteredLiterals)
             if (dialog.showAndGet()) {
                 selectedLiterals = dialog.getSelectedLiterals()
             }
@@ -165,6 +168,85 @@ class AutoLocalizeOrchestrator(
                 initializer.contextProvider.removeAutoLocalizeContext(uuid)
             }
         )
+    }
+
+    private fun performAiPreFiltering(
+        project: Project,
+        initializer: FlutterArbTranslationInitializer,
+        remainingLiterals: Map<PsiElement, Boolean>
+    ): Map<PsiElement, Boolean> {
+        if (remainingLiterals.isEmpty()) {
+            return remainingLiterals
+        }
+
+        try {
+            // Separate already-filtered (false) from candidates (true)
+            val alreadyFiltered = remainingLiterals.filterValues { !it }
+            val candidatesForAi = remainingLiterals.filterValues { it }
+
+            // If no candidates need AI filtering, return as-is
+            if (candidatesForAi.isEmpty()) {
+                return remainingLiterals
+            }
+
+            // Build pre-filter request only for candidates
+            val preFilterRequest = runReadAction {
+                initializer.preFilterRequestBuilder.buildRequest(candidatesForAi)
+            }
+
+            val totalBatches = estimateBatches(preFilterRequest.literals.size)
+
+            // Perform AI pre-filtering with blocking progress dialog
+            val preFilterResponse = com.intellij.openapi.progress.ProgressManager.getInstance().run(
+                object : com.intellij.openapi.progress.Task.WithResult<de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.entity.PreFilterResponse, Exception>(
+                    project,
+                    if (totalBatches > 1) {
+                        "Pre-filtering ${preFilterRequest.literals.size} strings in $totalBatches batches..."
+                    } else {
+                        "Pre-filtering ${preFilterRequest.literals.size} strings, one moment please..."
+                    },
+                    true
+                ) {
+                    override fun compute(indicator: com.intellij.openapi.progress.ProgressIndicator): de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.entity.PreFilterResponse {
+                        indicator.isIndeterminate = false
+
+                        return kotlinx.coroutines.runBlocking {
+                            initializer.preFilterClient.preFilter(preFilterRequest) { current, total ->
+                                indicator.fraction = current.toDouble() / total.toDouble()
+                                indicator.text = "Pre-filtering batch $current of $total..."
+                            }
+                        }
+                    }
+                }
+            )
+
+            // Map results back to PsiElements
+            val resultMap = mutableMapOf<String, Boolean>()
+            preFilterResponse.results.forEach { result ->
+                resultMap[result.id] = result.shouldTranslate
+            }
+
+            // Update selection based on AI results for candidates
+            val aiFilteredLiterals = mutableMapOf<PsiElement, Boolean>()
+            preFilterRequest.literals.forEach { literal ->
+                val shouldTranslate = resultMap[literal.id] ?: candidatesForAi[literal.psiElement] ?: false
+                aiFilteredLiterals[literal.psiElement] = shouldTranslate
+            }
+
+            // Merge with already-filtered strings (keep them as false)
+            return alreadyFiltered + aiFilteredLiterals
+        } catch (e: Exception) {
+            // On error, fall back to original selection
+            generalErrorHandler.handleError(project, e)
+            return remainingLiterals
+        }
+    }
+
+    private fun estimateBatches(literalCount: Int): Int {
+        val estimatedTokensPerLiteral = 50
+        val maxTokensPerBatch = 5000
+        val totalEstimatedTokens = literalCount * estimatedTokensPerLiteral
+        return (totalEstimatedTokens / maxTokensPerBatch).coerceAtLeast(1)
     }
 }
 

@@ -6,9 +6,12 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import de.keeyzar.gpthelper.gpthelper.common.error.GeneralErrorHandler
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.client.BestGuessL10nClient
+import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.client.PreFilterClient
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.controller.MultiKeyTranslationProcessController
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.service.*
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.client.GeminiBestGuessClient
+import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.client.GeminiPreFilterClient
+import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.service.IdeaPreFilterRequestBuilder
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.parser.BestGuessOpenAIResponseParser
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.service.OpenAIMultiKeyTranslationTaskSizeEstimator
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.service.PsiElementIdReferenceProvider
@@ -186,7 +189,7 @@ fun createAppModule(project: Project): Module {
         single<FormatTranslationFileContentService> { ArbFormatTranslationFileContentService(get()) }
         single<TaskAmountCalculator> { TranslateKeyTaskAmountCalculator() }
         single<TranslationTriggeredHooks> { TranslateKeyTranslationTriggeredHooks(get(), get()) }
-        single<OngoingTranslationHandler> { OngoingTranslationHandler(get(), get(), get()) }
+        single<OngoingTranslationHandler> { OngoingTranslationHandler(get(), get(), get(), get()) }
         single<FlutterArbCurrentFileModificationService> {
             FlutterArbCurrentFileModificationService(
                 get(),
@@ -229,12 +232,13 @@ fun createAppModule(project: Project): Module {
         single<GatherBestGuessContext> { IdeaGatherBestGuessContext(get(), get(), get()) }
         single<BestGuessOpenAIResponseParser> { BestGuessOpenAIResponseParser(get()) }
         single<BestGuessL10nClient> { GeminiBestGuessClient(get(), get(), get(), get()) }
+        single<PreFilterClient> { GeminiPreFilterClient(get(), get(), get()) }
+        single<PreFilterRequestBuilder> { IdeaPreFilterRequestBuilder(get()) }
         single<PsiElementIdReferenceProvider> { PsiElementIdReferenceProvider() }
         single<GuessAdaptionService> { IdeaBestGuessAdaptionService(get(), get(), get(), get()) }
         single<ArbFilesService> { ArbFilesService(get(), get(), get(), get()) }
         single<MultiKeyTranslationProcessController> {
             MultiKeyTranslationProcessController(
-                get(),
                 get(),
                 get(),
                 get(),

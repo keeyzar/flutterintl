@@ -11,7 +11,7 @@
 - speed up key guess generation - thinking budget is likely not required
 
 ### Bugfix
- 
+
 - setup-intl now also fixes l10n file, if it's not existing
 
 ## [2.0.11] - 2025-09-18
@@ -220,7 +220,8 @@
 
 - initial release
 
-[Unreleased]: https://github.com/keeyzar/gpt-helper/compare/v2.0.11...HEAD
+[Unreleased]: https://github.com/keeyzar/gpt-helper/compare/v2.0.12...HEAD
+[2.0.12]: https://github.com/keeyzar/gpt-helper/compare/v2.0.11...v2.0.12
 [2.0.11]: https://github.com/keeyzar/gpt-helper/compare/v2.0.10...v2.0.11
 [2.0.10]: https://github.com/keeyzar/gpt-helper/compare/v2.0.9...v2.0.10
 [2.0.9]: https://github.com/keeyzar/gpt-helper/compare/v2.0.8...v2.0.9
