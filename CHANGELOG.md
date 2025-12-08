@@ -4,6 +4,19 @@
 
 ## [Unreleased]
 
+## [2.0.13] - 2025-12-08
+
+### Added
+
+- new feature: pre-selection of strings to be translated
+- parallelization of key translation with better results
+
+### Bugfix
+
+- fixed bug for replacing existing strings;
+- fixed bug that lost track to string elements causing the process to fail
+- fixed bug that interrupted the whole process when something failed
+
 ## [2.0.12] - 2025-09-20
 
 ### Added
