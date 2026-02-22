@@ -4,6 +4,18 @@
 
 ## [Unreleased]
 
+## [2.0.15] - 2026-02-22
+
+### Added
+
+- Store decision about not translating string entries - so you do not have to review it again
+- limit to 2025.3.x versions
+
+### Bugfix
+
+- fixed terminal bug when running flutter gen-l10n (finally? We'll see.)
+- fix autocompletion for Strings in dart files (e.g. Text("wel<autocomplete> shows Text(AppLocalization.of(ctx)!.welcome))
+
 ## [2.0.14] - 2026-02-22
 
 ### Added
@@ -11,7 +23,6 @@
 - fix autocompletion for Strings in dart files (e.g. Text("wel<autocomplete> shows Text(AppLocalization.of(ctx)!.welcome))
 - Store decision about not translating string entries - so you do not have to review it again
 - fixed terminal bug when running flutter gen-l10n (finally? We'll see.)
-
 
 ## [2.0.13] - 2025-12-08
 
@@ -242,7 +253,8 @@
 
 - initial release
 
-[Unreleased]: https://github.com/keeyzar/gpt-helper/compare/v2.0.13...HEAD
+[Unreleased]: https://github.com/keeyzar/gpt-helper/compare/v2.0.14...HEAD
+[2.0.14]: https://github.com/keeyzar/gpt-helper/compare/v2.0.13...v2.0.14
 [2.0.13]: https://github.com/keeyzar/gpt-helper/compare/v2.0.12...v2.0.13
 [2.0.12]: https://github.com/keeyzar/gpt-helper/compare/v2.0.11...v2.0.12
 [2.0.11]: https://github.com/keeyzar/gpt-helper/compare/v2.0.10...v2.0.11
