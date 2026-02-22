@@ -29,12 +29,24 @@ import javax.swing.tree.TreePath
 
 class CollectedStringsDialog(
     private val project: Project,
-    private val stringLiteralsWithSelection: Map<SmartPsiElementWrapper<PsiElement>, Boolean>
+    private val stringLiteralsWithSelection: Map<SmartPsiElementWrapper<PsiElement>, Boolean>,
+    /**
+     * Set of reviewed-string IDs that were previously skipped by the user.
+     * These will be shown in a separate "Previously Skipped" section, unchecked by default.
+     */
+    private val previouslySkippedIds: Set<String> = emptySet(),
+    /**
+     * Function to compute the reviewed-string ID for a PsiElement.
+     * If null, no splitting into sections will occur.
+     */
+    private val idGenerator: ((PsiElement) -> String)? = null,
 ) : DialogWrapper(project) {
 
     private lateinit var contextTextArea: JBTextArea
     private lateinit var tree: CheckboxTree
     private val rootNode = CheckedTreeNode(project.name)
+    private val newStringsNode = CheckedTreeNode("New Strings")
+    private val previouslySkippedNode = CheckedTreeNode("Previously Skipped")
 
     init {
         title = "Select Strings to Localize"
@@ -83,6 +95,17 @@ class CollectedStringsDialog(
             layout = BoxLayout(this, BoxLayout.X_AXIS)
             add(expandAllButton)
             add(collapseAllButton)
+            if (previouslySkippedIds.isNotEmpty()) {
+                add(Box.createHorizontalStrut(10))
+                val resetSkippedButton = JButton("Check All Skipped")
+                resetSkippedButton.toolTipText = "Re-check all previously skipped strings so you can review them again"
+                resetSkippedButton.addActionListener {
+                    setAllChecked(previouslySkippedNode, true)
+                    (tree.model as DefaultTreeModel).nodeChanged(previouslySkippedNode)
+                    tree.repaint()
+                }
+                add(resetSkippedButton)
+            }
             add(Box.createHorizontalGlue())
         }
 
@@ -120,7 +143,42 @@ class CollectedStringsDialog(
             }.toMap()
         }
 
-        val fileToLiteralsMap = validElements.keys.groupBy { it.containingFile }
+        // Split elements into new vs previously skipped
+        val hasSections = previouslySkippedIds.isNotEmpty() && idGenerator != null
+        val newElements = mutableMapOf<PsiElement, Boolean>()
+        val skippedElements = mutableMapOf<PsiElement, Boolean>()
+
+        if (hasSections) {
+            ReadAction.run<Throwable> {
+                for ((element, selected) in validElements) {
+                    val id = idGenerator!!.invoke(element)
+                    if (id in previouslySkippedIds) {
+                        // Previously skipped: unchecked by default
+                        skippedElements[element] = false
+                    } else {
+                        newElements[element] = selected
+                    }
+                }
+            }
+        } else {
+            newElements.putAll(validElements)
+        }
+
+        if (hasSections && skippedElements.isNotEmpty()) {
+            // Build two sections under root
+            rootNode.add(newStringsNode)
+            buildSubTree(newStringsNode, newElements)
+            rootNode.add(previouslySkippedNode)
+            previouslySkippedNode.isChecked = false
+            buildSubTree(previouslySkippedNode, skippedElements)
+        } else {
+            // No sections needed - build flat like before
+            buildSubTree(rootNode, newElements)
+        }
+    }
+
+    private fun buildSubTree(parentNode: CheckedTreeNode, elements: Map<PsiElement, Boolean>) {
+        val fileToLiteralsMap = elements.keys.groupBy { it.containingFile }
         val nodeMap = mutableMapOf<String, CheckedTreeNode>()
 
         for ((psiFile, literals) in fileToLiteralsMap) {
@@ -130,8 +188,8 @@ class CollectedStringsDialog(
             val relativePath = psiFile.virtualFile.path.substringAfter(project.basePath!! + "/")
             val pathComponents = relativePath.split('/')
 
-            var currentParentNode = rootNode
-            var currentPath = ""
+            var currentParentNode = parentNode
+            var currentPath = parentNode.userObject.toString() // scope node map per section
 
             // Create directory nodes
             for (i in 0 until pathComponents.size - 1) {
@@ -153,7 +211,7 @@ class CollectedStringsDialog(
             // Create literal nodes
             for (literal in literals) {
                 val literalNode = CheckedTreeNode(literal) // User object is the PsiElement
-                literalNode.isChecked = validElements[literal] ?: true // Select based on map, default to true
+                literalNode.isChecked = elements[literal] ?: true // Select based on map, default to true
                 fileNode.add(literalNode)
             }
         }
@@ -216,6 +274,38 @@ class CollectedStringsDialog(
     }
 
     /**
+     * Returns all string literals that were NOT selected by the user.
+     * These are candidates for persisting as "previously skipped".
+     */
+    fun getUnselectedLiterals(): List<PsiElement> {
+        val unselectedLiterals = mutableListOf<PsiElement>()
+        collectUnselectedLiterals(rootNode, unselectedLiterals)
+        return unselectedLiterals
+    }
+
+    private fun collectUnselectedLiterals(node: CheckedTreeNode, unselected: MutableList<PsiElement>) {
+        if (!node.isChecked && node.userObject is PsiElement && node.userObject !is PsiFile) {
+            unselected.add(node.userObject as PsiElement)
+        }
+        for (i in 0 until node.childCount) {
+            val child = node.getChildAt(i)
+            if (child is CheckedTreeNode) {
+                collectUnselectedLiterals(child, unselected)
+            }
+        }
+    }
+
+    private fun setAllChecked(node: CheckedTreeNode, checked: Boolean) {
+        node.isChecked = checked
+        for (i in 0 until node.childCount) {
+            val child = node.getChildAt(i)
+            if (child is CheckedTreeNode) {
+                setAllChecked(child, checked)
+            }
+        }
+    }
+
+    /**
      * Overrides the OK action to validate that at least one string is selected.
      */
     override fun doOKAction() {
@@ -245,10 +335,35 @@ class CollectedStringsDialog(
             val text = when (userObject) {
                 is PsiFile -> userObject.name
                 is PsiElement -> userObject.text
-                is String -> userObject
+                is String -> {
+                    if (userObject == "New Strings" || userObject == "Previously Skipped") {
+                        val count = countLeafNodes(node)
+                        "$userObject ($count)"
+                    } else {
+                        userObject
+                    }
+                }
                 else -> "Project" // Root node
             }
             this.textRenderer.append(text)
+            if (userObject is String && userObject == "Previously Skipped") {
+                this.textRenderer.append(" — unchecked by default", com.intellij.ui.SimpleTextAttributes.GRAYED_ATTRIBUTES)
+            }
+        }
+
+        private fun countLeafNodes(node: CheckedTreeNode): Int {
+            var count = 0
+            for (i in 0 until node.childCount) {
+                val child = node.getChildAt(i)
+                if (child is CheckedTreeNode) {
+                    if (child.userObject is PsiElement && child.userObject !is PsiFile) {
+                        count++
+                    } else {
+                        count += countLeafNodes(child)
+                    }
+                }
+            }
+            return count
         }
     }
 }

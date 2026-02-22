@@ -13,6 +13,9 @@ import com.intellij.psi.search.GlobalSearchScopes
 import com.jetbrains.lang.dart.DartFileType
 import de.keeyzar.gpthelper.gpthelper.common.error.GeneralErrorHandler
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.client.BestGuessRequest
+import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.entity.ReviewedStringEntry
+import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.service.ReviewedStringIdGenerator
+import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.service.ReviewedStringsRepository
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.client.GeminiBestGuessClient
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.model.AutoLocalizeContext
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.presentation.widgets.CollectedStringsDialog
@@ -27,6 +30,8 @@ import java.util.concurrent.atomic.AtomicInteger
 class AutoLocalizeOrchestrator(
     private val generalErrorHandler: GeneralErrorHandler,
     private val verifySettings: VerifyTranslationSettingsService,
+    private val reviewedStringsRepository: ReviewedStringsRepository,
+    private val reviewedStringIdGenerator: ReviewedStringIdGenerator,
 ) {
 
     fun orchestrate(project: Project, directory: VirtualFile, title: String) {
@@ -101,13 +106,29 @@ class AutoLocalizeOrchestrator(
         // NEW: AI-based pre-filtering
         val preFilteredLiterals = performAiPreFiltering(project, initializer, remainingLiterals)
 
+        // Load previously reviewed (skipped) string IDs
+        val previouslySkippedIds = reviewedStringsRepository.getReviewedStrings().map { it.id }.toSet()
+
         var selectedLiterals: List<PsiElement>? = null
+        var unselectedLiterals: List<PsiElement> = emptyList()
         ApplicationManager.getApplication().invokeAndWait {
-            val dialog = CollectedStringsDialog(project, preFilteredLiterals)
+            val dialog = CollectedStringsDialog(
+                project,
+                preFilteredLiterals,
+                previouslySkippedIds = previouslySkippedIds,
+                idGenerator = { element -> reviewedStringIdGenerator.generateId(project, element) }
+            )
             if (dialog.showAndGet()) {
                 selectedLiterals = dialog.getSelectedLiterals()
+                unselectedLiterals = dialog.getUnselectedLiterals()
+            } else {
+                // User cancelled - persist all currently shown literals as reviewed/skipped
+                unselectedLiterals = dialog.getUnselectedLiterals() + dialog.getSelectedLiterals()
             }
         }
+
+        // Persist the user's review decisions
+        persistReviewDecisions(project, selectedLiterals, unselectedLiterals, previouslySkippedIds)
 
         val finalLiterals = selectedLiterals
         if (finalLiterals.isNullOrEmpty()) {
@@ -260,6 +281,49 @@ class AutoLocalizeOrchestrator(
             // On error, fall back to original selection
             generalErrorHandler.handleError(project, e)
             return remainingLiterals
+        }
+    }
+
+    private fun persistReviewDecisions(
+        project: Project,
+        selectedLiterals: List<PsiElement>?,
+        unselectedLiterals: List<PsiElement>,
+        previouslySkippedIds: Set<String>,
+    ) {
+        // Persist unselected literals as reviewed/skipped
+        if (unselectedLiterals.isNotEmpty()) {
+            val newEntries = runReadAction {
+                unselectedLiterals.mapNotNull { element ->
+                    val id = reviewedStringIdGenerator.generateId(project, element)
+                    if (id.isNotEmpty()) {
+                        val file = element.containingFile?.virtualFile ?: return@mapNotNull null
+                        val basePath = project.basePath ?: return@mapNotNull null
+                        val relativePath = file.path.substringAfter("$basePath/")
+                        ReviewedStringEntry(
+                            id = id,
+                            relativeFilePath = relativePath,
+                            literalText = element.text,
+                            reviewedAt = System.currentTimeMillis(),
+                        )
+                    } else null
+                }.toSet()
+            }
+            if (newEntries.isNotEmpty()) {
+                reviewedStringsRepository.addReviewedStrings(newEntries)
+            }
+        }
+
+        // If the user selected literals that were previously skipped, remove them from the skipped list
+        if (!selectedLiterals.isNullOrEmpty()) {
+            val idsToRemove = runReadAction {
+                selectedLiterals.mapNotNull { element ->
+                    val id = reviewedStringIdGenerator.generateId(project, element)
+                    if (id.isNotEmpty() && id in previouslySkippedIds) id else null
+                }.toSet()
+            }
+            if (idsToRemove.isNotEmpty()) {
+                reviewedStringsRepository.removeReviewedStrings(idsToRemove)
+            }
         }
     }
 

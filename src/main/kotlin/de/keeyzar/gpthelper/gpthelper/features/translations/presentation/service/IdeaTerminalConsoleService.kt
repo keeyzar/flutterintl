@@ -5,103 +5,109 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.wm.ToolWindowManager
-import com.intellij.terminal.ui.TerminalWidget
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.service.ConsoleService
 import org.jetbrains.plugins.terminal.TerminalToolWindowFactory
 import org.jetbrains.plugins.terminal.TerminalToolWindowManager
+import java.util.Timer
+import java.util.TimerTask
 
 class IdeaTerminalConsoleService(
-    private val project: Project) : ConsoleService {
+    private val project: Project
+) : ConsoleService {
 
     companion object {
         const val TAB_NAME_FOR_L10N_GENERATION = "L10N Generation"
         private val LOG = Logger.getInstance(IdeaTerminalConsoleService::class.java)
+        private const val NEW_SHELL_STARTUP_DELAY_MS = 2000L
+        private const val VFS_REFRESH_DELAY_MS = 5000L
     }
 
     override fun executeCommand(command: String) {
         ApplicationManager.getApplication().invokeLater {
             try {
-                val terminalView = TerminalToolWindowManager.getInstance(project)
+                val manager = TerminalToolWindowManager.getInstance(project)
                 val window = ToolWindowManager.getInstance(project)
                     .getToolWindow(TerminalToolWindowFactory.TOOL_WINDOW_ID)
-
-                if (window == null) {
-                    LOG.warn("Terminal tool window not found")
-                    return@invokeLater
-                }
+                    ?: run {
+                        LOG.warn("Terminal tool window not found")
+                        return@invokeLater
+                    }
 
                 val contentManager = window.contentManager
-                var content = contentManager.findContent(TAB_NAME_FOR_L10N_GENERATION)
-                var widget: TerminalWidget? = null
+                val existingContent = contentManager.findContent(TAB_NAME_FOR_L10N_GENERATION)
+                val existingWidget = existingContent?.let { TerminalToolWindowManager.findWidgetByContent(it) }
 
-                // Try to reuse existing content if the widget is still valid
-                if (content != null) {
-                    widget = TerminalToolWindowManager.findWidgetByContent(content)
-
-                    // Check if widget exists - if null, the content is stale
-                    if (widget == null) {
-                        LOG.info("Existing terminal widget is null, removing old content")
-                        contentManager.removeContent(content, true)
-                        content = null
-                    } else {
-                        // Try to use the widget to verify it's not disposed
-                        try {
-                            widget.terminalTitle // Access any property to verify widget is alive
-                            LOG.info("Reusing existing terminal widget")
-                        } catch (e: Exception) {
-                            LOG.info("Existing terminal widget is disposed or invalid, removing old content", e)
-                            contentManager.removeContent(content, true)
-                            content = null
-                            widget = null
-                        }
+                val isNewWidget: Boolean
+                if (existingWidget != null) {
+                    // Reuse the existing, still-alive terminal tab
+                    LOG.info("Reusing existing terminal widget")
+                    isNewWidget = false
+                    window.activate(null)
+                    contentManager.setSelectedContent(existingContent)
+                    sendCommandDelayed(existingWidget::sendCommandToExecute, command, 0L)
+                } else {
+                    // Remove stale content entry if present
+                    if (existingContent != null) {
+                        LOG.info("Removing stale terminal content")
+                        contentManager.removeContent(existingContent, true)
                     }
-                }
 
-                // Create new widget if needed
-                if (widget == null) {
+                    // createShellWidget registers the new tab in the tool window automatically
                     LOG.info("Creating new terminal widget")
-                    widget = terminalView.createShellWidget(
+                    isNewWidget = true
+                    val newWidget = manager.createShellWidget(
                         project.basePath,
                         TAB_NAME_FOR_L10N_GENERATION,
-                        true,
-                        true
+                        true,  // requestFocus
+                        true   // deferSession
                     )
-                    content = contentManager.factory.createContent(
-                        widget.component,
-                        TAB_NAME_FOR_L10N_GENERATION,
-                        false
-                    )
-                    content.isCloseable = true
-                    contentManager.addContent(content)
+
+                    window.activate(null)
+                    contentManager.findContent(TAB_NAME_FOR_L10N_GENERATION)
+                        ?.let { contentManager.setSelectedContent(it) }
+
+                    // Give the shell process time to start before sending the command
+                    sendCommandDelayed(newWidget::sendCommandToExecute, command, NEW_SHELL_STARTUP_DELAY_MS)
                 }
 
-                // Activate window and select content
-                window.activate(null)
-                contentManager.setSelectedContent(content)
-
-                // Send command to execute
-                widget.sendCommandToExecute(command)
-
-                // Schedule VFS refresh after command execution
-                // Use a single-shot timer that doesn't hold references
-                val timer = java.util.Timer("L10N-VFS-Refresh", true)
-                timer.schedule(object : java.util.TimerTask() {
-                    override fun run() {
-                        ApplicationManager.getApplication().invokeLater {
-                            try {
-                                VirtualFileManager.getInstance().asyncRefresh(null)
-                                LOG.info("VFS refresh completed after L10N generation")
-                            } catch (e: Exception) {
-                                LOG.error("Error during VFS refresh", e)
-                            }
-                        }
-                        timer.cancel() // Cancel timer after execution
-                    }
-                }, 5000L)
+                // Refresh the VFS so generated files appear in the project tree
+                scheduleVfsRefresh(if (isNewWidget) NEW_SHELL_STARTUP_DELAY_MS + VFS_REFRESH_DELAY_MS else VFS_REFRESH_DELAY_MS)
 
             } catch (e: Exception) {
                 LOG.error("Error executing terminal command: $command", e)
             }
         }
+    }
+
+    private fun sendCommandDelayed(send: (String) -> Unit, command: String, delayMs: Long) {
+        Timer("L10N-Command-Sender", true).schedule(object : TimerTask() {
+            override fun run() {
+                ApplicationManager.getApplication().invokeLater {
+                    try {
+                        send(command)
+                        LOG.info("Command sent to terminal: $command")
+                    } catch (e: Exception) {
+                        LOG.error("Error sending command to terminal", e)
+                    }
+                }
+                cancel()
+            }
+        }, delayMs)
+    }
+
+    private fun scheduleVfsRefresh(delayMs: Long) {
+        Timer("L10N-VFS-Refresh", true).schedule(object : TimerTask() {
+            override fun run() {
+                ApplicationManager.getApplication().invokeLater {
+                    try {
+                        VirtualFileManager.getInstance().asyncRefresh(null)
+                        LOG.info("VFS refresh completed after L10N generation")
+                    } catch (e: Exception) {
+                        LOG.error("Error during VFS refresh", e)
+                    }
+                }
+                cancel()
+            }
+        }, delayMs)
     }
 }

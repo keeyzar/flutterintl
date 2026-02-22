@@ -2,6 +2,7 @@ package de.keeyzar.gpthelper.gpthelper.features.autofilefixer.presentation.actio
 
 import com.intellij.codeInsight.completion.*
 import com.intellij.codeInsight.lookup.LookupElementBuilder
+import com.intellij.openapi.project.Project
 import com.intellij.patterns.PlatformPatterns.psiElement
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.util.PsiTreeUtil
@@ -14,34 +15,35 @@ import de.keeyzar.gpthelper.gpthelper.features.flutter_intl.infrastructure.servi
 import de.keeyzar.gpthelper.gpthelper.features.translations.domain.repository.TranslationFileRepository
 import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.service.ImportFixer
 import de.keeyzar.gpthelper.gpthelper.features.translations.presentation.service.StatementFixer
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
+import de.keeyzar.gpthelper.gpthelper.project.ProjectKoinService
+import java.util.concurrent.ConcurrentHashMap
 
 
-class AutoCompleteArbJson : CompletionContributor(), KoinComponent {
+class AutoCompleteArbJson : CompletionContributor() {
 
-    // DI - translation repository & arb file service are provided by Koin
-    private val translationFileRepository: TranslationFileRepository by inject()
-    private val arbFilesService: ArbFilesService by inject()
-    private val importFixer: ImportFixer by inject()
-    private val statementFixer: StatementFixer by inject()
+    // Per-project caches – resolved lazily when a project is first seen
+    private val suggestionServices = ConcurrentHashMap<Project, ArbSuggestionService>()
 
-    private val suggestionService by lazy {
-        ArbSuggestionService(
-            ArbFileContentProvider(
-                arbFilesService,
-                translationFileRepository
+    private fun getOrCreateSuggestionService(project: Project): ArbSuggestionService {
+        return suggestionServices.getOrPut(project) {
+            val koin = ProjectKoinService.getInstance(project).getKoin()
+            val arbFilesService = koin.get<ArbFilesService>()
+            val translationFileRepository = koin.get<TranslationFileRepository>()
+            ArbSuggestionService(
+                ArbFileContentProvider(arbFilesService, translationFileRepository)
             )
-        )
+        }
+    }
+
+    private fun getImportFixer(project: Project): ImportFixer {
+        return ProjectKoinService.getInstance(project).getKoin().get()
+    }
+
+    private fun getStatementFixer(project: Project): StatementFixer {
+        return ProjectKoinService.getInstance(project).getKoin().get()
     }
 
     init {
-        // refresh index eagerly
-        try {
-            suggestionService.refreshIndexIfNeeded()
-        } catch (_: Exception) {
-            // ignore - indexing will be attempted again on demand
-        }
         val provider = object : CompletionProvider<CompletionParameters>() {
             override fun addCompletions(
                 parameters: CompletionParameters,
@@ -50,9 +52,13 @@ class AutoCompleteArbJson : CompletionContributor(), KoinComponent {
             ) {
                 val prefix = result.prefixMatcher.prefix
                 if (prefix.isBlank()) return
+                val project = parameters.position.project
 
                 try {
-                    // ensure up-to-date index
+                    val suggestionService = getOrCreateSuggestionService(project)
+                    val importFixer = getImportFixer(project)
+                    val statementFixer = getStatementFixer(project)
+                    // Synchronous refresh is fine here – addCompletions runs on a background thread
                     suggestionService.refreshIndexIfNeeded()
                     val suggestions = suggestionService.suggest(prefix, 10)
                     for (s in suggestions) {
@@ -121,7 +127,7 @@ class AutoCompleteArbJson : CompletionContributor(), KoinComponent {
                         result.addElement(lookup)
                     }
                 } catch (e: Exception) {
-                    // on any failure just don't add suggestions
+                    e.printStackTrace()
                 }
             }
         }

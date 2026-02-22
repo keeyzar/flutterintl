@@ -12,6 +12,7 @@ import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.domain.service.*
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.client.GeminiBestGuessClient
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.client.GeminiPreFilterClient
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.service.IdeaPreFilterRequestBuilder
+import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.service.IdeaReviewedStringsRepository
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.parser.BestGuessOpenAIResponseParser
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.service.OpenAIMultiKeyTranslationTaskSizeEstimator
 import de.keeyzar.gpthelper.gpthelper.features.autofilefixer.infrastructure.service.PsiElementIdReferenceProvider
@@ -221,7 +222,9 @@ fun createAppModule(project: Project): Module {
         single<FinishedFileTranslationHandler> { FlutterArbTranslateFileFinished(get(), get(), get()) }
         single<UserSettingsMapper> { Mappers.getMapper(UserSettingsMapper::class.java) }
         single<TranslationCredentialsServiceRepository> { IdeaTranslationCredentialsServiceRepository() }
-        single<AutoLocalizeOrchestrator> { AutoLocalizeOrchestrator(get(), get()) }
+        single<ReviewedStringsRepository> { IdeaReviewedStringsRepository(get(), get()) }
+        single<ReviewedStringIdGenerator> { ReviewedStringIdGenerator() }
+        single<AutoLocalizeOrchestrator> { AutoLocalizeOrchestrator(get(), get(), get(), get()) }
         single<UserSettingsDTOMapper> { Mappers.getMapper(UserSettingsDTOMapper::class.java) }
         single<ClientConnectionTester> { OpenAIClientConnectionTester(get()) }
         single<DartAdditiveExpressionExtractor> { DartAdditiveExpressionExtractor() }
